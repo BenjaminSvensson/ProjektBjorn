@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic; // Added for List
+using System.Collections.Generic;
 
 /// <summary>
 /// This single script handles a limb that exists in the world.
@@ -25,6 +25,9 @@ public class WorldLimb : MonoBehaviour
     [SerializeField] private float throwSpeed = 5f;
     [SerializeField] private float throwHeight = 4f; // Starting "up" velocity
     [SerializeField] private float gravity = -9.8f;
+    [SerializeField, Range(0f, 1f)]
+    [Tooltip("How faint the shadow gets at its peak height (0.0 = invisible, 1.0 = no change)")]
+    private float minShadowAlphaFactor = 0.2f;
     [SerializeField] private float airDrag = 0.98f; // Multiplier to slow speed
     [SerializeField] private float fadeDuration = 3.0f; // Time for broken limbs to fade
 
@@ -38,6 +41,11 @@ public class WorldLimb : MonoBehaviour
     private float currentVerticalSpeed;
     private Collider2D col;
     
+    // --- NEW ---
+    private SpriteRenderer shadowSpriteRenderer;
+    private float originalShadowAlpha;
+    private float calculatedMaxHeight = 1f; // The peak of the arc
+
     // We'll cache all renderers for fading
     private List<SpriteRenderer> brokenVisualRenderers = new List<SpriteRenderer>();
 
@@ -47,17 +55,36 @@ public class WorldLimb : MonoBehaviour
         col.isTrigger = true;
         col.enabled = false; // Disable collider until it's a pickup
 
+        // --- NEW ---
+        // Get the shadow's renderer and store its original alpha
+        if (shadowGameObject != null)
+        {
+            shadowSpriteRenderer = shadowGameObject.GetComponent<SpriteRenderer>();
+        }
+        if (shadowSpriteRenderer != null)
+        {
+            originalShadowAlpha = shadowSpriteRenderer.color.a;
+        }
+        else
+        {
+            Debug.LogWarning("WorldLimb couldn't find a SpriteRenderer on its shadowGameObject!");
+        }
+        // --- END NEW ---
+
         // Cache renderers for the broken visual (for fading)
+        // --- THIS IS THE FIX ---
         if (brokenVisual != null)
         {
             brokenVisual.GetComponentsInChildren<SpriteRenderer>(brokenVisualRenderers);
         }
+        // ------------------------
 
-        // Start with all visuals off
-        if(defaultVisual) defaultVisual.SetActive(false);
-        if(damagedVisual) damagedVisual.SetActive(false);
-        if(brokenVisual) brokenVisual.SetActive(false);
-        if(shadowGameObject) shadowGameObject.SetActive(false);
+        // We can remove the "Start with all visuals off" logic from Awake,
+        // as our Initialize functions will now handle this robustly.
+        // if(defaultVisual) defaultVisual.SetActive(false);
+        // if(damagedVisual) damagedVisual.SetActive(false);
+        // if(brokenVisual) brokenVisual.SetActive(false);
+        // if(shadowGameObject) shadowGameObject.SetActive(false);
     }
 
     /// <summary>
@@ -68,10 +95,14 @@ public class WorldLimb : MonoBehaviour
         limbData = data;
         currentState = State.Attached;
         
-        if(defaultVisual) defaultVisual.SetActive(true); // Show default visual
+        // --- FIX ---
+        // Explicitly set all visual states
+        if(defaultVisual) defaultVisual.SetActive(true);
+        if(damagedVisual) damagedVisual.SetActive(false);
+        if(brokenVisual) brokenVisual.SetActive(false);
+        if(shadowGameObject) shadowGameObject.SetActive(false);
         
         col.enabled = false;
-        if(shadowGameObject) shadowGameObject.SetActive(false);
     }
 
     /// <summary>
@@ -85,6 +116,17 @@ public class WorldLimb : MonoBehaviour
         
         currentVerticalSpeed = throwHeight;
         
+        // --- NEW ---
+        // Calculate the peak height of the arc for shadow scaling
+        // Formula: peak = (initial_velocity^2) / (2 * -gravity)
+        calculatedMaxHeight = (throwHeight * throwHeight) / (2 * -gravity);
+        if (calculatedMaxHeight <= 0) calculatedMaxHeight = 1f; // Failsafe
+        // --- END NEW ---
+
+        // Explicitly set all visual states
+        if(defaultVisual) defaultVisual.SetActive(false);
+        if(damagedVisual) damagedVisual.SetActive(true); // Show damaged visual
+        if(brokenVisual) brokenVisual.SetActive(false);
         if(shadowGameObject)
         {
             shadowGameObject.SetActive(true);
@@ -93,7 +135,6 @@ public class WorldLimb : MonoBehaviour
 
         if(damagedVisual)
         {
-            damagedVisual.SetActive(true); // Show damaged visual
             damagedVisual.transform.localPosition = Vector3.zero;
         }
         
@@ -123,6 +164,26 @@ public class WorldLimb : MonoBehaviour
             damagedVisual.transform.localPosition = new Vector3(0, damagedVisual.transform.localPosition.y + currentVerticalSpeed * Time.deltaTime, 0);
         }
 
+        // --- NEW SHADOW FADE LOGIC ---
+        if (shadowSpriteRenderer != null && calculatedMaxHeight > 0)
+        {
+            float currentHeight = (damagedVisual != null) ? damagedVisual.transform.localPosition.y : 0;
+            currentHeight = Mathf.Max(0, currentHeight); // Ensure it's not negative
+
+            // Calculate how "high" we are as a 0-1 percentage
+            float heightPercent = Mathf.Clamp01(currentHeight / calculatedMaxHeight);
+
+            // Lerp the alpha factor. 1.0f (full alpha) at ground (0% height),
+            // minShadowAlphaFactor at peak (100% height)
+            float newAlphaFactor = Mathf.Lerp(1.0f, minShadowAlphaFactor, heightPercent);
+            
+            // Apply the new alpha, based on the shadow's original alpha
+            Color shadowColor = shadowSpriteRenderer.color;
+            shadowColor.a = originalShadowAlpha * newAlphaFactor;
+            shadowSpriteRenderer.color = shadowColor;
+        }
+        // --- END NEW LOGIC ---
+
         // 3. Check for landing
         if(damagedVisual && damagedVisual.transform.localPosition.y <= 0)
         {
@@ -143,19 +204,39 @@ public class WorldLimb : MonoBehaviour
         if(damagedVisual) damagedVisual.transform.localPosition = Vector3.zero; // Snap to ground
         if(shadowGameObject) shadowGameObject.SetActive(false); // No more shadow needed
 
+        // --- NEW ---
+        // Reset shadow alpha just in case
+        if (shadowSpriteRenderer != null)
+        {
+            Color shadowColor = shadowSpriteRenderer.color;
+            shadowColor.a = originalShadowAlpha;
+            shadowSpriteRenderer.color = shadowColor;
+        }
+        // --- END NEW ---
+
         if (isMaintained)
         {
             // --- Limb is Maintained ---
             currentState = State.Pickup;
             col.enabled = true; // Enable collider for pickup
+            
+            // --- FIX ---
+            // Explicitly set all visual states
+            if(defaultVisual) defaultVisual.SetActive(false);
             if(damagedVisual) damagedVisual.SetActive(true); // Ensure it's on
+            if(brokenVisual) brokenVisual.SetActive(false);
         }
         else
         {
             // --- Limb is Broken ---
             currentState = State.Broken;
+
+            // --- FIX ---
+            // Explicitly set all visual states
+            if(defaultVisual) defaultVisual.SetActive(false);
             if(damagedVisual) damagedVisual.SetActive(false); // Hide damaged visual
             if(brokenVisual) brokenVisual.SetActive(true); // Show broken visual
+            
             StartCoroutine(FadeOutAndDestroy());
         }
     }
@@ -166,6 +247,11 @@ public class WorldLimb : MonoBehaviour
         
         // Set up list of original colors
         List<Color> startColors = new List<Color>();
+        if (brokenVisualRenderers.Count == 0)
+        {
+            Debug.LogWarning("No SpriteRenderers found in brokenVisual to fade!", this);
+        }
+        
         foreach (var rend in brokenVisualRenderers)
         {
             startColors.Add(rend.color);
