@@ -40,6 +40,7 @@ public class WorldLimb : MonoBehaviour
     private Vector2 moveDirection;
     private float currentVerticalSpeed;
     private Collider2D col;
+    private float currentSpinSpeed; // --- NEW ---
     
     // --- NEW ---
     private SpriteRenderer shadowSpriteRenderer;
@@ -115,6 +116,7 @@ public class WorldLimb : MonoBehaviour
         moveDirection = direction;
         
         currentVerticalSpeed = throwHeight;
+        currentSpinSpeed = Random.Range(-480f, 480f); // --- NEW: Set a random spin speed ---
         
         // --- NEW ---
         // Calculate the peak height of the arc for shadow scaling
@@ -136,6 +138,7 @@ public class WorldLimb : MonoBehaviour
         if(damagedVisual)
         {
             damagedVisual.transform.localPosition = Vector3.zero;
+            damagedVisual.transform.localRotation = Quaternion.identity; // --- NEW: Reset rotation ---
         }
         
         currentState = State.Thrown;
@@ -162,6 +165,9 @@ public class WorldLimb : MonoBehaviour
         if(damagedVisual)
         {
             damagedVisual.transform.localPosition = new Vector3(0, damagedVisual.transform.localPosition.y + currentVerticalSpeed * Time.deltaTime, 0);
+            
+            // --- NEW: Apply spin ---
+            damagedVisual.transform.Rotate(0, 0, currentSpinSpeed * Time.deltaTime);
         }
 
         // --- NEW SHADOW FADE LOGIC ---
@@ -201,7 +207,13 @@ public class WorldLimb : MonoBehaviour
     /// </summary>
     private void Land()
     {
-        if(damagedVisual) damagedVisual.transform.localPosition = Vector3.zero; // Snap to ground
+        Quaternion landingRotation = Quaternion.identity; // --- NEW: Store landing rotation ---
+        if (damagedVisual)
+        {
+            landingRotation = damagedVisual.transform.rotation;
+            damagedVisual.transform.localPosition = Vector3.zero; // Snap to ground
+        }
+
         if(shadowGameObject) shadowGameObject.SetActive(false); // No more shadow needed
 
         // --- NEW ---
@@ -235,7 +247,11 @@ public class WorldLimb : MonoBehaviour
             // Explicitly set all visual states
             if(defaultVisual) defaultVisual.SetActive(false);
             if(damagedVisual) damagedVisual.SetActive(false); // Hide damaged visual
-            if(brokenVisual) brokenVisual.SetActive(true); // Show broken visual
+            if(brokenVisual)
+            {
+                brokenVisual.SetActive(true); // Show broken visual
+                brokenVisual.transform.rotation = landingRotation; // --- NEW: Apply landing rotation ---
+            }
             
             StartCoroutine(FadeOutAndDestroy());
         }

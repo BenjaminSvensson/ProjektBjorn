@@ -483,7 +483,7 @@ Rigidbody2D:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
@@ -556,7 +556,7 @@ MonoBehaviour:
   startingHead: {fileID: 11400000, guid: ba1df2c52c1259d41bd0aad125534ceb, type: 2}
   startingArm: {fileID: 11400000, guid: 14269ac5b635dee4aa1949a216a89f25, type: 2}
   startingLeg: {fileID: 11400000, guid: 4ddedf25301f3c5458577aea28d06d56, type: 2}
-  maintainLimbChance: 0.3
+  maintainLimbChance: 0.4
 --- !u!1 &1530818380
 GameObject:
   m_ObjectHideFlags: 0

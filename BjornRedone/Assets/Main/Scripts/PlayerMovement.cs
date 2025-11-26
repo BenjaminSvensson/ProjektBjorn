@@ -77,10 +77,19 @@ public class PlayerMovement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0;
-        rb.linearDamping = 3f;
+        
+        // --- THE FIX ---
+        // We are setting velocity directly, so we don't want
+        // the physics engine to add any drag/damping.
+        // This stops it from fighting our code on direction changes.
+        rb.drag = 0f; // <-- This is the modern property for Rigidbody2D
+        // rb.linearDamping = 0f; // This is the old property
+        
+        // --- THIS IS THE KEY ---
+        // Smooths the visual movement between physics frames
+        rb.interpolation = RigidbodyInterpolation2D.Interpolate; 
     }
 
-    // We don't need Update() anymore for input
     void Update() { }
 
     
@@ -101,18 +110,17 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleAttack(InputAction.CallbackContext callbackContext)
     {
-        Debug.Log("Interact pressed: Player taking 10 test damage!");
-            // This line calls the damage system:
+        // This is for testing damage
+        if (playerLimbController != null)
+        {
+            Debug.Log("Attack pressed: Player taking 10 test damage!");
             playerLimbController.TakeDamage(10f);
+        }
     }
 
     private void HandleInteract(InputAction.CallbackContext callbackContext)
     {
-        // We only care about the moment it's pressed
-        // Debug.Log("Interact action triggered!"); // We'll replace this
-
-        // --- New ---
-        // Call the TakeDamage method on the limb controller
+        // This is for testing damage
         if (playerLimbController != null)
         {
             Debug.Log("Interact pressed: Player taking 10 test damage!");
@@ -124,24 +132,28 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // --- No changes needed from here down ---
-
     void FixedUpdate()
     {
-        // Apply physics movement in FixedUpdate
+        // --- NEW MOVEMENT LOGIC ---
+        // Calculate the desired velocity
+        // --- THIS IS THE FIX ---
+        float targetSpeed = isSprinting ? currentMoveSpeed * sprintMultiplier : currentMoveSpeed;
+        Vector2 targetVelocity = moveInput * targetSpeed;
+
+        // Set the velocity directly
+        // This gives much smoother results than MovePosition
+        rb.velocity = targetVelocity; // Using .velocity (safer than .linearVelocity)
+        
+        /*
+        // Old logic:
         if (moveInput != Vector2.zero)
         {
-            // --- Updated movement logic ---
-            // Determine final speed based on sprinting or not
             float targetSpeed = isSprinting ? currentMoveSpeed * sprintMultiplier : currentMoveSpeed;
-            
             rb.MovePosition(rb.position + moveInput * targetSpeed * Time.fixedDeltaTime);
         }
+        */
     }
 
-    /// <summary>
-    /// This is called by PlayerLimbController to update the player's speed.
-    /// </summary>
     public void SetMoveSpeed(float newSpeed)
     {
         currentMoveSpeed = newSpeed;
