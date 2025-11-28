@@ -17,7 +17,6 @@ public class PlayerAnimationController : MonoBehaviour
     [SerializeField] private float bobSpeed = 10f;
     [SerializeField] private float bobAmount = 0.1f;
 
-    // --- NEW ---
     [Header("Arm Aiming")]
     [SerializeField] private float armReachDistance = 0.3f;
 
@@ -26,17 +25,15 @@ public class PlayerAnimationController : MonoBehaviour
     private Transform visualsHolder;
     private Transform leftArmSlot, rightArmSlot, leftLegSlot, rightLegSlot;
 
-    // --- FIX ---
     // Store the original positions of the leg slots
     private Vector3 leftLegOrigPos, rightLegOrigPos;
-    // --- NEW ---
     // Store the original positions of the arm slots
     private Vector3 leftArmOrigPos, rightArmOrigPos;
 
     private float walkTimer = 0f;
     private float currentBobOffset = 0f;
     private bool isFacingRight = true;
-    private bool isPunching = false; // --- NEW ---
+    private bool isPunching = false; 
 
     void Start()
     {
@@ -45,6 +42,7 @@ public class PlayerAnimationController : MonoBehaviour
         // Get references from other scripts
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
+        
         if (limbController == null)
             limbController = GetComponent<PlayerLimbController>();
             
@@ -57,12 +55,10 @@ public class PlayerAnimationController : MonoBehaviour
             leftLegSlot = limbController.GetLeftLegSlot();
             rightLegSlot = limbController.GetRightLegSlot();
 
-            // --- FIX ---
             // Store the original local positions
             if (leftLegSlot) leftLegOrigPos = leftLegSlot.localPosition;
-            if (rightLegSlot) rightLegOrigPos = rightLegSlot.localPosition;
+            if (rightLegSlot) rightLegOrigPos = rightLegSlot.localPosition; // Fixed typo here
 
-            // --- NEW ---
             // Store the original arm local positions
             if (leftArmSlot) leftArmOrigPos = leftArmSlot.localPosition;
             if (rightArmSlot) rightArmOrigPos = rightArmSlot.localPosition;
@@ -79,10 +75,10 @@ public class PlayerAnimationController : MonoBehaviour
         if (limbController == null || playerMovement == null || cam == null || visualsHolder == null)
             return;
 
-        // --- MODIFIED: Don't aim while punching ---
+        // Don't aim while punching
         if (!isPunching)
         {
-            HandleArmAimingAndFlipping();
+            HandleArmAimingAndFling();
         }
         HandleLegBobbing();
     }
@@ -90,7 +86,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// <summary>
     /// Aims the arms at the mouse and flips the player visual.
     /// </summary>
-    private void HandleArmAimingAndFlipping()
+    private void HandleArmAimingAndFling()
     {
         // Get mouse position in world space
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
@@ -107,10 +103,6 @@ public class PlayerAnimationController : MonoBehaviour
         }
 
         // --- 2. Arm Aiming Logic ---
-        // This is where we'll add the "punching" check later
-        // if (isPunching) return; // This check is now in Update()
-
-        // --- UPDATED ---
         AimSlot(leftArmSlot, leftArmOrigPos, mouseWorldPos);
         AimSlot(rightArmSlot, rightArmOrigPos, mouseWorldPos);
     }
@@ -122,38 +114,24 @@ public class PlayerAnimationController : MonoBehaviour
     {
         if (slot == null) return;
 
-        // --- NEW OFFSET LOGIC ---
-        // Get the mouse position in the local space of the visualsHolder
+        // 1. Get the mouse's position in the local space of the visualsHolder.
         Vector2 localTargetPos = visualsHolder.InverseTransformPoint(targetWorldPos);
 
-        // Get the direction from the arm's origin to the local mouse pos
-        Vector2 direction = localTargetPos - (Vector2)originalLocalPos;
-
-        // Clamp the magnitude of this direction to create the "reach"
-        Vector2 offset = Vector2.ClampMagnitude(direction, armReachDistance);
-
-        // Apply the new offset position
+        // 2. Calculate the offset and set the arm's new localPosition.
+        Vector2 localDirectionToTarget = localTargetPos - (Vector2)originalLocalPos;
+        Vector2 offset = Vector2.ClampMagnitude(localDirectionToTarget, armReachDistance);
         slot.localPosition = originalLocalPos + (Vector3)offset;
-        // --- END NEW OFFSET LOGIC ---
 
+        // 3. Get the direction FROM the arm TO the mouse in WORLD space.
+        Vector2 worldDirToMouse = (targetWorldPos - (Vector2)slot.position).normalized;
 
-        // --- ROTATION LOGIC (Modified to use the new offset position) ---
-        // Get direction from the arm's *new* world position to the mouse
-        Vector2 worldDirection = targetWorldPos - (Vector2)slot.position;
-        // Calculate the angle
-        float angle = Mathf.Atan2(worldDirection.y, worldDirection.x) * Mathf.Rad2Deg;
+        // 4. We want the arm's "bottom" (which is transform.up * -1) to point at the mouse.
+        //    This is the same as telling the arm's "top" (transform.up) to point AWAY from the mouse.
+        //    So, we just use the negative direction.
+        Vector2 lookDirection = -worldDirToMouse;
 
-        // --- THIS IS THE FIX ---
-        // We subtract 90 degrees because the arm sprite's "bottom" (where the hand is)
-        // should point at the cursor, not its "right" side.
-        angle -= 90f;
-        // --- END FIX ---
-
-        // Apply the rotation
-        // We add 180 degrees if the player is flipped, so the arm aims correctly
-        if (!isFacingRight) angle += 180f;
-
-        slot.rotation = Quaternion.Euler(0, 0, angle);
+        // 5. Set the arm's "up" vector to this look direction.
+        slot.up = lookDirection;
     }
 
     /// <summary>
@@ -179,34 +157,29 @@ public class PlayerAnimationController : MonoBehaviour
             currentBobOffset = Mathf.Lerp(currentBobOffset, 0f, Time.deltaTime * 10f);
         }
 
-        // --- FIX ---
         // Apply the bob offset TO the original Y position, keeping X and Z
         if (leftLegSlot)
             leftLegSlot.localPosition = new Vector3(leftLegOrigPos.x, leftLegOrigPos.y + currentBobOffset, leftLegOrigPos.z);
+        
         if (rightLegSlot)
-            rightLegSlot.localPosition = new Vector3(rightLegOrigPos.x, rightLegOrigPos.y - currentBobOffset, rightLegOrigPos.z);
+            rightLegSlot.localPosition = new Vector3(rightLegOrigPos.x, rightLegOrigPos.y - currentBobOffset, rightLegOrigPos.z); // Fixed typo here
     }
 
-    // --- NEW PUBLIC METHOD ---
     /// <summary>
     /// Triggers a simple punch animation on the specified arm.
     /// </summary>
-    // --- MODIFIED: Receives targetWorldPos (which is the hitPosition) ---
     public void TriggerPunch(Transform armToPunch, float punchDuration, Vector2 targetWorldPos)
     {
         // Find the arm's original local position
         Vector3 origPos = (armToPunch == leftArmSlot) ? leftArmOrigPos : rightArmOrigPos;
 
-        // --- FIX ---
         // Convert the WORLD target position to the LOCAL space of the visualsHolder
         Vector3 targetLocalPos = visualsHolder.InverseTransformPoint(targetWorldPos);
-        // --- END FIX ---
 
         // Pass the LOCAL target position to the coroutine
         StartCoroutine(PunchCoroutine(armToPunch, origPos, targetLocalPos, punchDuration));
     }
-
-    // --- MODIFIED: Receives targetLocalPos ---
+    
     private IEnumerator PunchCoroutine(Transform arm, Vector3 origPos, Vector3 targetLocalPos, float duration)
     {
         isPunching = true;
