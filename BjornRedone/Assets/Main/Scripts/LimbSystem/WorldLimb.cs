@@ -3,92 +3,97 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// This single script handles a limb that exists in the world.
-/// It should be placed ON THE ROOT of your limb prefab (e.g., "GoblinArmPrefab").
-/// It manages its state, from being thrown, to landing as a
-/// pickup, or landing as a broken part.
+/// This script is attached to the limb prefab. It controls the limb's
+/// visual state (default, damaged, broken) and its physical state (attached,
+/// thrown, or lying on the ground as a pickup).
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class WorldLimb : MonoBehaviour
 {
+    // --- NEW: For placing limbs directly in the scene ---
+    [Header("Scene Pickup Settings (For Prefabs)")]
+    [Tooltip("Assign the LimbData here if you are placing this prefab directly in the scene as a pickup.")]
+    [SerializeField] private LimbData startingLimbData;
+    [Tooltip("Check this if this prefab should start as a 'maintained' (usable) pickup when placed in the scene.")]
+    [SerializeField] private bool startAsMaintainedPickup = false;
+    // --- NEW ---
+    [Tooltip("If it's a 'maintained' pickup, should it show the 'damaged' visual? If false, it shows 'default'.")]
+    [SerializeField] private bool startAsDamaged = false;
+    // --- END NEW ---
+
     [Header("Visual State GameObjects (Assign in Prefab)")]
-    [Tooltip("The visual to show when attached to the player")]
     [SerializeField] private GameObject defaultVisual;
-    [Tooltip("The visual to show when in the air or as a pickup")]
     [SerializeField] private GameObject damagedVisual;
-    [Tooltip("The visual to show when the limb breaks on landing")]
     [SerializeField] private GameObject brokenVisual;
-    [Tooltip("The child object for the shadow sprite")]
     [SerializeField] private GameObject shadowGameObject;
 
     [Header("Physics Settings")]
-    [SerializeField] private float throwSpeed = 5f;
-    [SerializeField] private float throwHeight = 4f; // Starting "up" velocity
-    [SerializeField] private float gravity = -9.8f;
-    [SerializeField, Range(0f, 1f)]
-    [Tooltip("How faint the shadow gets at its peak height (0.0 = invisible, 1.0 = no change)")]
-    private float minShadowAlphaFactor = 0.2f;
-    [SerializeField] private float airDrag = 0.98f; // Multiplier to slow speed
-    [SerializeField] private float fadeDuration = 3.0f; // Time for broken limbs to fade
+    [SerializeField] private float throwForce = 5f;
+    [SerializeField] private float pickupDespawnTime = 10f;
 
-    // --- State Variables ---
-    private enum State { Attached, Thrown, Pickup, Broken }
-    private State currentState;
+    // --- State ---
+    private enum State { Idle, Attached, Thrown, Pickup }
+    private State currentState = State.Idle;
     
     private LimbData limbData;
-    private bool isMaintained;
-    private Vector2 moveDirection;
-    private float currentVerticalSpeed;
+    private bool isMaintained = false;
+    private Rigidbody2D rb;
     private Collider2D col;
-    private float currentSpinSpeed; // --- NEW ---
-    
-    // --- NEW ---
-    private SpriteRenderer shadowSpriteRenderer;
-    private float originalShadowAlpha;
-    private float calculatedMaxHeight = 1f; // The peak of the arc
 
     // We'll cache all renderers for fading
     private List<SpriteRenderer> brokenVisualRenderers = new List<SpriteRenderer>();
 
     void Awake()
     {
+        rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
-        col.isTrigger = true;
-        col.enabled = false; // Disable collider until it's a pickup
-
-        // --- NEW ---
-        // Get the shadow's renderer and store its original alpha
-        if (shadowGameObject != null)
-        {
-            shadowSpriteRenderer = shadowGameObject.GetComponent<SpriteRenderer>();
-        }
-        if (shadowSpriteRenderer != null)
-        {
-            originalShadowAlpha = shadowSpriteRenderer.color.a;
-        }
-        else
-        {
-            Debug.LogWarning("WorldLimb couldn't find a SpriteRenderer on its shadowGameObject!");
-        }
-        // --- END NEW ---
-
+        
         // Cache renderers for the broken visual (for fading)
         if (brokenVisual != null)
         {
             brokenVisual.GetComponentsInChildren<SpriteRenderer>(brokenVisualRenderers);
         }
+
+        // Disable all visuals by default, they will be set by an Initialize function
+        if(defaultVisual) defaultVisual.SetActive(false);
+        if(damagedVisual) damagedVisual.SetActive(false);
+        if(brokenVisual) brokenVisual.SetActive(false);
+        if(shadowGameObject) shadowGameObject.SetActive(false);
+    }
+
+    void Start()
+    {
+        // This logic runs ONLY if the limb was placed in the scene
+        // and NOT initialized by the player (since its state is still Idle).
+        if (currentState == State.Idle && startingLimbData != null)
+        {
+            if (startAsMaintainedPickup)
+            {
+                InitializeAsScenePickup(startingLimbData, true);
+            }
+            else
+            {
+                // It's a scene object, but not a pickup (e.g., a "broken" one)
+                InitializeAsScenePickup(startingLimbData, false);
+            }
+        }
+        // --- FIX for disappearing limbs ---
+        else if (currentState == State.Idle && startingLimbData == null)
+        {
+            // This is the most likely cause of the "disappearing limb" bug.
+            Debug.LogError($"WorldLimb '{gameObject.name}' was placed in the scene but has no 'Starting Limb Data' assigned in the Inspector! It will be invisible.", this);
+        }
+        // --- END FIX ---
     }
 
     /// <summary>
     /// Called by PlayerLimbController when attaching the limb.
     /// </summary>
-    // --- MODIFIED: Added 'isPickup' parameter ---
     public void InitializeAttached(LimbData data, bool isPickup)
     {
         limbData = data;
         currentState = State.Attached;
         
-        // --- THIS IS THE FIX ---
         // Explicitly set all visual states
         if (isPickup)
         {
@@ -105,199 +110,165 @@ public class WorldLimb : MonoBehaviour
         
         if(brokenVisual) brokenVisual.SetActive(false);
         if(shadowGameObject) shadowGameObject.SetActive(false);
-        // --- END FIX ---
         
         col.enabled = false;
+        if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
     }
 
     /// <summary>
-    /// Called by PlayerLimbController to throw this limb.
+    /// Called when a limb is detached from the player.
     /// </summary>
     public void InitializeThrow(LimbData data, bool maintained, Vector2 direction)
     {
         limbData = data;
-        isMaintained = maintained;
-        moveDirection = direction;
-        
-        currentVerticalSpeed = throwHeight;
-        currentSpinSpeed = Random.Range(-480f, 480f); // --- NEW: Set a random spin speed ---
-        
-        // --- NEW ---
-        // Calculate the peak height of the arc for shadow scaling
-        // Formula: peak = (initial_velocity^2) / (2 * -gravity)
-        calculatedMaxHeight = (throwHeight * throwHeight) / (2 * -gravity);
-        if (calculatedMaxHeight <= 0) calculatedMaxHeight = 1f; // Failsafe
-        // --- END NEW ---
-
-        // Explicitly set all visual states
-        if(defaultVisual) defaultVisual.SetActive(false);
-        if(damagedVisual) damagedVisual.SetActive(true); // Show damaged visual
-        if(brokenVisual) brokenVisual.SetActive(false);
-        if(shadowGameObject)
-        {
-            shadowGameObject.SetActive(true);
-            shadowGameObject.transform.localPosition = Vector3.zero;
-        }
-
-        if(damagedVisual)
-        {
-            damagedVisual.transform.localPosition = Vector3.zero;
-            damagedVisual.transform.localRotation = Quaternion.identity; // --- NEW: Reset rotation ---
-        }
-        
         currentState = State.Thrown;
+        isMaintained = maintained;
+
+        // Detach from parent
+        transform.SetParent(null);
+
+        // Set visual state
+        if(defaultVisual) defaultVisual.SetActive(false);
+        if(damagedVisual) damagedVisual.SetActive(isMaintained); // Show damaged if it's usable
+        if(brokenVisual) brokenVisual.SetActive(!isMaintained); // Show broken if it's not
+        if(shadowGameObject) shadowGameObject.SetActive(true);
+
+        // Enable physics
+        col.enabled = true;
+        col.isTrigger = false; // Make it a solid object
+        if (rb)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.AddForce(direction * throwForce, ForceMode2D.Impulse);
+            rb.AddTorque(Random.Range(-90f, 90f));
+        }
+
+        // Start timer to become a pickup
+        StartCoroutine(BecomePickupAfterDelay(1.0f)); 
     }
 
-    void Update()
+    public void InitializeAsScenePickup(LimbData data, bool maintained = true)
     {
-        if (currentState == State.Thrown)
-        {
-            HandleThrownState();
-        }
-    }
-
-    private void HandleThrownState()
-    {
-        // 1. Move horizontally (on the ground plane)
-        transform.position += (Vector3)moveDirection * throwSpeed * Time.deltaTime;
-        // Apply "air drag"
-        throwSpeed *= airDrag;
-
-        // 2. Move vertically (the arc)
-        currentVerticalSpeed += gravity * Time.deltaTime;
-        // We move the damaged visual, not the shadow
-        if(damagedVisual)
-        {
-            damagedVisual.transform.localPosition = new Vector3(0, damagedVisual.transform.localPosition.y + currentVerticalSpeed * Time.deltaTime, 0);
-            
-            // --- NEW: Apply spin ---
-            damagedVisual.transform.Rotate(0, 0, currentSpinSpeed * Time.deltaTime);
-        }
-
-        // --- NEW SHADOW FADE LOGIC ---
-        if (shadowSpriteRenderer != null && calculatedMaxHeight > 0)
-        {
-            float currentHeight = (damagedVisual != null) ? damagedVisual.transform.localPosition.y : 0;
-            currentHeight = Mathf.Max(0, currentHeight); // Ensure it's not negative
-
-            // Calculate how "high" we are as a 0-1 percentage
-            float heightPercent = Mathf.Clamp01(currentHeight / calculatedMaxHeight);
-
-            // Lerp the alpha factor. 1.0f (full alpha) at ground (0% height),
-            // minShadowAlphaFactor at peak (100% height)
-            float newAlphaFactor = Mathf.Lerp(1.0f, minShadowAlphaFactor, heightPercent);
-            
-            // Apply the new alpha, based on the shadow's original alpha
-            Color shadowColor = shadowSpriteRenderer.color;
-            shadowColor.a = originalShadowAlpha * newAlphaFactor;
-            shadowSpriteRenderer.color = shadowColor;
-        }
-        // --- END NEW LOGIC ---
-
-        // 3. Check for landing
-        if(damagedVisual && damagedVisual.transform.localPosition.y <= 0)
-        {
-            Land();
-        }
-        else if (damagedVisual == null)
-        {
-            // Failsafe if no damaged visual is assigned
-            Land();
-        }
-    }
-
-    /// <summary>
-    /// Called when the limb hits the ground.
-    /// </summary>
-    private void Land()
-    {
-        Quaternion landingRotation = Quaternion.identity; // --- NEW: Store landing rotation ---
-        if (damagedVisual)
-        {
-            landingRotation = damagedVisual.transform.rotation;
-            damagedVisual.transform.localPosition = Vector3.zero; // Snap to ground
-        }
-
-        if(shadowGameObject) shadowGameObject.SetActive(false); // No more shadow needed
-
-        // --- NEW ---
-        // Reset shadow alpha just in case
-        if (shadowSpriteRenderer != null)
-        {
-            Color shadowColor = shadowSpriteRenderer.color;
-            shadowColor.a = originalShadowAlpha;
-            shadowSpriteRenderer.color = shadowColor;
-        }
-        // --- END NEW ---
+        limbData = data;
+        currentState = State.Pickup;
+        isMaintained = maintained;
+        
+        // --- NEW VISUAL LOGIC ---
+        // Set visual state based on inspector settings
+        if(defaultVisual) defaultVisual.SetActive(false);
+        if(damagedVisual) damagedVisual.SetActive(false);
+        if(brokenVisual) brokenVisual.SetActive(false);
 
         if (isMaintained)
         {
-            // --- Limb is Maintained ---
-            currentState = State.Pickup;
-            col.enabled = true; // Enable collider for pickup
-            
-            // --- FIX ---
-            // Explicitly set all visual states
-            if(defaultVisual) defaultVisual.SetActive(false);
-            if(damagedVisual) damagedVisual.SetActive(true); // Ensure it's on
-            if(brokenVisual) brokenVisual.SetActive(false);
+            if (startAsDamaged)
+            {
+                if(damagedVisual) damagedVisual.SetActive(true);
+            }
+            else
+            {
+                if(defaultVisual) defaultVisual.SetActive(true);
+            }
         }
         else
         {
-            // --- Limb is Broken ---
-            currentState = State.Broken;
+            if(brokenVisual) brokenVisual.SetActive(true);
+        }
+        // --- END NEW VISUAL LOGIC ---
+        
+        if(shadowGameObject) shadowGameObject.SetActive(true);
 
-            // --- FIX ---
-            // Explicitly set all visual states
-            if(defaultVisual) defaultVisual.SetActive(false);
-            if(damagedVisual) damagedVisual.SetActive(false); // Hide damaged visual
-            if(brokenVisual)
-            {
-                brokenVisual.SetActive(true); // Show broken visual
-                brokenVisual.transform.rotation = landingRotation; // --- NEW: Apply landing rotation ---
-            }
-            
-            StartCoroutine(FadeOutAndDestroy());
+        // Enable collider as a trigger
+        col.enabled = true;
+        col.isTrigger = true;
+        
+        // Disable physics
+        if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
+
+        // Set tag based on if it's usable
+        if (isMaintained)
+        {
+            gameObject.tag = "LimbPickup";
+            // Scene-placed pickups should not despawn
+        }
+        else
+        {
+            gameObject.tag = "Untagged"; // It's just a broken prop
         }
     }
 
-    private IEnumerator FadeOutAndDestroy()
+
+    /// <summary>
+    /// Waits for a moment, then settles the limb on the ground.
+    /// </summary>
+    private IEnumerator BecomePickupAfterDelay(float delay)
     {
+        yield return new WaitForSeconds(delay);
+
+        currentState = State.Pickup;
+        
+        // Stop physics
+        if (rb)
+        {
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0;
+        }
+        
+        // Make it a trigger so the player can pick it up
+        col.isTrigger = true;
+
+        if (isMaintained)
+        {
+            // It's usable
+            gameObject.tag = "LimbPickup";
+            // Start the despawn timer *only for thrown limbs*
+            StartCoroutine(DespawnTimer(pickupDespawnTime));
+        }
+        else
+        {
+            // It's just a broken prop
+            gameObject.tag = "Untagged";
+            // Start fading out the broken visual
+            StartCoroutine(FadeOutBrokenLimb(2.0f));
+        }
+    }
+
+    private IEnumerator DespawnTimer(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        // Add a small fade-out effect here later if you want
+        Destroy(gameObject);
+    }
+
+    private IEnumerator FadeOutBrokenLimb(float duration)
+    {
+        yield return new WaitForSeconds(duration); // Wait a bit before fading
+
         float timer = 0f;
-        
-        // Set up list of original colors
-        List<Color> startColors = new List<Color>();
-        if (brokenVisualRenderers.Count == 0)
+        while (timer < duration)
         {
-            Debug.LogWarning("No SpriteRenderers found in brokenVisual to fade!", this);
-        }
-        
-        foreach (var rend in brokenVisualRenderers)
-        {
-            startColors.Add(rend.color);
-        }
-
-        while (timer < fadeDuration)
-        {
-            timer += Time.deltaTime;
-            float alpha = 1.0f - (timer / fadeDuration);
-
-            for (int i = 0; i < brokenVisualRenderers.Count; i++)
+            float alpha = Mathf.Lerp(1f, 0f, timer / duration);
+            foreach (var sr in brokenVisualRenderers)
             {
-                Color newColor = startColors[i];
-                newColor.a = alpha;
-                brokenVisualRenderers[i].color = newColor;
+                sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, alpha);
             }
+            timer += Time.deltaTime;
             yield return null;
         }
 
         Destroy(gameObject);
     }
 
-    // --- Public Methods for PlayerCollision ---
+    /// <summary>
+    /// Checks if the player is allowed to pick up this limb.
+    /// </summary>
+    /// <returns>True if the limb is in the Pickup state and is usable.</returns>
     public bool CanPickup()
     {
-        return currentState == State.Pickup;
+        // The player can pick up this limb if it's in the Pickup state
+        // AND it's a "maintained" (usable) limb.
+        return (currentState == State.Pickup && isMaintained);
     }
 
     public LimbData GetLimbData()

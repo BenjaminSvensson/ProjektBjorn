@@ -101,6 +101,14 @@ public class DamageSource : MonoBehaviour
         // This loop will run forever until StopCoroutine is called
         while (true)
         {
+            // Make sure the player is still valid (hasn't been destroyed)
+            if (player == null)
+            {
+                Debug.Log("Player is null, stopping tick damage.");
+                tickDamageCoroutine = null;
+                yield break; // Exit the coroutine
+            }
+            
             Debug.Log($"Dealing {damageAmount} tick damage to the player!");
             player.TakeDamage(damageAmount);
             

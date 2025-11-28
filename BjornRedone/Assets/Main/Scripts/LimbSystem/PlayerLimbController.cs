@@ -1,5 +1,5 @@
 using UnityEngine;
-using System.Collections; // We need this for Coroutines
+using System.Collections;
 using System.Collections.Generic;
 
 public class PlayerLimbController : MonoBehaviour
@@ -44,8 +44,8 @@ public class PlayerLimbController : MonoBehaviour
     // --- Component References ---
     private PlayerMovement playerMovement;
     private Rigidbody2D rb; 
-    // private PlayerAttack playerAttack; // This is now in PlayerAttackController
     private Vector3 visualsHolderOriginalPos; 
+    private bool isShaking = false; // Fix for damage snapping
 
     void Start()
     {
@@ -61,9 +61,6 @@ public class PlayerLimbController : MonoBehaviour
             Debug.LogError("PlayerLimbController needs a Rigidbody2D on the same GameObject.");
         }
         
-        // Find or add attack script
-        // playerAttack = GetComponent<PlayerAttack>(); 
-
         if (visualsHolder != null)
         {
             visualsHolderOriginalPos = visualsHolder.localPosition;
@@ -126,19 +123,22 @@ public class PlayerLimbController : MonoBehaviour
     /// <summary>
     // Called by PlayerCollision when it touches a LimbPickup.
     /// </summary>
-    public void TryAttachLimb(LimbData limbToAttach)
+    // --- THIS IS THE FIX: It now returns 'bool' ---
+    public bool TryAttachLimb(LimbData limbToAttach)
     {
-        if (limbToAttach == null) return;
+        if (limbToAttach == null) return false;
 
         if (limbToAttach.limbType == LimbType.Arm)
         {
             if (currentRightArm == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.RightArm, false, true);
+                return true; // Report success
             }
             else if (currentLeftArm == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, true);
+                return true; // Report success
             }
         }
         else if (limbToAttach.limbType == LimbType.Leg)
@@ -146,22 +146,28 @@ public class PlayerLimbController : MonoBehaviour
             if (currentRightLeg == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, true);
+                return true; // Report success
             }
             else if (currentLeftLeg == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, true);
+                return true; // Report success
             }
         }
+
+        // If all slots are full, report failure
+        return false;
     }
+    // --- END FIX ---
 
     /// <summary>
     /// Call this when the player takes damage.
     /// </summary>
     public void TakeDamage(float damageAmount)
     {
-        if (visualsHolder != null)
+        // Fix for damage snapping
+        if (visualsHolder != null && !isShaking)
         {
-            StopAllCoroutines(); 
             StartCoroutine(ShakeVisuals());
         }
         
@@ -248,8 +254,6 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     void UpdatePlayerStats()
     {
-        // --- NEW LOGIC: Enforce limb-specific stats ---
-        
         float totalMoveSpeed = 0f;
         int legCount = 0;
         
@@ -309,19 +313,13 @@ public class PlayerLimbController : MonoBehaviour
         if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos;
     }
 
-    // --- NEW PUBLIC GETTERS for PlayerAttackController ---
+    // --- PUBLIC GETTERS for PlayerAttackController ---
     
-    /// <summary>
-    /// Checks if the player has at least one arm to attack with.
-    /// </summary>
     public bool CanAttack()
     {
         return currentLeftArm != null || currentRightArm != null;
     }
 
-    /// <summary>
-    /// Gets the LimbData for the specified arm.
-    /// </summary>
     public LimbData GetArmData(bool isLeftArm)
     {
         if (isLeftArm)
@@ -334,15 +332,12 @@ public class PlayerLimbController : MonoBehaviour
         }
     }
 
-    // --- END NEW GETTERS ---
-
-    // --- NEW PUBLIC GETTERS ---
+    // --- PUBLIC GETTERS for PlayerAnimationController ---
     public Transform GetVisualsHolder() { return visualsHolder; }
     public Transform GetLeftArmSlot() { return leftArmSlot; }
     public Transform GetRightArmSlot() { return rightArmSlot; }
     public Transform GetLeftLegSlot() { return leftLegSlot; }
     public Transform GetRightLegSlot() { return rightLegSlot; }
-    // --- END NEW GETTERS ---
 
 
     /// <summary>
@@ -350,6 +345,8 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     private IEnumerator ShakeVisuals()
     {
+        isShaking = true;
+
         float elapsed = 0f;
 
         while (elapsed < shakeDuration)
@@ -368,5 +365,7 @@ public class PlayerLimbController : MonoBehaviour
         }
 
         visualsHolder.localPosition = visualsHolderOriginalPos;
+
+        isShaking = false;
     }
 }

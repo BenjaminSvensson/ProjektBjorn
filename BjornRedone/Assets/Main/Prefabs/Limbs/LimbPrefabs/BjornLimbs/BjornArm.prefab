@@ -193,7 +193,7 @@ GameObject:
   - component: {fileID: 6032263021279543201}
   m_Layer: 0
   m_Name: BjornArm
-  m_TagString: Untagged
+  m_TagString: LimbPickup
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -275,16 +275,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d7a72af32fc60149be4461e2c8ce43c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldLimb
+  startingLimbData: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
+  startAsMaintainedPickup: 1
   defaultVisual: {fileID: 210326100112170909}
   damagedVisual: {fileID: 620730531392086626}
   brokenVisual: {fileID: 6753134318681120763}
   shadowGameObject: {fileID: 20196419967631131}
-  throwSpeed: 5
-  throwHeight: 4
-  gravity: -9.8
-  minShadowAlphaFactor: 0.2
-  airDrag: 0.98
-  fadeDuration: 3
+  throwForce: 5
+  pickupDespawnTime: 10
 --- !u!1 &6753134318681120763
 GameObject:
   m_ObjectHideFlags: 0

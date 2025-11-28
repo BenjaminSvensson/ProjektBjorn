@@ -22,10 +22,15 @@ public class PlayerCollision : MonoBehaviour
             // Try to attach this limb
             if (limbController != null)
             {
-                limbController.TryAttachLimb(worldLimb.GetLimbData());
+                // --- MODIFIED: Check if the attach was successful ---
+                bool attached = limbController.TryAttachLimb(worldLimb.GetLimbData());
                 
-                // Destroy the pickup object after collecting it
-                Destroy(other.gameObject);
+                // Only destroy the pickup if we successfully attached it
+                if (attached)
+                {
+                    Destroy(other.gameObject);
+                }
+                // --- END MODIFICATION ---
             }
         }
     }
