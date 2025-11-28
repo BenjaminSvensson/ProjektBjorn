@@ -11,26 +11,28 @@ public class LimbData : ScriptableObject
     [Tooltip("The prefab to spawn (must have WorldLimb.cs on it)")]
     public GameObject visualPrefab;
 
-    // We no longer need these!
-    // [Tooltip("The sprite to show when this limb is a pickup on the ground")]
-    // public Sprite pickupSprite;
-    //
-    // [Tooltip("The sprite to show when this limb breaks on the ground")]
-    // public Sprite brokenLimbSprite;
+    [Header("--- Limb-Specific Stats ---")]
 
-    [Header("Stat Modifiers")]
-    [Tooltip("Bonus added to player's base move speed")]
+    [Header("Leg Stats")]
+    [Tooltip("Bonus added to player's base move speed. ONLY APPLIES TO LEGS.")]
     public float moveSpeedBonus = 0f;
-
-    [Tooltip("Bonus added to player's base attack damage")]
-    public float attackDamageBonus = 0f;
     
-    [Tooltip("Bonus added to player's base attack speed")]
-    public float attackSpeedBonus = 0f;
+    [Header("Arm Stats")]
+    [Tooltip("Bonus added to player's base attack damage. ONLY APPLIES TO ARMS.")]
+    public float attackDamageBonus = 0f;
+    [Tooltip("Base attack speed. (e.g., 2.0 = 2 attacks per second). ONLY APPLIES TO ARMS.")]
+    public float attackSpeed = 1.0f; 
+    [Tooltip("How far the punch reaches from the arm. ONLY APPLIES TO ARMS.")]
+    public float attackReach = 0.5f;
+    [Tooltip("The radius of the punch impact. ONLY APPLIES TO ARMS.")]
+    public float impactSize = 0.3f;
 
-    [Tooltip("Bonus added to player's max health (mostly for Head/Torso)")]
+    [Header("Head Stats")]
+    [Tooltip("Bonus added to player's max health (mostly for Head/Torso).")]
     public float healthBonus = 0f;
 
-    // You can add more here later, like special abilities
-    // public string specialAbilityID;
+    // We can remove these, as they are now limb-specific
+    // public float moveSpeedBonus = 0f;
+    // public float attackDamageBonus = 0f;
+    // public float attackSpeedBonus = 0f;
 }

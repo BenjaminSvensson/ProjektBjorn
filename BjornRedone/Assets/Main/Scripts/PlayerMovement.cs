@@ -35,10 +35,10 @@ public class PlayerMovement : MonoBehaviour
         playerControls.Player.Sprint.performed += HandleSprint;
         playerControls.Player.Sprint.canceled += HandleSprint;
 
-        // --- New ---
-        // We also need to listen for Attack and Interact
-        playerControls.Player.Attack.performed += HandleAttack;
-        playerControls.Player.Interact.performed += HandleInteract;
+        // --- REMOVED ---
+        // PlayerAttackController handles these now
+        // playerControls.Player.Attack.performed += HandleAttack;
+        // playerControls.Player.Interact.performed += HandleInteract;
 
         // --- Enable the "Player" Action Map ---
         playerControls.Player.Enable();
@@ -65,8 +65,10 @@ public class PlayerMovement : MonoBehaviour
         playerControls.Player.Move.canceled -= HandleMove;
         playerControls.Player.Sprint.performed -= HandleSprint;
         playerControls.Player.Sprint.canceled -= HandleSprint;
-        playerControls.Player.Attack.performed -= HandleAttack;
-        playerControls.Player.Interact.performed -= HandleInteract;
+        
+        // --- REMOVED ---
+        // playerControls.Player.Attack.performed -= HandleAttack;
+        // playerControls.Player.Interact.performed -= HandleInteract;
 
         // --- Disable the "Player" Action Map ---
         playerControls.Player.Disable();
@@ -82,7 +84,7 @@ public class PlayerMovement : MonoBehaviour
         // We are setting velocity directly, so we don't want
         // the physics engine to add any drag/damping.
         // This stops it from fighting our code on direction changes.
-        rb.drag = 0f; // <-- This is the modern property for Rigidbody2D
+        rb.linearDamping = 0f; // <-- This is the modern property for Rigidbody2D
         // rb.linearDamping = 0f; // This is the old property
         
         // --- THIS IS THE KEY ---
@@ -108,6 +110,8 @@ public class PlayerMovement : MonoBehaviour
         isSprinting = callbackContext.performed;
     }
 
+    // --- REMOVED: These methods are no longer needed ---
+    /*
     private void HandleAttack(InputAction.CallbackContext callbackContext)
     {
         // This is for testing damage
@@ -131,6 +135,7 @@ public class PlayerMovement : MonoBehaviour
             Debug.LogWarning("Interact pressed, but PlayerLimbController was not found!");
         }
     }
+    */
 
     void FixedUpdate()
     {
@@ -142,7 +147,7 @@ public class PlayerMovement : MonoBehaviour
 
         // Set the velocity directly
         // This gives much smoother results than MovePosition
-        rb.velocity = targetVelocity; // Using .velocity (safer than .linearVelocity)
+        rb.linearVelocity = targetVelocity; // Using .velocity (safer than .linearVelocity)
         
         /*
         // Old logic:
@@ -157,5 +162,14 @@ public class PlayerMovement : MonoBehaviour
     public void SetMoveSpeed(float newSpeed)
     {
         currentMoveSpeed = newSpeed;
+    }
+
+    // --- NEW PUBLIC GETTER ---
+    /// <summary>
+    /// Allows other scripts to read the current movement input.
+    /// </summary>
+    public Vector2 GetMoveInput()
+    {
+        return moveInput;
     }
 }

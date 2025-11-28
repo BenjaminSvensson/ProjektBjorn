@@ -73,35 +73,39 @@ public class WorldLimb : MonoBehaviour
         // --- END NEW ---
 
         // Cache renderers for the broken visual (for fading)
-        // --- THIS IS THE FIX ---
         if (brokenVisual != null)
         {
             brokenVisual.GetComponentsInChildren<SpriteRenderer>(brokenVisualRenderers);
         }
-        // ------------------------
-
-        // We can remove the "Start with all visuals off" logic from Awake,
-        // as our Initialize functions will now handle this robustly.
-        // if(defaultVisual) defaultVisual.SetActive(false);
-        // if(damagedVisual) damagedVisual.SetActive(false);
-        // if(brokenVisual) brokenVisual.SetActive(false);
-        // if(shadowGameObject) shadowGameObject.SetActive(false);
     }
 
     /// <summary>
     /// Called by PlayerLimbController when attaching the limb.
     /// </summary>
-    public void InitializeAttached(LimbData data)
+    // --- MODIFIED: Added 'isPickup' parameter ---
+    public void InitializeAttached(LimbData data, bool isPickup)
     {
         limbData = data;
         currentState = State.Attached;
         
-        // --- FIX ---
+        // --- THIS IS THE FIX ---
         // Explicitly set all visual states
-        if(defaultVisual) defaultVisual.SetActive(true);
-        if(damagedVisual) damagedVisual.SetActive(false);
+        if (isPickup)
+        {
+            // This is a used limb, show the damaged visual
+            if(defaultVisual) defaultVisual.SetActive(false);
+            if(damagedVisual) damagedVisual.SetActive(true);
+        }
+        else
+        {
+            // This is a fresh limb (at start), show the default visual
+            if(defaultVisual) defaultVisual.SetActive(true);
+            if(damagedVisual) damagedVisual.SetActive(false);
+        }
+        
         if(brokenVisual) brokenVisual.SetActive(false);
         if(shadowGameObject) shadowGameObject.SetActive(false);
+        // --- END FIX ---
         
         col.enabled = false;
     }

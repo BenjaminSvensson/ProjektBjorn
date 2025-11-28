@@ -1,8 +1,15 @@
 using UnityEngine;
+using System.Collections; // We need this for Coroutines
 using System.Collections.Generic;
 
 public class PlayerLimbController : MonoBehaviour
 {
+    [Header("Visuals (Assign in Inspector)")]
+    [Tooltip("The parent GameObject that holds all limb slots. This is what will shake.")]
+    [SerializeField] private Transform visualsHolder;
+    [SerializeField] private float shakeDuration = 0.15f;
+    [SerializeField] private float shakeMagnitude = 0.1f;
+
     [Header("Limb Slots (Assign in Inspector)")]
     public Transform headSlot;
     public Transform leftArmSlot;
@@ -23,13 +30,11 @@ public class PlayerLimbController : MonoBehaviour
     public LimbData startingLeg;
 
     [Header("Limb Physics")]
-    // We no longer need the limbDropPrefab!
     [Tooltip("The chance a limb will be 'maintained' (re-usable) when lost")]
     [Range(0f, 1f)]
     public float maintainLimbChance = 0.3f;
 
     // --- Current Limb References ---
-    // THIS IS THE FIX: Changed from "Limb" to "WorldLimb"
     private WorldLimb currentHead;
     private WorldLimb currentLeftArm;
     private WorldLimb currentRightArm;
@@ -38,25 +43,42 @@ public class PlayerLimbController : MonoBehaviour
 
     // --- Component References ---
     private PlayerMovement playerMovement;
-    // private PlayerAttack playerAttack; // Add this when you create an attack script
+    private Rigidbody2D rb; 
+    // private PlayerAttack playerAttack; // This is now in PlayerAttackController
+    private Vector3 visualsHolderOriginalPos; 
 
     void Start()
     {
         playerMovement = GetComponent<PlayerMovement>();
+        rb = GetComponent<Rigidbody2D>(); 
+
         if (playerMovement == null)
         {
             Debug.LogError("PlayerLimbController needs a PlayerMovement script on the same GameObject.");
+        }
+        if (rb == null) 
+        {
+            Debug.LogError("PlayerLimbController needs a Rigidbody2D on the same GameObject.");
         }
         
         // Find or add attack script
         // playerAttack = GetComponent<PlayerAttack>(); 
 
+        if (visualsHolder != null)
+        {
+            visualsHolderOriginalPos = visualsHolder.localPosition;
+        }
+        else
+        {
+            Debug.LogError("VisualsHolder is not assigned in PlayerLimbController!");
+        }
+
         // Spawn starting limbs
-        if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false);
-        if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true);
-        if(startingArm) AttachToSlot(startingArm, LimbSlot.RightArm, false);
-        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true);
-        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false);
+        if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false);
+        if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true, false);
+        if(startingArm) AttachToSlot(startingArm, LimbSlot.RightArm, false, false);
+        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false);
+        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false);
 
         UpdatePlayerStats();
     }
@@ -64,24 +86,21 @@ public class PlayerLimbController : MonoBehaviour
     /// <summary>
     /// Attaches a limb prefab to a specific slot.
     /// </summary>
-    void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite)
+    void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isPickup)
     {
         Transform parentSlot = GetSlotTransform(slot);
         if (parentSlot == null) return;
 
-        // Instantiate the limb's VISUAL PREFAB
         GameObject limbObj = Instantiate(limbData.visualPrefab, parentSlot.position, parentSlot.rotation, parentSlot);
         limbObj.name = limbData.name + " (Attached)";
 
-        // Flip sprite if it's a left limb
         SpriteRenderer sr = limbObj.GetComponentInChildren<SpriteRenderer>();
         if (sr != null && flipSprite)
         {
             sr.flipX = true;
         }
 
-        // Get the WorldLimb component from the prefab
-        WorldLimb limbComponent = limbObj.GetComponent<WorldLimb>(); // This was already correct
+        WorldLimb limbComponent = limbObj.GetComponent<WorldLimb>();
         if (limbComponent == null)
         {
             Debug.LogError($"Limb prefab '{limbData.name}' is missing the WorldLimb.cs script!", limbData);
@@ -89,8 +108,7 @@ public class PlayerLimbController : MonoBehaviour
             return;
         }
 
-        // Initialize it in its "Attached" state
-        limbComponent.InitializeAttached(limbData);
+        limbComponent.InitializeAttached(limbData, isPickup);
 
         // Store the reference
         switch (slot)
@@ -112,33 +130,28 @@ public class PlayerLimbController : MonoBehaviour
     {
         if (limbToAttach == null) return;
 
-        // Check Arms
         if (limbToAttach.limbType == LimbType.Arm)
         {
-            // Prioritize Right Arm slot if both are missing
             if (currentRightArm == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.RightArm, false);
+                AttachToSlot(limbToAttach, LimbSlot.RightArm, false, true);
             }
             else if (currentLeftArm == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.LeftArm, true);
+                AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, true);
             }
         }
-        // Check Legs
         else if (limbToAttach.limbType == LimbType.Leg)
         {
-            // Prioritize Right Leg slot if both are missing
             if (currentRightLeg == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.RightLeg, false);
+                AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, true);
             }
             else if (currentLeftLeg == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true);
+                AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, true);
             }
         }
-        // Note: Head cannot be picked up and attached, only lost.
     }
 
     /// <summary>
@@ -146,10 +159,12 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     public void TakeDamage(float damageAmount)
     {
-        // In a real game, you'd apply damage to torso/head health first.
-        // For this demo, we'll just have a chance to lose a limb.
+        if (visualsHolder != null)
+        {
+            StopAllCoroutines(); 
+            StartCoroutine(ShakeVisuals());
+        }
         
-        // Create a list of limbs that can be lost
         List<LimbSlot> detachableLimbs = new List<LimbSlot>();
         if (currentLeftArm) detachableLimbs.Add(LimbSlot.LeftArm);
         if (currentRightArm) detachableLimbs.Add(LimbSlot.RightArm);
@@ -158,19 +173,16 @@ public class PlayerLimbController : MonoBehaviour
 
         if (detachableLimbs.Count > 0)
         {
-            // Lose a random limb
             LimbSlot slotToLose = detachableLimbs[Random.Range(0, detachableLimbs.Count)];
             DetachLimb(slotToLose);
         }
         else if (currentHead)
         {
-            // No other limbs left, lose the head!
             Debug.Log("Losing head!");
             DetachLimb(LimbSlot.Head);
         }
         else
         {
-            // Only torso is left, take torso damage
             torsoHealth -= damageAmount;
             if (torsoHealth <= 0)
             {
@@ -184,8 +196,7 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     void DetachLimb(LimbSlot slot)
     {
-        // We now detach the WorldLimb component
-        WorldLimb limbToDetach = null; // This was already correct
+        WorldLimb limbToDetach = null;
         switch (slot)
         {
             case LimbSlot.Head:
@@ -212,34 +223,18 @@ public class PlayerLimbController : MonoBehaviour
 
         if (limbToDetach != null)
         {
-            // --- NEW LOGIC ---
-            // 1. Calculate if the limb is maintained
             bool isMaintained = Random.value <= maintainLimbChance;
-
-            // 2. Spawn a NEW instance of the same limb prefab
-            // We get the prefab from the limb's own data
             GameObject thrownLimbObj = Instantiate(limbToDetach.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
-                
-            // 3. Give it a random throw direction
-            Vector2 throwDirection = new Vector2(Random.Range(-1f, 1f), Random.Range(0.5f, 1f)).normalized; // Throw slightly upwards
-                
-            // 4. Get its WorldLimb component and initialize its "Thrown" state
-            WorldLimb worldLimb = thrownLimbObj.GetComponent<WorldLimb>(); // This was already correct
+            Vector2 throwDirection = new Vector2(Random.Range(-1f, 1f), Random.Range(0.5f, 1f)).normalized; 
+            WorldLimb worldLimb = thrownLimbObj.GetComponent<WorldLimb>();
             if (worldLimb)
             {
-                // Tell the new limb to fly!
                 worldLimb.InitializeThrow(limbToDetach.GetLimbData(), isMaintained, throwDirection);
             }
-            else
-            {
-                Debug.LogError($"The limb prefab {limbToDetach.GetLimbData().name} is missing the WorldLimb.cs script!", thrownLimbObj);
-            }
             
-            // 5. Destroy the OLD limb object that was attached to the player
             Destroy(limbToDetach.gameObject);
         }
 
-        // Check for death condition
         if (currentHead == null)
         {
             Die();
@@ -253,23 +248,11 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     void UpdatePlayerStats()
     {
-        float totalMoveSpeed = baseMoveSpeed;
-        float totalAttackDamage = baseAttackDamage;
+        // --- NEW LOGIC: Enforce limb-specific stats ---
+        
+        float totalMoveSpeed = 0f;
         int legCount = 0;
-
-        // Accumulate stats from all limbs
-        // We also need to get the data via GetLimbData() here
-        if (currentHead) totalMoveSpeed += currentHead.GetLimbData().moveSpeedBonus;
-        if (currentLeftArm)
-        {
-            totalMoveSpeed += currentLeftArm.GetLimbData().moveSpeedBonus;
-            totalAttackDamage += currentLeftArm.GetLimbData().attackDamageBonus;
-        }
-        if (currentRightArm)
-        {
-            totalMoveSpeed += currentRightArm.GetLimbData().moveSpeedBonus;
-            totalAttackDamage += currentRightArm.GetLimbData().attackDamageBonus;
-        }
+        
         if (currentLeftLeg)
         {
             totalMoveSpeed += currentLeftLeg.GetLimbData().moveSpeedBonus;
@@ -281,36 +264,21 @@ public class PlayerLimbController : MonoBehaviour
             legCount++;
         }
 
-        // --- Apply Gameplay Logic Based on Missing Limbs ---
-
-        // Leg logic
-        if (legCount == 1)
+        if (legCount > 0)
         {
-            // Slower with one leg
-            totalMoveSpeed *= 0.6f;
+            totalMoveSpeed += baseMoveSpeed; 
+            if (legCount == 1)
+            {
+                totalMoveSpeed *= 0.6f; 
+            }
         }
-        else if (legCount == 0)
-        {
-            // Crawling speed
-            totalMoveSpeed *= 0.3f; 
-        }
-
-        // Arm logic
-        // (e.g., if(currentLeftArm == null && currentRightArm == null) playerAttack.DisableAttacks(); )
-        // (e.g., if(currentRightArm == null) playerAttack.DisablePrimaryAttack(); )
-
-        // --- Send stats to other components ---
+        
         if (playerMovement)
         {
             playerMovement.SetMoveSpeed(totalMoveSpeed);
         }
-        
-        // if (playerAttack)
-        // {
-        //    playerAttack.SetAttackDamage(totalAttackDamage);
-        // }
 
-        Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Damage={totalAttackDamage}, Legs={legCount}");
+        Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}");
     }
 
     Transform GetSlotTransform(LimbSlot slot)
@@ -329,8 +297,76 @@ public class PlayerLimbController : MonoBehaviour
     void Die()
     {
         Debug.Log("Player has died! (Lost their head or torso)");
-        // Disable controls, play death animation, restart level, etc.
         this.enabled = false;
         if (playerMovement) playerMovement.enabled = false;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        StopAllCoroutines();
+        if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos;
+    }
+
+    // --- NEW PUBLIC GETTERS for PlayerAttackController ---
+    
+    /// <summary>
+    /// Checks if the player has at least one arm to attack with.
+    /// </summary>
+    public bool CanAttack()
+    {
+        return currentLeftArm != null || currentRightArm != null;
+    }
+
+    /// <summary>
+    /// Gets the LimbData for the specified arm.
+    /// </summary>
+    public LimbData GetArmData(bool isLeftArm)
+    {
+        if (isLeftArm)
+        {
+            return (currentLeftArm != null) ? currentLeftArm.GetLimbData() : null;
+        }
+        else
+        {
+            return (currentRightArm != null) ? currentRightArm.GetLimbData() : null;
+        }
+    }
+
+    // --- END NEW GETTERS ---
+
+    // --- NEW PUBLIC GETTERS ---
+    public Transform GetVisualsHolder() { return visualsHolder; }
+    public Transform GetLeftArmSlot() { return leftArmSlot; }
+    public Transform GetRightArmSlot() { return rightArmSlot; }
+    public Transform GetLeftLegSlot() { return leftLegSlot; }
+    public Transform GetRightLegSlot() { return rightLegSlot; }
+    // --- END NEW GETTERS ---
+
+
+    /// <summary>
+    /// Shakes the visualsHolder transform for a short duration.
+    /// </summary>
+    private IEnumerator ShakeVisuals()
+    {
+        float elapsed = 0f;
+
+        while (elapsed < shakeDuration)
+        {
+            float x = Random.Range(-1f, 1f) * shakeMagnitude;
+            float y = Random.Range(-1f, 1f) * shakeMagnitude;
+
+            visualsHolder.localPosition = new Vector3(
+                visualsHolderOriginalPos.x + x, 
+                visualsHolderOriginalPos.y + y, 
+                visualsHolderOriginalPos.z);
+
+            elapsed += Time.deltaTime;
+            
+            yield return null; 
+        }
+
+        visualsHolder.localPosition = visualsHolderOriginalPos;
     }
 }

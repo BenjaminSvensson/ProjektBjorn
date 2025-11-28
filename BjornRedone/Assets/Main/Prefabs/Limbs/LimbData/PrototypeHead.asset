@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
   limbType: 0
   visualPrefab: {fileID: 5463483987274889270, guid: 2c71134d7e1201e47be75ac6918ad525, type: 3}
-  pickupSprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   moveSpeedBonus: 0
   attackDamageBonus: 0
-  attackSpeedBonus: 0
+  attackSpeed: 0
+  attackReach: 0
+  impactSize: 0
   healthBonus: 0
