@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfc652f006a04b3479f2c4452d4ab38b, type: 3}
+  m_Name: BjornArm
+  m_EditorClassIdentifier: Assembly-CSharp::LimbData
+  limbType: 1
+  visualPrefab: {fileID: 1703309220703536604, guid: 6ebb246c6c28d9a459e52b4699ed999b, type: 3}
+  moveSpeedBonus: 0
+  attackDamageBonus: 0
+  attackSpeed: 3.5
+  attackReach: 2.2
+  impactSize: 1
+  healthBonus: 0

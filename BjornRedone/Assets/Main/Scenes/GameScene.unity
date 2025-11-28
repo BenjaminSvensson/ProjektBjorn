@@ -553,9 +553,9 @@ MonoBehaviour:
   baseMoveSpeed: 5
   baseAttackDamage: 1
   torsoHealth: 100
-  startingHead: {fileID: 11400000, guid: ba1df2c52c1259d41bd0aad125534ceb, type: 2}
-  startingArm: {fileID: 11400000, guid: 14269ac5b635dee4aa1949a216a89f25, type: 2}
-  startingLeg: {fileID: 11400000, guid: 4ddedf25301f3c5458577aea28d06d56, type: 2}
+  startingHead: {fileID: 11400000, guid: 0af1cd97961f64841aadc75c0adc4662, type: 2}
+  startingArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
+  startingLeg: {fileID: 11400000, guid: 823d4ad74e94f3245934ef33017e32ca, type: 2}
   maintainLimbChance: 0.5
 --- !u!114 &1414503441
 MonoBehaviour:
@@ -618,7 +618,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 0.9, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2096866869}
@@ -670,7 +670,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -9095717837082945937, guid: 207ee8102dd4143d288186ef0be518ee, type: 3}
+  m_Sprite: {fileID: 4410727576077583496, guid: 57cc55fc9c9b6de4c92f17af53c52a6f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
