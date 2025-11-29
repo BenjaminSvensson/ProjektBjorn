@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cfc652f006a04b3479f2c4452d4ab38b, type: 3}
-  m_Name: BjornArm
+  m_Name: GorillaArm
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
   limbType: 1
-  visualPrefab: {fileID: 1703309220703536604, guid: 6ebb246c6c28d9a459e52b4699ed999b, type: 3}
+  visualPrefab: {fileID: 1703309220703536604, guid: 259011a8f85881a498b363091c74d781, type: 3}
   moveSpeedBonus: 0
   attackDamageBonus: 0
-  attackSpeed: 3.5
-  attackReach: 1
-  impactSize: 1
-  healthBonus: 0
+  attackSpeed: 1.8
+  attackReach: 0.6
+  impactSize: 2
+  healthBonus: 2

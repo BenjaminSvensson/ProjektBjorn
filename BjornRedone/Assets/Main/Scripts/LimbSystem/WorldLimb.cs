@@ -10,6 +10,7 @@ using UnityEngine.Rendering;
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(SortingGroup))]
 [RequireComponent(typeof(DynamicYSorter))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class WorldLimb : MonoBehaviour, IInteractable
 {
     [Header("Scene Pickup Settings (For Prefabs)")]
@@ -26,6 +27,10 @@ public class WorldLimb : MonoBehaviour, IInteractable
     [Header("Physics Settings")]
     [SerializeField] private float throwForce = 5f;
     [SerializeField] private float pickupDespawnTime = 10f;
+    // --- NEW VARIABLE ---
+    [Tooltip("Time in seconds after being thrown before the limb can be picked up.")]
+    [SerializeField] private float pickupDelay = 1.0f;
+    // --- END NEW VARIABLE ---
 
     // --- State ---
     private enum State { Idle, Attached, Thrown, Pickup }
@@ -149,11 +154,13 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (rb)
         {
             rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.AddForce(direction * throwForce, ForceMode2D.Impulse);
-            rb.AddTorque(Random.Range(-90f, 90f));
+            rb.AddForce(direction * throwForce, ForceMode2D.Impulse); 
+            rb.AddTorque(Random.Range(-90f, 90f)); 
         }
 
-        StartCoroutine(BecomePickupAfterDelay(1.0f)); 
+        // --- MODIFIED: Use the new variable ---
+        StartCoroutine(BecomePickupAfterDelay(pickupDelay)); 
+        // --- END MODIFICATION ---
     }
 
     public void InitializeAsScenePickup(LimbData data, bool maintained = true)
@@ -191,10 +198,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (ySorter) ySorter.enabled = true;
 
         col.enabled = true;
-        // --- THIS IS THE FIX ---
-        // You are right, it should be a trigger so it doesn't block the player.
         col.isTrigger = true; 
-        // --- END FIX ---
         
         if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
 
@@ -221,10 +225,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
             rb.angularVelocity = 0;
         }
         
-        // --- THIS IS THE FIX ---
-        // Make it a trigger so the player can walk over it
         col.isTrigger = true;
-        // --- END FIX ---
 
         if (isMaintained)
         {

@@ -170,7 +170,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 5
   m_Sprite: {fileID: 2489114940229903430, guid: 8ce4e43d5338e1d428f9d1ff75cae3b4, type: 3}
-  m_Color: {r: 1, g: 0.4669811, b: 0.4669811, a: 1}
+  m_Color: {r: 1, g: 0.2688679, b: 0.2688679, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -193,6 +193,7 @@ GameObject:
   - component: {fileID: 6032263021279543201}
   - component: {fileID: 5776033817896907670}
   - component: {fileID: 2290539813419762177}
+  - component: {fileID: 8750761773297907225}
   m_Layer: 7
   m_Name: BjornArm
   m_TagString: LimbPickup
@@ -284,7 +285,7 @@ MonoBehaviour:
   damagedVisual: {fileID: 620730531392086626}
   brokenVisual: {fileID: 6753134318681120763}
   shadowGameObject: {fileID: 20196419967631131}
-  throwForce: 5
+  throwForce: 1
   pickupDespawnTime: 10
   interactionText: Pick Up Limb
 --- !u!210 &5776033817896907670
@@ -311,6 +312,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
+--- !u!50 &8750761773297907225
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1703309220703536604}
+  m_BodyType: 0
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &6753134318681120763
 GameObject:
   m_ObjectHideFlags: 0
@@ -391,7 +419,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 4
   m_Sprite: {fileID: 2489114940229903430, guid: 8ce4e43d5338e1d428f9d1ff75cae3b4, type: 3}
-  m_Color: {r: 1, g: 0.15566039, b: 0.15566039, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
