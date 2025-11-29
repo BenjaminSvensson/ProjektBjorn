@@ -1,15 +1,26 @@
 using UnityEngine;
 
+/// <summary>
+/// This script goes on a child GameObject of the Player.
+/// It should have a Collider2D set to "Is Trigger = true"
+/// and is responsible for detecting limb pickups.
+/// </summary>
+[RequireComponent(typeof(Collider2D))]
 public class PlayerCollision : MonoBehaviour
 {
-    private PlayerLimbController limbController;
+    [Header("Required Reference")]
+    [SerializeField] private PlayerLimbController limbController;
 
-    void Start()
+    void Awake()
     {
-        limbController = GetComponent<PlayerLimbController>();
         if (limbController == null)
         {
-            Debug.LogError("PlayerCollision script requires a PlayerLimbController on the same GameObject.");
+            // If not assigned, try to find it on the parent
+            limbController = GetComponentInParent<PlayerLimbController>();
+        }
+        if (limbController == null)
+        {
+            Debug.LogError("PlayerCollision could not find the PlayerLimbController!");
         }
     }
 
@@ -22,8 +33,9 @@ public class PlayerCollision : MonoBehaviour
             // Try to attach this limb
             if (limbController != null)
             {
-                // --- MODIFIED: Check if the attach was successful ---
-                bool attached = limbController.TryAttachLimb(worldLimb.GetLimbData());
+                // --- MODIFIED: Check if the limb is damaged and pass it ---
+                bool isDamaged = worldLimb.IsShowingDamaged();
+                bool attached = limbController.TryAttachLimb(worldLimb.GetLimbData(), isDamaged);
                 
                 // Only destroy the pickup if we successfully attached it
                 if (attached)

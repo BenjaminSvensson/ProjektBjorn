@@ -10,6 +10,20 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeMagnitude = 0.1f;
 
+    // --- NEW: Sorting Order for Limbs ---
+    [Header("Sorting Orders (Relative to Body)")]
+    [Tooltip("Order for the main body sprite (VisualsHolder)")]
+    [SerializeField] private int bodyOrder = 0;
+    [Tooltip("Order for the Head (should be in front)")]
+    [SerializeField] private int headOrder = 10;
+    [Tooltip("Order for the Left Arm (in front of body)")]
+    [SerializeField] private int leftArmOrder = 5;
+    [Tooltip("Order for the Right Arm (behind body)")]
+    [SerializeField] private int rightArmOrder = -5;
+    [Tooltip("Order for the Legs (behind everything)")]
+    [SerializeField] private int legOrder = -10;
+    // --- END NEW ---
+
     [Header("Limb Slots (Assign in Inspector)")]
     public Transform headSlot;
     public Transform leftArmSlot;
@@ -46,6 +60,8 @@ public class PlayerLimbController : MonoBehaviour
     private Rigidbody2D rb; 
     private Vector3 visualsHolderOriginalPos; 
     private bool isShaking = false; // Fix for damage snapping
+    
+    private bool canCrawl = false;
 
     void Start()
     {
@@ -83,7 +99,7 @@ public class PlayerLimbController : MonoBehaviour
     /// <summary>
     /// Attaches a limb prefab to a specific slot.
     /// </summary>
-    void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isPickup)
+    void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged)
     {
         Transform parentSlot = GetSlotTransform(slot);
         if (parentSlot == null) return;
@@ -105,17 +121,41 @@ public class PlayerLimbController : MonoBehaviour
             return;
         }
 
-        limbComponent.InitializeAttached(limbData, isPickup);
+        limbComponent.InitializeAttached(limbData, isDamaged);
 
-        // Store the reference
+        // --- NEW: Set the Sorting Order for the new limb ---
+        int sortingOrder = 0;
         switch (slot)
         {
-            case LimbSlot.Head:     currentHead = limbComponent; break;
-            case LimbSlot.LeftArm:  currentLeftArm = limbComponent; break;
-            case LimbSlot.RightArm: currentRightArm = limbComponent; break;
-            case LimbSlot.LeftLeg:  currentLeftLeg = limbComponent; break;
-            case LimbSlot.RightLeg: currentRightLeg = limbComponent; break;
+            case LimbSlot.Head:     
+                currentHead = limbComponent;
+                sortingOrder = headOrder;
+                break;
+            case LimbSlot.LeftArm:  
+                currentLeftArm = limbComponent;
+                sortingOrder = leftArmOrder;
+                break;
+            case LimbSlot.RightArm: 
+                currentRightArm = limbComponent;
+                sortingOrder = rightArmOrder;
+                break;
+            case LimbSlot.LeftLeg:  
+                currentLeftLeg = limbComponent;
+                sortingOrder = legOrder;
+                break;
+            case LimbSlot.RightLeg: 
+                currentRightLeg = limbComponent;
+                sortingOrder = legOrder;
+                break;
         }
+
+        // Apply this order to all renderers on the new limb
+        SpriteRenderer[] srs = limbObj.GetComponentsInChildren<SpriteRenderer>();
+        foreach (var sr_renderer in srs) // Renamed 'sr' to 'sr_renderer' to avoid conflict
+        {
+            sr_renderer.sortingOrder = sortingOrder;
+        }
+        // --- END NEW ---
 
         UpdatePlayerStats();
     }
@@ -123,8 +163,7 @@ public class PlayerLimbController : MonoBehaviour
     /// <summary>
     // Called by PlayerCollision when it touches a LimbPickup.
     /// </summary>
-    // --- THIS IS THE FIX: It now returns 'bool' ---
-    public bool TryAttachLimb(LimbData limbToAttach)
+    public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
         if (limbToAttach == null) return false;
 
@@ -132,33 +171,32 @@ public class PlayerLimbController : MonoBehaviour
         {
             if (currentRightArm == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.RightArm, false, true);
-                return true; // Report success
+                AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged);
+                return true; 
             }
             else if (currentLeftArm == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, true);
-                return true; // Report success
+                AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged);
+                return true; 
             }
         }
         else if (limbToAttach.limbType == LimbType.Leg)
         {
             if (currentRightLeg == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, true);
-                return true; // Report success
+                AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged);
+                return true; 
             }
             else if (currentLeftLeg == null)
             {
-                AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, true);
-                return true; // Report success
+                AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged);
+                return true; 
             }
         }
 
         // If all slots are full, report failure
         return false;
     }
-    // --- END FIX ---
 
     /// <summary>
     /// Call this when the player takes damage.
@@ -256,6 +294,7 @@ public class PlayerLimbController : MonoBehaviour
     {
         float totalMoveSpeed = 0f;
         int legCount = 0;
+        int armCount = 0; 
         
         if (currentLeftLeg)
         {
@@ -267,6 +306,9 @@ public class PlayerLimbController : MonoBehaviour
             totalMoveSpeed += currentRightLeg.GetLimbData().moveSpeedBonus;
             legCount++;
         }
+        
+        if (currentLeftArm) armCount++;
+        if (currentRightArm) armCount++;
 
         if (legCount > 0)
         {
@@ -282,7 +324,10 @@ public class PlayerLimbController : MonoBehaviour
             playerMovement.SetMoveSpeed(totalMoveSpeed);
         }
 
-        Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}");
+        // Crawl State Logic
+        canCrawl = (legCount == 0 && armCount > 0);
+
+        Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}, Arms={armCount}, CanCrawl={canCrawl}");
     }
 
     Transform GetSlotTransform(LimbSlot slot)
@@ -318,6 +363,11 @@ public class PlayerLimbController : MonoBehaviour
     public bool CanAttack()
     {
         return currentLeftArm != null || currentRightArm != null;
+    }
+
+    public bool CanCrawl()
+    {
+        return canCrawl;
     }
 
     public LimbData GetArmData(bool isLeftArm)
