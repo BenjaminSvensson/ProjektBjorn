@@ -191,7 +191,9 @@ GameObject:
   - component: {fileID: 92388457651930071}
   - component: {fileID: 552843423585985556}
   - component: {fileID: 6032263021279543201}
-  m_Layer: 0
+  - component: {fileID: 5776033817896907670}
+  - component: {fileID: 2290539813419762177}
+  m_Layer: 7
   m_Name: BjornArm
   m_TagString: LimbPickup
   m_Icon: {fileID: 0}
@@ -251,7 +253,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.0017754287, y: -0.33429635}
+  m_Offset: {x: 0.04254788, y: -0.070467114}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -261,7 +263,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.3502024, y: 0.83094454}
+  m_Size: {x: 0.43884903, y: 1.0103486}
   m_EdgeRadius: 0
 --- !u!114 &6032263021279543201
 MonoBehaviour:
@@ -277,12 +279,38 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldLimb
   startingLimbData: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
   startAsMaintainedPickup: 1
+  startAsDamaged: 0
   defaultVisual: {fileID: 210326100112170909}
   damagedVisual: {fileID: 620730531392086626}
   brokenVisual: {fileID: 6753134318681120763}
   shadowGameObject: {fileID: 20196419967631131}
   throwForce: 5
   pickupDespawnTime: 10
+  interactionText: Pick Up Limb
+--- !u!210 &5776033817896907670
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1703309220703536604}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+--- !u!114 &2290539813419762177
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1703309220703536604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
 --- !u!1 &6753134318681120763
 GameObject:
   m_ObjectHideFlags: 0
@@ -391,23 +419,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.30530524
+      value: 0.48706377
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.1470554
+      value: 0.23460244
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.6105
+      value: 0.97395116
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 0.059
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.8
+      value: -0.669
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalPosition.z
@@ -440,6 +468,14 @@ PrefabInstance:
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8071527557358092223, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
+      propertyPath: m_Color.a
+      value: 0.4392157
+      objectReference: {fileID: 0}
+    - target: {fileID: 8071527557358092223, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
+      propertyPath: m_SortingOrder
+      value: -1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

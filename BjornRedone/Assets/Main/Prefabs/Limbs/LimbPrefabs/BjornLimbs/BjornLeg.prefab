@@ -11,7 +11,9 @@ GameObject:
   - component: {fileID: 2528254116516100454}
   - component: {fileID: 4983183672860958045}
   - component: {fileID: 7124313440074596595}
-  m_Layer: 0
+  - component: {fileID: 1314142435997360402}
+  - component: {fileID: 4240056187745014326}
+  m_Layer: 7
   m_Name: BjornLeg
   m_TagString: LimbPickup
   m_Icon: {fileID: 0}
@@ -97,12 +99,38 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldLimb
   startingLimbData: {fileID: 11400000, guid: 823d4ad74e94f3245934ef33017e32ca, type: 2}
   startAsMaintainedPickup: 1
+  startAsDamaged: 0
   defaultVisual: {fileID: 7021148139655591862}
   damagedVisual: {fileID: 2591080701121884861}
   brokenVisual: {fileID: 2989056784420397970}
   shadowGameObject: {fileID: 7221240211202065772}
   throwForce: 5
   pickupDespawnTime: 10
+  interactionText: Pick Up Limb
+--- !u!210 &1314142435997360402
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2324061009247522880}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+--- !u!114 &4240056187745014326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2324061009247522880}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
 --- !u!1 &2591080701121884861
 GameObject:
   m_ObjectHideFlags: 0
@@ -407,7 +435,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.8
+      value: -0.55
       objectReference: {fileID: 0}
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalPosition.z
@@ -440,6 +468,10 @@ PrefabInstance:
     - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8071527557358092223, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
+      propertyPath: m_Color.a
+      value: 0.5529412
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

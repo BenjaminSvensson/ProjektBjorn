@@ -1,27 +1,20 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine.Rendering; // --- NEW: For SortingGroup ---
+using UnityEngine.Rendering;
 
 /// <summary>
 /// This script is attached to the limb prefab. It controls the limb's
-/// visual state (default, damaged, broken) and its physical state (attached,
-/// thrown, or lying on the ground as a pickup).
+/// visual state and its physical state (attached, thrown, or pickup).
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
-// --- NEW: Require these components for sorting ---
 [RequireComponent(typeof(SortingGroup))]
 [RequireComponent(typeof(DynamicYSorter))]
-// --- END NEW ---
-public class WorldLimb : MonoBehaviour
+public class WorldLimb : MonoBehaviour, IInteractable
 {
-    // --- THIS IS THE MISSING SECTION ---
     [Header("Scene Pickup Settings (For Prefabs)")]
-    [Tooltip("Assign the LimbData here if you are placing this prefab directly in the scene as a pickup.")]
     [SerializeField] private LimbData startingLimbData;
-    [Tooltip("Check this if this prefab should start as a 'maintained' (usable) pickup when placed in the scene.")]
     [SerializeField] private bool startAsMaintainedPickup = false;
-    [Tooltip("If it's a 'maintained' pickup, should it show the 'damaged' visual? If false, it shows 'default'.")]
     [SerializeField] private bool startAsDamaged = false;
 
     [Header("Visual State GameObjects (Assign in Prefab)")]
@@ -32,8 +25,6 @@ public class WorldLimb : MonoBehaviour
 
     [Header("Physics Settings")]
     [SerializeField] private float throwForce = 5f;
-    // --- END MISSING SECTION ---
-
     [SerializeField] private float pickupDespawnTime = 10f;
 
     // --- State ---
@@ -45,33 +36,45 @@ public class WorldLimb : MonoBehaviour
     private Rigidbody2D rb;
     private Collider2D col;
     
-    // --- NEW: Component references for sorting ---
     private SortingGroup sortingGroup;
     private DynamicYSorter ySorter;
-    // --- END NEW ---
 
     private bool isShowingDamaged = false;
-
-    // We'll cache all renderers for fading
     private List<SpriteRenderer> brokenVisualRenderers = new List<SpriteRenderer>();
+
+    // --- IInteractable Implementation ---
+    [Header("Interaction")]
+    [Tooltip("The text that will appear on the interaction prompt.")]
+    [SerializeField] private string interactionText = "Pick Up Limb";
+    public string InteractionPromptText => interactionText;
+
+    public void Interact(PlayerLimbController player)
+    {
+        // Only allow interaction if this is a usable pickup
+        if (CanPickup())
+        {
+            bool attached = player.TryAttachLimb(limbData, isShowingDamaged);
+            if (attached)
+            {
+                Destroy(gameObject);
+            }
+        }
+    }
+    // --- End IInteractable ---
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         
-        // --- NEW: Get sorting components ---
         sortingGroup = GetComponent<SortingGroup>();
         ySorter = GetComponent<DynamicYSorter>();
-        // --- END NEW ---
         
-        // Cache renderers for the broken visual (for fading)
         if (brokenVisual != null)
         {
             brokenVisual.GetComponentsInChildren<SpriteRenderer>(brokenVisualRenderers);
         }
 
-        // Disable all visuals by default, they will be set by an Initialize function
         if(defaultVisual) defaultVisual.SetActive(false);
         if(damagedVisual) damagedVisual.SetActive(false);
         if(brokenVisual) brokenVisual.SetActive(false);
@@ -80,8 +83,6 @@ public class WorldLimb : MonoBehaviour
 
     void Start()
     {
-        // This logic runs ONLY if the limb was placed in the scene
-        // and NOT initialized by the player (since its state is still Idle).
         if (currentState == State.Idle && startingLimbData != null)
         {
             if (startAsMaintainedPickup)
@@ -90,36 +91,28 @@ public class WorldLimb : MonoBehaviour
             }
             else
             {
-                // It's a scene object, but not a pickup (e.g., a "broken" one)
                 InitializeAsScenePickup(startingLimbData, false);
             }
         }
         else if (currentState == State.Idle && startingLimbData == null)
         {
-            // This is the most likely cause of the "disappearing limb" bug.
-            Debug.LogError($"WorldLimb '{gameObject.name}' was placed in the scene but has no 'Starting Limb Data' assigned in the Inspector! It will be invisible.", this);
+            Debug.LogError($"WorldLimb '{gameObject.name}' was placed in the scene but has no 'Starting Limb Data' assigned!", this);
         }
     }
 
-    /// <summary>
-    /// Called by PlayerLimbController when attaching the limb.
-    /// </summary>
     public void InitializeAttached(LimbData data, bool isDamaged)
     {
         limbData = data;
         currentState = State.Attached;
-        isShowingDamaged = isDamaged; // Store the state
+        isShowingDamaged = isDamaged; 
         
-        // Explicitly set all visual states
         if (isDamaged)
         {
-            // This is a used limb, show the damaged visual
             if(defaultVisual) defaultVisual.SetActive(false);
             if(damagedVisual) damagedVisual.SetActive(true);
         }
         else
         {
-            // This is a fresh limb (at start), show the default visual
             if(defaultVisual) defaultVisual.SetActive(true);
             if(damagedVisual) damagedVisual.SetActive(false);
         }
@@ -130,43 +123,29 @@ public class WorldLimb : MonoBehaviour
         col.enabled = false;
         if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
 
-        // --- NEW: Disable sorting components ---
-        // When attached, the limb becomes part of the PLAYER's
-        // sorting group and doesn't need its own.
         if (sortingGroup) sortingGroup.enabled = false;
         if (ySorter) ySorter.enabled = false;
-        // --- END NEW ---
     }
 
-    /// <summary>
-    /// Called when a limb is detached from the player.
-    /// </summary>
     public void InitializeThrow(LimbData data, bool maintained, Vector2 direction)
     {
         limbData = data;
         currentState = State.Thrown;
         isMaintained = maintained;
-        isShowingDamaged = isMaintained; // Thrown limbs are always "damaged"
+        isShowingDamaged = isMaintained; 
 
-        // Detach from parent
         transform.SetParent(null);
 
-        // Set visual state
         if(defaultVisual) defaultVisual.SetActive(false);
-        if(damagedVisual) damagedVisual.SetActive(isMaintained); // Show damaged if it's usable
-        if(brokenVisual) brokenVisual.SetActive(!isMaintained); // Show broken if it's not
+        if(damagedVisual) damagedVisual.SetActive(isMaintained); 
+        if(brokenVisual) brokenVisual.SetActive(!isMaintained); 
         if(shadowGameObject) shadowGameObject.SetActive(true);
 
-        // --- NEW: Enable sorting components ---
-        // When thrown, the limb is now its own object
-        // and needs to sort itself.
         if (sortingGroup) sortingGroup.enabled = true;
         if (ySorter) ySorter.enabled = true;
-        // --- END NEW ---
 
-        // Enable physics
         col.enabled = true;
-        col.isTrigger = false; // Make it a solid object
+        col.isTrigger = false; // Start as solid (so it can bounce)
         if (rb)
         {
             rb.bodyType = RigidbodyType2D.Dynamic;
@@ -174,7 +153,6 @@ public class WorldLimb : MonoBehaviour
             rb.AddTorque(Random.Range(-90f, 90f));
         }
 
-        // Start timer to become a pickup
         StartCoroutine(BecomePickupAfterDelay(1.0f)); 
     }
 
@@ -184,7 +162,6 @@ public class WorldLimb : MonoBehaviour
         currentState = State.Pickup;
         isMaintained = maintained;
         
-        // Set visual state based on inspector settings
         if(defaultVisual) defaultVisual.SetActive(false);
         if(damagedVisual) damagedVisual.SetActive(false);
         if(brokenVisual) brokenVisual.SetActive(false);
@@ -194,58 +171,49 @@ public class WorldLimb : MonoBehaviour
             if (startAsDamaged)
             {
                 if(damagedVisual) damagedVisual.SetActive(true);
-                isShowingDamaged = true; // Store the state
+                isShowingDamaged = true; 
             }
             else
             {
                 if(defaultVisual) defaultVisual.SetActive(true);
-                isShowingDamaged = false; // Store the state
+                isShowingDamaged = false; 
             }
         }
         else
         {
             if(brokenVisual) brokenVisual.SetActive(true);
-            isShowingDamaged = false; // Broken limbs aren't "damaged" they're just props
+            isShowingDamaged = false; 
         }
         
         if(shadowGameObject) shadowGameObject.SetActive(true);
 
-        // --- NEW: Enable sorting components ---
-        // A scene pickup also needs to sort itself.
         if (sortingGroup) sortingGroup.enabled = true;
         if (ySorter) ySorter.enabled = true;
-        // --- END NEW ---
 
-        // Enable collider as a trigger
         col.enabled = true;
-        col.isTrigger = true;
+        // --- THIS IS THE FIX ---
+        // You are right, it should be a trigger so it doesn't block the player.
+        col.isTrigger = true; 
+        // --- END FIX ---
         
-        // Disable physics
         if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
 
-        // Set tag based on if it's usable
         if (isMaintained)
         {
             gameObject.tag = "LimbPickup";
-            // Scene-placed pickups should not despawn
         }
         else
         {
-            gameObject.tag = "Untagged"; // It's just a broken prop
+            gameObject.tag = "Untagged"; 
         }
     }
 
-
-    /// <summary>
-    /// Waits for a moment, then settles the limb on the ground.
-    /// </summary>
     private IEnumerator BecomePickupAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
 
         currentState = State.Pickup;
         
-        // Stop physics
         if (rb)
         {
             rb.bodyType = RigidbodyType2D.Kinematic;
@@ -253,21 +221,19 @@ public class WorldLimb : MonoBehaviour
             rb.angularVelocity = 0;
         }
         
-        // Make it a trigger so the player can pick it up
+        // --- THIS IS THE FIX ---
+        // Make it a trigger so the player can walk over it
         col.isTrigger = true;
+        // --- END FIX ---
 
         if (isMaintained)
         {
-            // It's usable
             gameObject.tag = "LimbPickup";
-            // Start the despawn timer *only for thrown limbs*
             StartCoroutine(DespawnTimer(pickupDespawnTime));
         }
         else
         {
-            // It's just a broken prop
             gameObject.tag = "Untagged";
-            // Start fading out the broken visual
             StartCoroutine(FadeOutBrokenLimb(2.0f));
         }
     }
@@ -280,7 +246,7 @@ public class WorldLimb : MonoBehaviour
 
     private IEnumerator FadeOutBrokenLimb(float duration)
     {
-        yield return new WaitForSeconds(duration); // Wait a bit before fading
+        yield return new WaitForSeconds(duration); 
 
         float timer = 0f;
         while (timer < duration)
@@ -297,23 +263,15 @@ public class WorldLimb : MonoBehaviour
         Destroy(gameObject);
     }
 
-    /// <summary>
-    /// Checks if the player is allowed to pick up this limb.
-    /// </summary>
     public bool CanPickup()
     {
         return (currentState == State.Pickup && isMaintained);
     }
 
-    // --- NEW GETTER ---
-    /// <summary>
-    /// Returns true if the limb is currently showing the "damaged" visual.
-    /// </summary>
     public bool IsShowingDamaged()
     {
         return isShowingDamaged;
     }
-    // --- END NEW GETTER ---
 
     public LimbData GetLimbData()
     {
