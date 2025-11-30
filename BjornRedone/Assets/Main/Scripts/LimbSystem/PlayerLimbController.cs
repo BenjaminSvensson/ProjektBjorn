@@ -2,34 +2,25 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(AudioSource))] // --- NEW: Required for damage sound
+[RequireComponent(typeof(AudioSource))]
 public class PlayerLimbController : MonoBehaviour
 {
+    // ... (all variables at the top are the same) ...
     [Header("Visuals (Assign in Inspector)")]
     [Tooltip("The parent GameObject that holds all limb slots. This is what will shake.")]
     [SerializeField] private Transform visualsHolder;
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeMagnitude = 0.1f;
 
-    // --- NEW: Damage Feedback ---
     [Header("Damage Feedback")]
-    [Tooltip("The sound that plays when the player gets hurt.")]
     [SerializeField] private AudioClip damageSound;
-    [Tooltip("How long (in seconds) the red flash should last.")]
     [SerializeField] private float flashDuration = 0.2f;
-    [Tooltip("The color the player flashes when hit.")]
     [SerializeField] private Color flashColor = Color.red;
-    // --- END NEW ---
 
     [Header("Sorting Orders (Relative to Body)")]
-    // [SerializeField] private int bodyOrder = 0; // This variable was unused, so I've removed it to clear the warning.
-    [Tooltip("Order for the Head (should be in front)")]
     [SerializeField] private int headOrder = 10;
-    [Tooltip("Order for the Left Arm (in front of body)")]
     [SerializeField] private int leftArmOrder = 5;
-    [Tooltip("Order for the Right Arm (behind body)")]
     [SerializeField] private int rightArmOrder = -5;
-    [Tooltip("Order for the Legs (behind everything)")]
     [SerializeField] private int legOrder = -10;
 
     [Header("Limb Slots (Assign in Inspector)")]
@@ -50,7 +41,6 @@ public class PlayerLimbController : MonoBehaviour
     public LimbData startingLeg;
 
     [Header("Limb Physics")]
-    [Tooltip("The chance a limb will be 'maintained' (re-usable) when lost")]
     [Range(0f, 1f)]
     public float maintainLimbChance = 0.3f;
 
@@ -65,20 +55,17 @@ public class PlayerLimbController : MonoBehaviour
     private PlayerMovement playerMovement;
     private Rigidbody2D rb; 
     private Vector3 visualsHolderOriginalPos; 
-    private bool isShaking = false; // Fix for damage snapping
+    private bool isShaking = false;
     private bool canCrawl = false;
-
-    // --- NEW: For damage feedback ---
     private AudioSource audioSource;
     private List<SpriteRenderer> currentRenderers = new List<SpriteRenderer>();
-    private Coroutine flashCoroutine; // To prevent multiple flashes
-    // --- END NEW ---
+    private Coroutine flashCoroutine;
 
     void Start()
     {
         playerMovement = GetComponent<PlayerMovement>();
         rb = GetComponent<Rigidbody2D>(); 
-        audioSource = GetComponent<AudioSource>(); // --- NEW ---
+        audioSource = GetComponent<AudioSource>();
 
         if (playerMovement == null)
         {
@@ -98,20 +85,24 @@ public class PlayerLimbController : MonoBehaviour
             Debug.LogError("VisualsHolder is not assigned in PlayerLimbController!");
         }
 
-        // Spawn starting limbs
-        if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false);
-        if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true, false);
-        if(startingArm) AttachToSlot(startingArm, LimbSlot.RightArm, false, false);
-        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false);
-        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false);
+        // --- MODIFICATION ---
+        // Spawn starting limbs, but tell AttachToSlot NOT to update stats yet.
+        if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
+        if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false);
+        if(startingArm) AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false);
+        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false);
+        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false);
 
+        // Now, update stats ONCE, after all limbs are attached.
         UpdatePlayerStats();
+        // --- END MODIFICATION ---
     }
 
     /// <summary>
     /// Attaches a limb prefab to a specific slot.
     /// </summary>
-    void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged)
+    // --- MODIFIED: Added 'updateStats' parameter ---
+    void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged, bool updateStats = true)
     {
         Transform parentSlot = GetSlotTransform(slot);
         if (parentSlot == null) return;
@@ -135,7 +126,6 @@ public class PlayerLimbController : MonoBehaviour
 
         limbComponent.InitializeAttached(limbData, isDamaged);
 
-        // --- Set the Sorting Order for the new limb ---
         int sortingOrder = 0;
         switch (slot)
         {
@@ -161,23 +151,30 @@ public class PlayerLimbController : MonoBehaviour
                 break;
         }
 
-        // Apply this order to all renderers on the new limb
         SpriteRenderer[] srs = limbObj.GetComponentsInChildren<SpriteRenderer>();
-        foreach (var sr_renderer in srs) // Renamed 'sr' to 'sr_renderer' to avoid conflict
+        foreach (var sr_renderer in srs)
         {
             sr_renderer.sortingOrder = sortingOrder;
         }
 
-        UpdatePlayerStats();
+        // --- MODIFICATION ---
+        // Only update stats if allowed (defaults to true for pickups)
+        if (updateStats)
+        {
+            UpdatePlayerStats();
+        }
+        // --- END MODIFICATION ---
     }
 
     /// <summary>
-    // Called by PlayerCollision when it touches a LimbPickup.
+    // Called when picking up a limb.
     /// </summary>
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
         if (limbToAttach == null) return false;
 
+        // Note: This calls AttachToSlot with the default updateStats = true,
+        // so it will correctly update stats when picking up a limb.
         if (limbToAttach.limbType == LimbType.Arm)
         {
             if (currentRightArm == null)
@@ -204,8 +201,6 @@ public class PlayerLimbController : MonoBehaviour
                 return true; 
             }
         }
-
-        // If all slots are full, report failure
         return false;
     }
 
@@ -214,21 +209,17 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     public void TakeDamage(float damageAmount)
     {
-        // --- NEW: Damage Feedback ---
         if (audioSource != null && damageSound != null)
         {
             audioSource.PlayOneShot(damageSound);
         }
 
-        // Start flash (or reset it if already flashing)
         if (flashCoroutine != null)
         {
             StopCoroutine(flashCoroutine);
         }
         flashCoroutine = StartCoroutine(FlashDamageCoroutine());
-        // --- END FEEDBACK ---
 
-        // Fix for damage snapping
         if (visualsHolder != null && !isShaking)
         {
             StartCoroutine(ShakeVisuals());
@@ -353,6 +344,17 @@ public class PlayerLimbController : MonoBehaviour
         canCrawl = (legCount == 0 && armCount > 0);
 
         Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}, Arms={armCount}, CanCrawl={canCrawl}");
+
+        // --- Helplessness Check ---
+        // (This is now safe to run because it's only called after all limbs are attached)
+        if (legCount == 0 && armCount == 0)
+        {
+            if (currentHead != null)
+            {
+                Debug.Log("Player is helpless (0 arms, 0 legs). Detaching head.");
+                DetachLimb(LimbSlot.Head); 
+            }
+        }
     }
 
     Transform GetSlotTransform(LimbSlot slot)
@@ -382,6 +384,8 @@ public class PlayerLimbController : MonoBehaviour
         StopAllCoroutines();
         if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos;
     }
+
+// ... (rest of the script is unchanged: Getters, ShakeVisuals, FlashDamageCoroutine) ...
 
     // --- PUBLIC GETTERS for PlayerAttackController ---
     
@@ -444,7 +448,6 @@ public class PlayerLimbController : MonoBehaviour
         isShaking = false;
     }
 
-    // --- NEW: Coroutine for damage flash ---
     /// <summary>
     /// Flashes all player sprites (body and limbs) to the flashColor.
     /// </summary>
@@ -452,7 +455,6 @@ public class PlayerLimbController : MonoBehaviour
     {
         // 1. Find all renderers
         currentRenderers.Clear();
-        // Get renderers on the VisualsHolder (body) and all children (limbs)
         if (visualsHolder != null)
         {
             visualsHolder.GetComponentsInChildren<SpriteRenderer>(currentRenderers);
@@ -461,7 +463,7 @@ public class PlayerLimbController : MonoBehaviour
         // 2. Set to flash color
         foreach (var renderer in currentRenderers)
         {
-            if (renderer != null) // Check just in case
+            if (renderer != null)
             {
                 renderer.color = flashColor;
             }
@@ -481,5 +483,4 @@ public class PlayerLimbController : MonoBehaviour
         
         flashCoroutine = null; // Mark as finished
     }
-    // --- END NEW ---
 }
