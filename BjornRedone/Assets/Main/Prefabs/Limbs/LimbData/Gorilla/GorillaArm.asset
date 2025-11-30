@@ -15,8 +15,12 @@ MonoBehaviour:
   limbType: 1
   visualPrefab: {fileID: 1703309220703536604, guid: 259011a8f85881a498b363091c74d781, type: 3}
   moveSpeedBonus: 0
-  attackDamageBonus: 0
-  attackSpeed: 1.8
-  attackReach: 0.6
+  punchSound: {fileID: 8300000, guid: 8d12348ab12ba2147bf988775c31ec10, type: 3}
+  punchPitch: 1
+  punchVolume: 1
+  attackDamageBonus: 10
+  punchDuration: 0.13
+  attackCooldown: 1
+  attackReach: 0.7
   impactSize: 2
   healthBonus: 2

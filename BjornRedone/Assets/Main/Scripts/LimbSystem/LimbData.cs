@@ -17,11 +17,23 @@ public class LimbData : ScriptableObject
     [Tooltip("Bonus added to player's base move speed. ONLY APPLIES TO LEGS.")]
     public float moveSpeedBonus = 0f;
     
+    [Header("Arm Audio")]
+    [Tooltip("Sound to play on punch impact.")]
+    public AudioClip punchSound;
+    [Tooltip("The pitch of the punch sound. Higher = faster/lighter, Lower = slower/heavier.")]
+    [Range(0.1f, 3f)]
+    public float punchPitch = 1.0f;
+    [Tooltip("The volume of the punch sound.")]
+    [Range(0.1f, 1f)]
+    public float punchVolume = 1.0f;
+
     [Header("Arm Stats")]
     [Tooltip("Bonus added to player's base attack damage. ONLY APPLIES TO ARMS.")]
     public float attackDamageBonus = 0f;
-    [Tooltip("Base attack speed. (e.g., 2.0 = 2 attacks per second). ONLY APPLIES TO ARMS.")]
-    public float attackSpeed = 1.0f; 
+    [Tooltip("How long the punch animation lasts (in seconds).")]
+    public float punchDuration = 0.2f;
+    [Tooltip("How long to wait between punches (in seconds).")]
+    public float attackCooldown = 0.5f;
     [Tooltip("How far the punch reaches from the arm. ONLY APPLIES TO ARMS.")]
     public float attackReach = 0.5f;
     [Tooltip("The radius of the punch impact. ONLY APPLIES TO ARMS.")]
@@ -30,9 +42,4 @@ public class LimbData : ScriptableObject
     [Header("Head Stats")]
     [Tooltip("Bonus added to player's max health (mostly for Head/Torso).")]
     public float healthBonus = 0f;
-
-    // We can remove these, as they are now limb-specific
-    // public float moveSpeedBonus = 0f;
-    // public float attackDamageBonus = 0f;
-    // public float attackSpeedBonus = 0f;
 }

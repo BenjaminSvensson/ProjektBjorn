@@ -57,7 +57,7 @@ public class PlayerAnimationController : MonoBehaviour
 
             // Store the original local positions
             if (leftLegSlot) leftLegOrigPos = leftLegSlot.localPosition;
-            if (rightLegSlot) rightLegOrigPos = rightLegSlot.localPosition; // Fixed typo here
+            if (rightLegSlot) rightLegOrigPos = rightLegSlot.localPosition; 
 
             // Store the original arm local positions
             if (leftArmSlot) leftArmOrigPos = leftArmSlot.localPosition;
@@ -78,7 +78,7 @@ public class PlayerAnimationController : MonoBehaviour
         // Don't aim while punching
         if (!isPunching)
         {
-            HandleArmAimingAndFling();
+            HandleArmAimingAndFlipping(); // Renamed for clarity
         }
         HandleLegBobbing();
     }
@@ -86,7 +86,7 @@ public class PlayerAnimationController : MonoBehaviour
     /// <summary>
     /// Aims the arms at the mouse and flips the player visual.
     /// </summary>
-    private void HandleArmAimingAndFling()
+    private void HandleArmAimingAndFlipping() // Renamed for clarity
     {
         // Get mouse position in world space
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
@@ -162,7 +162,7 @@ public class PlayerAnimationController : MonoBehaviour
             leftLegSlot.localPosition = new Vector3(leftLegOrigPos.x, leftLegOrigPos.y + currentBobOffset, leftLegOrigPos.z);
         
         if (rightLegSlot)
-            rightLegSlot.localPosition = new Vector3(rightLegOrigPos.x, rightLegOrigPos.y - currentBobOffset, rightLegOrigPos.z); // Fixed typo here
+            rightLegSlot.localPosition = new Vector3(rightLegOrigPos.x, rightLegOrigPos.y - currentBobOffset, rightLegOrigPos.z);
     }
 
     /// <summary>
@@ -184,7 +184,11 @@ public class PlayerAnimationController : MonoBehaviour
     {
         isPunching = true;
         
+        // --- MODIFIED: Use the exact duration ---
         float halfDuration = duration / 2f;
+        if (halfDuration < Time.deltaTime) halfDuration = Time.deltaTime; // Prevent zero-duration
+        // --- END MODIFICATION ---
+
         float timer = 0f;
 
         // --- Jab Out ---

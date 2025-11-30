@@ -10,13 +10,14 @@ public class PlayerAttackController : MonoBehaviour
     [Header("Required References")]
     [SerializeField] private PlayerLimbController limbController;
     [SerializeField] private PlayerAnimationController animController;
-    // --- REMOVED: Rigidbody rb ---
 
     [Header("Attack Settings")]
     [Tooltip("The layer(s) that can be hit by a punch.")]
     [SerializeField] private LayerMask hittableLayers;
-
-    // --- REMOVED: Crawl Settings ---
+    
+    [Header("Audio")]
+    [Tooltip("The AudioSource used for action sounds (punching). Assign this in the Inspector.")]
+    [SerializeField] private AudioSource actionAudioSource;
 
     // --- Private State ---
     private InputSystem_Actions playerControls;
@@ -34,7 +35,12 @@ public class PlayerAttackController : MonoBehaviour
             limbController = GetComponent<PlayerLimbController>();
         if (animController == null)
             animController = GetComponent<PlayerAnimationController>();
-        // --- REMOVED: Rigidbody rb assignment ---
+            
+        // Add a check in case it's not assigned
+        if (actionAudioSource == null)
+        {
+            Debug.LogWarning("PlayerAttackController is missing a reference to the Action Audio Source!");
+        }
     }
 
     void OnEnable()
@@ -79,13 +85,11 @@ public class PlayerAttackController : MonoBehaviour
         // Check if the player is holding the attack button and cooldown is ready
         if (isAttackHeld && attackCooldownTimer <= 0)
         {
-            // --- MODIFIED: Simplified logic ---
             // Check if we can attack (have arms) AND we are not in the crawl state
             if (limbController.CanAttack() && !limbController.CanCrawl())
             {
                 TryPunch();
             }
-            // --- END MODIFICATION ---
         }
     }
 
@@ -127,7 +131,6 @@ public class PlayerAttackController : MonoBehaviour
         // Failsafe: if we still have no arm, do nothing
         if (armData == null)
         {
-            // This case should be rare, but good to have
             return;
         }
 
@@ -138,35 +141,43 @@ public class PlayerAttackController : MonoBehaviour
         isNextPunchLeft = !isNextPunchLeft;
     }
 
-    // --- REMOVED: TryCrawl() method ---
-
     private void PerformPunch(Transform armTransform, LimbData armData)
     {
         // Get stats from the arm
         float damage = limbController.baseAttackDamage + armData.attackDamageBonus;
-        float speed = armData.attackSpeed;
         float reach = armData.attackReach;
         float radius = armData.impactSize;
+
+        // --- NEW: Use new variables ---
+        float duration = armData.punchDuration;
+        float cooldown = armData.attackCooldown;
+        attackCooldownTimer = cooldown;
+        // --- END NEW ---
 
         // Get mouse position from camera
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
 
-        // Calculate direction from arm to mouse. This is now reliable!
+        // Calculate direction from arm to mouse.
         Vector2 punchDirection = (mouseWorldPos - (Vector2)armTransform.position).normalized;
         
-        // Calculate the hit position using the correct direction
+        // Calculate the hit position
         Vector2 hitPosition = (Vector2)armTransform.position + (punchDirection * reach);
 
-
-        // Calculate cooldown
-        float cooldown = 1.0f / speed;
-        attackCooldownTimer = cooldown;
+        // --- NEW: Play Sound ---
+        if (actionAudioSource != null && armData.punchSound != null)
+        {
+            // Set pitch and volume based on the limb's data
+            actionAudioSource.pitch = armData.punchPitch;
+            actionAudioSource.PlayOneShot(armData.punchSound, armData.punchVolume);
+        }
+        // --- END NEW ---
 
         // Trigger the animation
         if (animController != null)
         {
-            animController.TriggerPunch(armTransform, cooldown * 0.8f, hitPosition);
+            // Pass the punch DURATION to the animation
+            animController.TriggerPunch(armTransform, duration, hitPosition);
         }
 
         // Perform the physics check to deal damage
