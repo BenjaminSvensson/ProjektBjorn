@@ -361,13 +361,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 2
+  totalRooms: 10
   numberOfBossRooms: 0
-  roomSize: {x: 17.59128, y: 8.055085}
+  roomSize: {x: 20, y: 10.5}
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
   normalRoomPrefabs:
-  - {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
-  - {fileID: 3293985558420901034, guid: cb01dc127fe1ac94884e0caa94b829ee, type: 3}
+  - {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
+  - {fileID: 3293985558420901034, guid: 3203430101b3ff247894230fd213982a, type: 3}
+  - {fileID: 3293985558420901034, guid: 8a73db516bd2f2d48bb0277dfcc538e7, type: 3}
+  - {fileID: 3293985558420901034, guid: f65a179cba51094448cc67cddca39f8e, type: 3}
+  - {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
   bossRoomPrefabs: []
   environmentProps:
   - prefab: {fileID: 7915102392887708610, guid: 8c4452de4dfd70346a334c909e57774c, type: 3}
