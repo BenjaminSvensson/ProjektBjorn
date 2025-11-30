@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(AudioSource))] // --- NEW: Required for damage sound
 public class PlayerLimbController : MonoBehaviour
 {
     [Header("Visuals (Assign in Inspector)")]
@@ -10,10 +11,18 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeMagnitude = 0.1f;
 
-    // --- NEW: Sorting Order for Limbs ---
+    // --- NEW: Damage Feedback ---
+    [Header("Damage Feedback")]
+    [Tooltip("The sound that plays when the player gets hurt.")]
+    [SerializeField] private AudioClip damageSound;
+    [Tooltip("How long (in seconds) the red flash should last.")]
+    [SerializeField] private float flashDuration = 0.2f;
+    [Tooltip("The color the player flashes when hit.")]
+    [SerializeField] private Color flashColor = Color.red;
+    // --- END NEW ---
+
     [Header("Sorting Orders (Relative to Body)")]
-    [Tooltip("Order for the main body sprite (VisualsHolder)")]
-    [SerializeField] private int bodyOrder = 0;
+    // [SerializeField] private int bodyOrder = 0; // This variable was unused, so I've removed it to clear the warning.
     [Tooltip("Order for the Head (should be in front)")]
     [SerializeField] private int headOrder = 10;
     [Tooltip("Order for the Left Arm (in front of body)")]
@@ -22,7 +31,6 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private int rightArmOrder = -5;
     [Tooltip("Order for the Legs (behind everything)")]
     [SerializeField] private int legOrder = -10;
-    // --- END NEW ---
 
     [Header("Limb Slots (Assign in Inspector)")]
     public Transform headSlot;
@@ -34,11 +42,9 @@ public class PlayerLimbController : MonoBehaviour
     [Header("Base Stats")]
     public float baseMoveSpeed = 5f;
     public float baseAttackDamage = 1f;
-    // Torso acts as the root and could have its own health
     public float torsoHealth = 100f; 
 
     [Header("Starting Limbs (Prefabs)")]
-    [Tooltip("Player's starting head. Losing this = death.")]
     public LimbData startingHead;
     public LimbData startingArm;
     public LimbData startingLeg;
@@ -60,13 +66,19 @@ public class PlayerLimbController : MonoBehaviour
     private Rigidbody2D rb; 
     private Vector3 visualsHolderOriginalPos; 
     private bool isShaking = false; // Fix for damage snapping
-    
     private bool canCrawl = false;
+
+    // --- NEW: For damage feedback ---
+    private AudioSource audioSource;
+    private List<SpriteRenderer> currentRenderers = new List<SpriteRenderer>();
+    private Coroutine flashCoroutine; // To prevent multiple flashes
+    // --- END NEW ---
 
     void Start()
     {
         playerMovement = GetComponent<PlayerMovement>();
         rb = GetComponent<Rigidbody2D>(); 
+        audioSource = GetComponent<AudioSource>(); // --- NEW ---
 
         if (playerMovement == null)
         {
@@ -123,7 +135,7 @@ public class PlayerLimbController : MonoBehaviour
 
         limbComponent.InitializeAttached(limbData, isDamaged);
 
-        // --- NEW: Set the Sorting Order for the new limb ---
+        // --- Set the Sorting Order for the new limb ---
         int sortingOrder = 0;
         switch (slot)
         {
@@ -155,7 +167,6 @@ public class PlayerLimbController : MonoBehaviour
         {
             sr_renderer.sortingOrder = sortingOrder;
         }
-        // --- END NEW ---
 
         UpdatePlayerStats();
     }
@@ -203,6 +214,20 @@ public class PlayerLimbController : MonoBehaviour
     /// </summary>
     public void TakeDamage(float damageAmount)
     {
+        // --- NEW: Damage Feedback ---
+        if (audioSource != null && damageSound != null)
+        {
+            audioSource.PlayOneShot(damageSound);
+        }
+
+        // Start flash (or reset it if already flashing)
+        if (flashCoroutine != null)
+        {
+            StopCoroutine(flashCoroutine);
+        }
+        flashCoroutine = StartCoroutine(FlashDamageCoroutine());
+        // --- END FEEDBACK ---
+
         // Fix for damage snapping
         if (visualsHolder != null && !isShaking)
         {
@@ -418,4 +443,43 @@ public class PlayerLimbController : MonoBehaviour
 
         isShaking = false;
     }
+
+    // --- NEW: Coroutine for damage flash ---
+    /// <summary>
+    /// Flashes all player sprites (body and limbs) to the flashColor.
+    /// </summary>
+    private IEnumerator FlashDamageCoroutine()
+    {
+        // 1. Find all renderers
+        currentRenderers.Clear();
+        // Get renderers on the VisualsHolder (body) and all children (limbs)
+        if (visualsHolder != null)
+        {
+            visualsHolder.GetComponentsInChildren<SpriteRenderer>(currentRenderers);
+        }
+
+        // 2. Set to flash color
+        foreach (var renderer in currentRenderers)
+        {
+            if (renderer != null) // Check just in case
+            {
+                renderer.color = flashColor;
+            }
+        }
+
+        // 3. Wait
+        yield return new WaitForSeconds(flashDuration);
+
+        // 4. Reset to white
+        foreach (var renderer in currentRenderers)
+        {
+            if (renderer != null)
+            {
+                renderer.color = Color.white;
+            }
+        }
+        
+        flashCoroutine = null; // Mark as finished
+    }
+    // --- END NEW ---
 }

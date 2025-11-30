@@ -277,6 +277,7 @@ MonoBehaviour:
   shadowGameObject: {fileID: 1911070674231619108}
   throwForce: 1
   pickupDespawnTime: 10
+  pickupDelay: 0.5
   interactionText: Pick Up Limb
 --- !u!210 &2334121455426481853
 SortingGroup:
