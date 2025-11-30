@@ -361,11 +361,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 20
-  numberOfBossRooms: 1
+  totalRooms: 2
+  numberOfBossRooms: 0
   roomSize: {x: 17.59128, y: 8.055085}
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
-  normalRoomPrefabs: []
+  normalRoomPrefabs:
+  - {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
+  - {fileID: 3293985558420901034, guid: cb01dc127fe1ac94884e0caa94b829ee, type: 3}
   bossRoomPrefabs: []
   environmentProps:
   - prefab: {fileID: 7915102392887708610, guid: 8c4452de4dfd70346a334c909e57774c, type: 3}
@@ -384,7 +386,7 @@ MonoBehaviour:
     minScale: 0.9
     maxScale: 1.1
   - prefab: {fileID: 7845664515393865056, guid: 8cdaf7521d0e1164788d21f726fda281, type: 3}
-    spawnChance: 0.32
+    spawnChance: 0.2
     allowRandomFlip: 1
     minScale: 0.98
     maxScale: 1.02
