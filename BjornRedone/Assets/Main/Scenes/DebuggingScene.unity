@@ -370,7 +370,9 @@ MonoBehaviour:
   - {fileID: 3293985558420901034, guid: 3203430101b3ff247894230fd213982a, type: 3}
   - {fileID: 3293985558420901034, guid: 8a73db516bd2f2d48bb0277dfcc538e7, type: 3}
   - {fileID: 3293985558420901034, guid: f65a179cba51094448cc67cddca39f8e, type: 3}
+  - {fileID: 3293985558420901034, guid: a73afc622c67ea143affedd826f97712, type: 3}
   - {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
+  - {fileID: 3293985558420901034, guid: 18937705890835c498f64ca42fe90c9f, type: 3}
   bossRoomPrefabs: []
   environmentProps:
   - prefab: {fileID: 7915102392887708610, guid: 8c4452de4dfd70346a334c909e57774c, type: 3}
