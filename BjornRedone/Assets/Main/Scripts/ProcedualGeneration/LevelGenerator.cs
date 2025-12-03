@@ -2,14 +2,12 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq; // Used for ordering
-using UnityEngine.InputSystem; // --- NEW: Added for the new Input System ---
+using UnityEngine.InputSystem; 
 
-// Enum to define door directions.
 public enum Direction { Top, Bottom, Left, Right }
 
 public class LevelGenerator : MonoBehaviour
 {
-    // --- MODIFIED: Added new fields for variation ---
     [System.Serializable]
     public class EnvironmentProp
     {
@@ -28,7 +26,6 @@ public class LevelGenerator : MonoBehaviour
         [Range(0.5f, 1.5f)]
         public float maxScale = 1.1f;
     }
-    // --- END MODIFICATION ---
 
     [Header("Generation Settings")]
     [Tooltip("The total number of rooms to generate (including start and boss rooms).")]
@@ -37,25 +34,21 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private int numberOfBossRooms = 1;
     [Tooltip("The exact size of one room. ALL room prefabs must be this size!")]
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
+    // --- NEW: Retry Settings ---
+    [Tooltip("How many times to retry generating if the room count target isn't met.")]
+    [SerializeField] private int maxGenerationAttempts = 10;
+    // --- END NEW ---
 
     [Header("Room Prefabs")]
-    [Tooltip("The prefab for the very first room.")]
     [SerializeField] private Room startRoomPrefab;
-    [Tooltip("A list of all possible 'normal' room prefabs (hallways, branches, etc.).")]
     [SerializeField] private List<Room> normalRoomPrefabs;
-    [Tooltip("A list of all possible 'boss' room prefabs.")]
     [SerializeField] private List<Room> bossRoomPrefabs;
 
     [Header("Environment Population")]
-    [Tooltip("The list of all possible environment props and their spawn chances.")]
     [SerializeField] private List<EnvironmentProp> environmentProps;
-    [Tooltip("How many spawn *attempts* to make per square unit. Higher = denser rooms.")]
     [SerializeField] private float propSpawnAttemptsPerUnit = 0.1f;
 
     // --- Private Internal State ---
-    
-    // A "frontier" of open doorways. Stores the grid position for a *new* room
-    // and the direction its "entry" door must be.
     private class GenerationState
     {
         public Vector2Int gridPos;
@@ -71,107 +64,108 @@ public class LevelGenerator : MonoBehaviour
         GenerateLevel();
     }
 
-    // --- MODIFIED: Debugging Function ---
-    /// <summary>
-    /// Listens for the 'R' key to regenerate the level for fast debugging.
-    /// </summary>
     void Update()
     {
-        // Check if a keyboard is present and the 'R' key was pressed this frame
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
         {
             Debug.Log("--- [DEBUG] Regenerating Level via 'R' key! ---");
             GenerateLevel();
         }
     }
-    // --- END MODIFICATION ---
 
     public void GenerateLevel()
+    {
+        int attempts = 0;
+
+        // --- NEW: Retry Loop ---
+        while (attempts < maxGenerationAttempts)
+        {
+            // 1. Run a single generation attempt
+            RunGenerationAttempt();
+
+            // 2. Check if we hit our target
+            if (allRooms.Count >= totalRooms)
+            {
+                Debug.Log($"Success! Generated {allRooms.Count} rooms on attempt {attempts + 1}.");
+                break; // Exit the loop, we are done!
+            }
+            else
+            {
+                Debug.LogWarning($"Attempt {attempts + 1} failed (only {allRooms.Count}/{totalRooms} rooms). Retrying...");
+                attempts++;
+            }
+        }
+
+        if (allRooms.Count < totalRooms)
+        {
+            Debug.LogError("Failed to generate a complete level after " + maxGenerationAttempts + " attempts.");
+        }
+        // --- END NEW ---
+    }
+
+    private void RunGenerationAttempt()
     {
         // 1. Clear any old level
         foreach (var room in allRooms)
         {
-            if(room) Destroy(room.gameObject);
+            if (room) Destroy(room.gameObject);
         }
         grid.Clear();
         allRooms.Clear();
         frontier.Clear();
 
         // 2. Spawn Start Room
-        if (startRoomPrefab == null)
-        {
-            Debug.LogError("Start Room Prefab is not assigned!");
-            return;
-        }
+        if (startRoomPrefab == null) return;
         SpawnRoom(startRoomPrefab, Vector2Int.zero);
 
         // 3. Generate Normal Rooms
-        int normalRoomsToBuild = totalRooms - numberOfBossRooms - 1; // Subtract 1 for start room
+        int normalRoomsToBuild = totalRooms - numberOfBossRooms - 1; 
         int roomsBuilt = 0;
-        while (roomsBuilt < normalRoomsToBuild && frontier.Count > 0)
+        
+        // Safety break to prevent infinite loops if something goes wrong
+        int safetyCounter = 0;
+        while (roomsBuilt < normalRoomsToBuild && frontier.Count > 0 && safetyCounter < 1000)
         {
             if (TrySpawnRoom(normalRoomPrefabs))
             {
                 roomsBuilt++;
             }
+            safetyCounter++;
         }
 
         // 4. Place Boss Rooms
         PlaceBossRooms();
-        
-        // 5. Populate All Rooms
+
+        // 5. Populate All Rooms (only done once per attempt)
         PopulateRooms();
-        
-        Debug.Log($"Level Generation Complete: {allRooms.Count} total rooms spawned.");
     }
 
-    /// <summary>
-    /// Tries to pick a random frontier point and spawn a matching normal room.
-    /// </summary>
     private bool TrySpawnRoom(List<Room> roomList)
     {
-        // Pick a random available doorway from our frontier
         int randIndex = Random.Range(0, frontier.Count);
         GenerationState state = frontier[randIndex];
-        frontier.RemoveAt(randIndex); // This doorway is now "used"
+        frontier.RemoveAt(randIndex); 
 
-        // Check if a room already exists at this grid position (e.g., from another branch)
-        if (grid.ContainsKey(state.gridPos))
-        {
-            return false; // Failed to spawn, but we'll try another frontier point
-        }
+        if (grid.ContainsKey(state.gridPos)) return false; 
 
-        // Find a random room prefab that has the required door
         Room roomPrefab = FindMatchingRoom(roomList, state.requiredEntryDoor);
-        if (roomPrefab == null)
-        {
-            // This doorway is a dead end (no matching room prefab)
-            return false; // Failed to spawn
-        }
+        if (roomPrefab == null) return false; 
 
-        // We have a valid room! Spawn it.
         SpawnRoom(roomPrefab, state.gridPos, state.requiredEntryDoor);
-        return true; // Success!
+        return true; 
     }
 
-    /// <summary>
-    /// Instantiates a room, registers it, and connects its doors.
-    /// </summary>
     private void SpawnRoom(Room roomPrefab, Vector2Int gridPos, Direction entryDoor = (Direction)(-1))
     {
-        // Calculate world position
         Vector3 worldPos = new Vector3(gridPos.x * roomSize.x, gridPos.y * roomSize.y, 0);
         
-        // Spawn and name the room
         Room newRoom = Instantiate(roomPrefab, worldPos, Quaternion.identity, transform);
         newRoom.name = $"Room_{gridPos.x}_{gridPos.y} ({roomPrefab.name})";
         newRoom.gridPos = gridPos;
 
-        // Register the room
         grid[gridPos] = newRoom;
         allRooms.Add(newRoom);
 
-        // --- Connect doors ---
         if (entryDoor != (Direction)(-1))
         {
             Vector2Int neighborPos = gridPos + GetOppositeDirectionVector(entryDoor);
@@ -182,13 +176,9 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        // Add this new room's *other* doors to the frontier
         AddNeighborsToFrontier(newRoom);
     }
 
-    /// <summary>
-    /// Checks all 4 sides of a new room and adds its available doors to the frontier.
-    /// </summary>
     private void AddNeighborsToFrontier(Room room)
     {
         if (room.hasTopDoor)    TryAddFrontier(room.gridPos + Vector2Int.up,    Direction.Bottom);
@@ -197,9 +187,6 @@ public class LevelGenerator : MonoBehaviour
         if (room.hasRightDoor)  TryAddFrontier(room.gridPos + Vector2Int.right, Direction.Left);
     }
 
-    /// <summary>
-    /// Adds a new potential room location to the frontier, if it's not already occupied.
-    /// </summary>
     private void TryAddFrontier(Vector2Int pos, Direction requiredDoor)
     {
         if (!grid.ContainsKey(pos))
@@ -208,9 +195,6 @@ public class LevelGenerator : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Finds a random room from a list that has at least one matching door.
-    /// </summary>
     private Room FindMatchingRoom(List<Room> roomList, Direction requiredDoor)
     {
         List<Room> candidates = new List<Room>();
@@ -222,13 +206,10 @@ public class LevelGenerator : MonoBehaviour
             if (requiredDoor == Direction.Right  && room.hasRightDoor)  candidates.Add(room);
         }
 
-        if (candidates.Count == 0) return null; // No matching rooms
+        if (candidates.Count == 0) return null; 
         return candidates[Random.Range(0, candidates.Count)];
     }
 
-    /// <summary>
-    /// After normal generation, finds dead ends and places boss rooms there.
-    /// </summary>
     private void PlaceBossRooms()
     {
         if (bossRoomPrefabs.Count == 0) return;
@@ -245,21 +226,16 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Tells every spawned room to populate itself with environment objects.
-    /// </summary>
     private void PopulateRooms()
     {
         if (environmentProps == null || environmentProps.Count == 0) return;
 
         foreach (Room room in allRooms)
         {
-            // Pass the prop list, room size, and density to each room
             room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
         }
     }
 
-    // --- Helper Methods ---
     private Vector2Int GetOppositeDirectionVector(Direction dir)
     {
         if (dir == Direction.Top)    return Vector2Int.down;

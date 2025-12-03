@@ -39,6 +39,15 @@ public class PlayerAnimationController : MonoBehaviour
     {
         cam = Camera.main;
 
+        // --- FIX: Robust Camera Finding ---
+        // If the new camera isn't tagged "MainCamera", find it anyway.
+        if (cam == null)
+        {
+             // Updated to use the new API to fix the warning
+             cam = FindFirstObjectByType<Camera>();
+        }
+        // --- END FIX ---
+
         // Get references from other scripts
         if (playerMovement == null)
             playerMovement = GetComponent<PlayerMovement>();
@@ -78,7 +87,7 @@ public class PlayerAnimationController : MonoBehaviour
         // Don't aim while punching
         if (!isPunching)
         {
-            HandleArmAimingAndFlipping(); // Renamed for clarity
+            HandleArmAimingAndFlipping();
         }
         HandleLegBobbing();
     }
@@ -86,8 +95,11 @@ public class PlayerAnimationController : MonoBehaviour
     /// <summary>
     /// Aims the arms at the mouse and flips the player visual.
     /// </summary>
-    private void HandleArmAimingAndFlipping() // Renamed for clarity
+    private void HandleArmAimingAndFlipping()
     {
+        // Safety check for mouse
+        if (Mouse.current == null) return;
+
         // Get mouse position in world space
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
@@ -184,10 +196,8 @@ public class PlayerAnimationController : MonoBehaviour
     {
         isPunching = true;
         
-        // --- MODIFIED: Use the exact duration ---
         float halfDuration = duration / 2f;
         if (halfDuration < Time.deltaTime) halfDuration = Time.deltaTime; // Prevent zero-duration
-        // --- END MODIFICATION ---
 
         float timer = 0f;
 

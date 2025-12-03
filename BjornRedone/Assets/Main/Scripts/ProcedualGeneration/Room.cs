@@ -27,6 +27,10 @@ public class Room : MonoBehaviour
     [Tooltip("The 'Wall' GameObject that blocks the RIGHT door.")]
     public GameObject wallRight;
 
+    [Header("Environment Settings")]
+    [Tooltip("Distance from the room edge where props CANNOT spawn. Increase this if props are spawning in walls.")]
+    [SerializeField] private float wallPadding = 2.5f;
+
     [HideInInspector]
     public Vector2Int gridPos; // Set by the LevelGenerator
 
@@ -67,10 +71,9 @@ public class Room : MonoBehaviour
         int spawnAttempts = Mathf.RoundToInt(roomArea * density);
 
         // 2. Define the spawn boundaries (in local space)
-        // We add a padding so props don't spawn right on the walls
-        float padding = 1.0f; 
-        float halfWidth = (roomSize.x / 2f) - padding;
-        float halfHeight = (roomSize.y / 2f) - padding;
+        // --- FIXED: Use the customized wallPadding variable ---
+        float halfWidth = (roomSize.x / 2f) - wallPadding;
+        float halfHeight = (roomSize.y / 2f) - wallPadding;
 
         for (int i = 0; i < spawnAttempts; i++)
         {
