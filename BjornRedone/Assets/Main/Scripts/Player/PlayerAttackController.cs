@@ -160,7 +160,14 @@ public class PlayerAttackController : MonoBehaviour
 
         // Get mouse position safely
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
-        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
+
+        // --- FIX: Calculate depth for ScreenToWorldPoint ---
+        // This ensures aiming works even if the camera is Perspective or at a different Z depth
+        // We assume the game happens on Z=0 (where the player is usually located in 2D)
+        float depth = Mathf.Abs(cam.transform.position.z - transform.position.z);
+        Vector3 screenPosWithZ = new Vector3(mouseScreenPos.x, mouseScreenPos.y, depth);
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(screenPosWithZ);
+        // --- END FIX ---
 
         // Calculate direction
         Vector2 punchDirection = (mouseWorldPos - (Vector2)armTransform.position).normalized;
