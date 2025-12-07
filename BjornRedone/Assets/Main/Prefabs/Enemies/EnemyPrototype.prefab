@@ -461,18 +461,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00b9fbb9502f27f4283622cedea06bf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
-  detectionRadius: 3
+  detectionRadius: 3.5
+  hearingRadius: 6
   attackRange: 1
   roamRadius: 3
   baseMoveSpeed: 2
   baseDamage: 5
+  roamSpeedMult: 0.5
+  chaseSpeedMult: 1.4
+  turningSpeed: 5
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 1024
   avoidDistance: 0.4
+  bodyWidth: 0.5
   attackCooldown: 1
   minRoamWaitTime: 1
   maxRoamWaitTime: 4
+  investigateTime: 3
 --- !u!114 &6541777387533408052
 MonoBehaviour:
   m_ObjectHideFlags: 0

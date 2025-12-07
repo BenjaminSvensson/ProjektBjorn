@@ -172,8 +172,28 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
-      propertyPath: avoidDistance
-      value: 0.4
+      propertyPath: roamRadius
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: turningSpeed
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: roamSpeedMult
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: attackCooldown
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: chaseSpeedMult
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: minRoamWaitTime
+      value: 0.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -472,6 +492,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: hearingRadius
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
+      propertyPath: detectionRadius
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4709876423050380326, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
       propertyPath: obstacleLayer.m_Bits
       value: 1024
       objectReference: {fileID: 0}
@@ -654,27 +682,27 @@ MonoBehaviour:
   bossRoomPrefabs: []
   environmentProps:
   - prefab: {fileID: 7915102392887708610, guid: 8c4452de4dfd70346a334c909e57774c, type: 3}
-    spawnChance: 0.27
+    spawnChance: 0.22
     allowRandomFlip: 1
     minScale: 0.9
     maxScale: 1.1
   - prefab: {fileID: 7915102392887708610, guid: 44147058188998441851783776292ab1, type: 3}
-    spawnChance: 0.21
+    spawnChance: 0.2
     allowRandomFlip: 1
     minScale: 0.9
     maxScale: 1.1
   - prefab: {fileID: 7915102392887708610, guid: 0fd4499ea3384134d9f05aa05ce3953d, type: 3}
-    spawnChance: 0.13
+    spawnChance: 0.1
     allowRandomFlip: 1
     minScale: 0.9
     maxScale: 1.1
   - prefab: {fileID: 7845664515393865056, guid: 8cdaf7521d0e1164788d21f726fda281, type: 3}
-    spawnChance: 0.086
+    spawnChance: 0.06
     allowRandomFlip: 1
     minScale: 0.98
     maxScale: 1.02
   - prefab: {fileID: 6976051191219054279, guid: 1c4e8204d2bed644fa530e169b4e61df, type: 3}
-    spawnChance: 0.4
+    spawnChance: 0.2
     allowRandomFlip: 1
     minScale: 0.9
     maxScale: 1.1
@@ -723,7 +751,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -1.51
       objectReference: {fileID: 0}
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalPosition.y

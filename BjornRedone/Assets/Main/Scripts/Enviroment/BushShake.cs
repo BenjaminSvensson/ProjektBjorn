@@ -1,87 +1,107 @@
 using UnityEngine;
-using System.Collections; // We need this for Coroutines
+using System.Collections;
 
-/// <summary>
-/// Attach this to any bush (or similar object) that should shake and
-/// play a sound when the player walks through it.
-/// 
-/// REQUIRES:
-/// 1. A Collider2D set to "Is Trigger = true".
-/// 2. An AudioSource component.
-/// 3. (Recommended) A SortingGroup and DynamicYSorter.
-/// 4. The Player GameObject must have the tag "Player".
-/// </summary>
-[RequireComponent(typeof(Collider2D))]
-[RequireComponent(typeof(AudioSource))]
+[RequireComponent(typeof(SpriteRenderer))]
+[RequireComponent(typeof(Collider2D))] 
+[RequireComponent(typeof(AudioSource))] // --- NEW: Require AudioSource ---
 public class BushShake : MonoBehaviour
 {
     [Header("Shake Settings")]
-    [Tooltip("How long the shake effect should last.")]
     [SerializeField] private float shakeDuration = 0.5f;
-    [Tooltip("How fast the bush should wiggle back and forth.")]
-    [SerializeField] private float shakeSpeed = 50f;
-    [Tooltip("How far (in degrees) the bush should wiggle.")]
-    [SerializeField] private float shakeAngle = 5f;
-
-    [Header("Audio")]
-    [Tooltip("The 'rustle' sound to play when triggered.")]
-    [SerializeField] private AudioClip shakeSound;
-    private AudioSource audioSource;
-
-    [Header("Trigger Settings")]
-    [Tooltip("The tag of the object that triggers the shake (e.g., 'Player').")]
-    [SerializeField] private string triggerTag = "Player";
+    [SerializeField] private float shakeMagnitude = 0.1f;
     
-    // --- Private State ---
-    private bool isShaking = false;
-    private Quaternion originalRotation;
+    [Header("Noise Settings")]
+    [SerializeField] private float noiseRadius = 8f;
+    [SerializeField] private LayerMask enemyLayer;
 
+    // --- NEW: Audio Settings ---
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip rustleSound;
+    [SerializeField] private float minPitch = 0.8f;
+    [SerializeField] private float maxPitch = 1.2f;
+    // --- END NEW ---
+
+    private Transform visualTransform;
+    private bool isShaking = false;
+    private AudioSource audioSource; // --- NEW: Reference ---
+
+    // --- FIX: Use Awake instead of Start ---
+    // Awake runs immediately upon creation, BEFORE collision events.
     void Awake()
     {
-        // Get the AudioSource component on this GameObject
-        audioSource = GetComponent<AudioSource>();
-        // Store our starting rotation so we can return to it
-        originalRotation = transform.localRotation;
+        visualTransform = transform;
+        audioSource = GetComponent<AudioSource>(); // --- NEW: Get Component ---
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Check if the object that entered is the player AND we're not already shaking
-        if (other.CompareTag(triggerTag) && !isShaking)
+        if (!isShaking && (other.CompareTag("Player") || other.GetComponent<EnemyAI>() != null))
         {
-            // Start the shake
-            StartCoroutine(ShakeCoroutine());
+            PlayRustleSound(); // --- NEW: Play Sound ---
+            StartCoroutine(ShakeRoutine());
+        }
+
+        if (other.CompareTag("Player"))
+        {
+            AlertEnemies();
         }
     }
 
-    private IEnumerator ShakeCoroutine()
+    // --- NEW: Audio Helper ---
+    private void PlayRustleSound()
+    {
+        if (audioSource != null && rustleSound != null)
+        {
+            audioSource.pitch = Random.Range(minPitch, maxPitch);
+            audioSource.PlayOneShot(rustleSound);
+        }
+    }
+    // --- END NEW ---
+
+    private void AlertEnemies()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, noiseRadius, enemyLayer);
+        
+        foreach (var hit in hits)
+        {
+            EnemyAI ai = hit.GetComponent<EnemyAI>();
+            if (ai != null)
+            {
+                ai.OnHearNoise(transform.position);
+            }
+        }
+    }
+
+    private IEnumerator ShakeRoutine()
     {
         isShaking = true;
+        
+        // --- FIX: Capture position right now ---
+        // This ensures we shake around the correct spot, even if the generator 
+        // moved the bush after Awake but before this Trigger.
+        Vector3 startPos = visualTransform.localPosition;
+        
         float elapsed = 0f;
 
-        // Play the sound (if one is assigned)
-        if (shakeSound != null)
-        {
-            audioSource.PlayOneShot(shakeSound);
-        }
-
-        // Loop for the duration of the shake
         while (elapsed < shakeDuration)
         {
-            // We use a Sine wave to create a smooth, rapid back-and-forth wiggle.
-            // Time.time * shakeSpeed makes it fast.
-            // shakeAngle determines how far it wiggles.
-            float zAngle = Mathf.Sin(Time.time * shakeSpeed) * shakeAngle;
+            float x = Random.Range(-1f, 1f) * shakeMagnitude;
+            float y = Random.Range(-1f, 1f) * shakeMagnitude;
             
-            // Apply this wiggle to our original rotation
-            transform.localRotation = originalRotation * Quaternion.Euler(0, 0, zAngle);
-            
+            // Apply offset relative to the startPos we captured
+            visualTransform.localPosition = startPos + new Vector3(x, y, 0);
+
             elapsed += Time.deltaTime;
-            yield return null; // Wait for the next frame
+            yield return null;
         }
-        
-        // Reset to the original rotation when done
-        transform.localRotation = originalRotation;
+
+        visualTransform.localPosition = startPos;
         isShaking = false;
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, noiseRadius);
     }
 }
