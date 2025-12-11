@@ -66,5 +66,8 @@
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj"
     },
-    "dotnet.defaultSolution": "BjornRedone.slnx"
+    "dotnet.defaultSolution": "BjornRedone.slnx",
+    "vscode-pets.theme": "winter",
+    "vscode-pets.petSize": "medium",
+    "vscode-pets.throwBallWithMouse": true
 }
