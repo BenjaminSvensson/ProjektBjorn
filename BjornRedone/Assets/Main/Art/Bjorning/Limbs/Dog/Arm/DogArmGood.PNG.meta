@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 18735c741c31db7479d7903026c3f9a0
+guid: cb9afa6313d31664d8a46a5aa98245cd
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 1633630543421584206
-    second: Group 20_0
+      213: -3715454536789496533
+    second: image2 - kopia.png (1)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Group 20_0
+      name: image2 - kopia.png (1)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 446
-        height: 202
+        width: 97
+        height: 51
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e433fdae252dba610800000000000000
-      internalID: 1633630543421584206
+      spriteID: b2d6c8bb8cd007cc0800000000000000
+      internalID: -3715454536789496533
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Group 20_0: 1633630543421584206
+      image2 - kopia.png (1)_0: -3715454536789496533
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
