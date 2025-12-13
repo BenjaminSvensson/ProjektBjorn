@@ -12,7 +12,7 @@ public class PlayerAttackController : MonoBehaviour
     [SerializeField] private PlayerAnimationController animController;
 
     [Header("Attack Settings")]
-    [Tooltip("The layer(s) that can be hit by a punch.")]
+    [Tooltip("The layer(s) that can be hit by a punch. MAKE SURE ENEMIES ARE ON THIS LAYER.")]
     [SerializeField] private LayerMask hittableLayers;
     
     [Header("Audio")]
@@ -26,6 +26,10 @@ public class PlayerAttackController : MonoBehaviour
     private float attackCooldownTimer = 0f;
     private Camera cam;
 
+    // --- OPTIMIZATION: Physics Buffer ---
+    // We allocate this once to reuse memory, preventing lag spikes during combat.
+    private Collider2D[] hitBuffer = new Collider2D[10]; 
+
     void Awake()
     {
         playerControls = new InputSystem_Actions();
@@ -35,7 +39,6 @@ public class PlayerAttackController : MonoBehaviour
         if (cam == null)
         {
             // Try to find ANY camera if MainCamera tag is missing
-            // Updated to use the new API to fix the warning
             cam = FindFirstObjectByType<Camera>();
             if (cam == null)
             {
@@ -145,29 +148,25 @@ public class PlayerAttackController : MonoBehaviour
         }
         if (Mouse.current == null)
         {
-            // This happens if no mouse is detected (e.g. only gamepad connected)
             return; 
         }
-        // --- END FIX ---
 
         float damage = limbController.baseAttackDamage + armData.attackDamageBonus;
         float reach = armData.attackReach;
         float radius = armData.impactSize;
         float duration = armData.punchDuration;
         float cooldown = armData.attackCooldown;
-        
+        float knockback = armData.knockbackForce; // Get knockback from LimbData
+
         attackCooldownTimer = cooldown;
 
         // Get mouse position safely
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
 
-        // --- FIX: Calculate depth for ScreenToWorldPoint ---
-        // This ensures aiming works even if the camera is Perspective or at a different Z depth
-        // We assume the game happens on Z=0 (where the player is usually located in 2D)
+        // --- Calculate depth for ScreenToWorldPoint ---
         float depth = Mathf.Abs(cam.transform.position.z - transform.position.z);
         Vector3 screenPosWithZ = new Vector3(mouseScreenPos.x, mouseScreenPos.y, depth);
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(screenPosWithZ);
-        // --- END FIX ---
 
         // Calculate direction
         Vector2 punchDirection = (mouseWorldPos - (Vector2)armTransform.position).normalized;
@@ -186,17 +185,30 @@ public class PlayerAttackController : MonoBehaviour
             animController.TriggerPunch(armTransform, duration, hitPosition);
         }
 
-        // Deal Damage
-        Collider2D[] hits = Physics2D.OverlapCircleAll(hitPosition, radius, hittableLayers);
+        // --- DEAL DAMAGE (FIXED) ---
+        // We use OverlapCircleNonAlloc for performance (no garbage generation)
+        int hitCount = Physics2D.OverlapCircleNonAlloc(hitPosition, radius, hitBuffer, hittableLayers);
 
-        foreach (Collider2D hit in hits)
+        for (int i = 0; i < hitCount; i++)
         {
-            // Example damage logic:
-            // if (hit.TryGetComponent<EnemyHealth>(out EnemyHealth enemy))
-            // {
-            //     enemy.TakeDamage(damage);
-            // }
-            Debug.Log($"Hit: {hit.name}");
+            Collider2D hit = hitBuffer[i];
+            
+            // 1. Check for EnemyLimbController
+            if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
+            {
+                enemy.TakeDamage(damage);
+
+                // --- APPLY KNOCKBACK ---
+                if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D enemyRb))
+                {
+                    // Reset velocity slightly to ensure crisp knockback even if they were moving towards us
+                    enemyRb.linearVelocity = Vector2.zero; 
+                    enemyRb.AddForce(punchDirection * knockback, ForceMode2D.Impulse);
+                }
+
+                Debug.Log($"Hit Enemy {hit.name} for {damage} damage!");
+            }
+            // 2. Optional: Add logic here for breakable crates, etc.
         }
     }
 }

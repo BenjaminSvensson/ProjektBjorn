@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Create assets from this (e.g., "Goblin Arm", "Skeleton Leg")
-// Right-click in Project view -> Create -> Rogalike/Limb Data
+// Right-click in Project view -> Create -> Roguelike/Limb Data
 [CreateAssetMenu(fileName = "NewLimbData", menuName = "Roguelike/Limb Data")]
 public class LimbData : ScriptableObject
 {
@@ -38,6 +38,8 @@ public class LimbData : ScriptableObject
     public float attackReach = 0.5f;
     [Tooltip("The radius of the punch impact. ONLY APPLIES TO ARMS.")]
     public float impactSize = 0.3f;
+    [Tooltip("The force applied to enemies when hit. ONLY APPLIES TO ARMS.")]
+    public float knockbackForce = 5f;
 
     [Header("Head Stats")]
     [Tooltip("Bonus added to player's max health (mostly for Head/Torso).")]

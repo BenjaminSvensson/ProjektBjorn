@@ -46,18 +46,13 @@ public class EnemyLimbController : MonoBehaviour
     // Components
     private AudioSource audioSource;
     private List<SpriteRenderer> renderers = new List<SpriteRenderer>();
-    // We remove the AI reference here to avoid circular dependencies in Awake, 
-    // AI will read from this script instead.
 
     void Start()
     {
         currentHealth = maxHealth;
         audioSource = GetComponent<AudioSource>();
 
-        // Find all renderers for flashing
-        GetComponentsInChildren<SpriteRenderer>(renderers);
-
-        // Equip starting limbs
+        // Equip starting limbs FIRST
         if (startingHead) AttachLimb(startingHead, LimbSlot.Head);
         if (startingLeftArm) AttachLimb(startingLeftArm, LimbSlot.LeftArm);
         if (startingRightArm) AttachLimb(startingRightArm, LimbSlot.RightArm);
@@ -65,6 +60,9 @@ public class EnemyLimbController : MonoBehaviour
         if (startingRightLeg) AttachLimb(startingRightLeg, LimbSlot.RightLeg);
         
         UpdateStats();
+
+        // NOW find all renderers, so we include the newly spawned limbs in the flash effect
+        GetComponentsInChildren<SpriteRenderer>(renderers);
     }
 
     public void TakeDamage(float amount)
@@ -130,6 +128,13 @@ public class EnemyLimbController : MonoBehaviour
             // Fling it away
             Vector2 flingDir = Random.insideUnitCircle.normalized;
             pickupScript.InitializeThrow(limbToRemove.GetLimbData(), true, flingDir);
+
+            // Important: Remove its renderer from our list so we don't try to flash a destroyed object
+            SpriteRenderer[] limbRenderers = limbToRemove.GetComponentsInChildren<SpriteRenderer>();
+            foreach(var sr in limbRenderers)
+            {
+                if(renderers.Contains(sr)) renderers.Remove(sr);
+            }
 
             Destroy(limbToRemove.gameObject);
             UpdateStats();
@@ -201,9 +206,20 @@ public class EnemyLimbController : MonoBehaviour
 
     private IEnumerator FlashDamage()
     {
-        foreach (var sr in renderers) if (sr) sr.color = damageFlashColor;
+        // Filter out nulls just in case a limb was destroyed mid-frame
+        for (int i = renderers.Count - 1; i >= 0; i--)
+        {
+            if (renderers[i] == null) renderers.RemoveAt(i);
+            else renderers[i].color = damageFlashColor;
+        }
+        
         yield return new WaitForSeconds(0.1f);
-        foreach (var sr in renderers) if (sr) sr.color = Color.white;
+        
+        for (int i = renderers.Count - 1; i >= 0; i--)
+        {
+            if (renderers[i] == null) renderers.RemoveAt(i);
+            else renderers[i].color = Color.white;
+        }
     }
     
     // --- Public Helpers for AI & Animation ---

@@ -23,4 +23,5 @@ MonoBehaviour:
   attackCooldown: 1
   attackReach: 0.7
   impactSize: 2
+  knockbackForce: 8
   healthBonus: 2
