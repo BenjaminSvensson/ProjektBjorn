@@ -10,20 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
-  m_Name: Knife
+  m_Name: Hammer
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  weaponName: Knife
-  icon: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
-  pickupPrefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
-  heldSprite: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
-  heldScale: {x: 1, y: 1, z: 1}
+  weaponName: Hammer
+  icon: {fileID: 6741607474328365339, guid: 39f166cb248644843b3e25f591a93b03, type: 3}
+  pickupPrefab: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+  heldSprite: {fileID: 6741607474328365339, guid: 39f166cb248644843b3e25f591a93b03, type: 3}
+  heldScale: {x: 1.3, y: 1.3, z: 11.3}
   type: 0
-  attackStyle: 0
-  meleeDamageBonus: 5
-  meleeImpactSounds:
-  - {fileID: 8300000, guid: 9d7ab24ac4a239c46aaab65c648f133b, type: 3}
-  attackSpeedMultiplier: 1.2
-  knockbackMultiplier: 0.5
+  attackStyle: 1
+  meleeDamageBonus: 10
+  meleeImpactSounds: []
+  attackSpeedMultiplier: 0.4
+  knockbackMultiplier: 1
   swingArc: 90
   projectilePrefab: {fileID: 0}
   fireRate: 0.2

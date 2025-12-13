@@ -5,13 +5,25 @@ using UnityEngine.InputSystem;
 public class WeaponSystem : MonoBehaviour
 {
     [Header("State")]
-    [SerializeField] private WeaponData[] weaponSlots = new WeaponData[2]; // Slot 0 and Slot 1
+    [SerializeField] private WeaponData[] weaponSlots = new WeaponData[2]; 
     [SerializeField] private int activeSlotIndex = 0;
 
     [Header("References")]
-    [SerializeField] private WeaponHUD weaponHUD; // Assign this in Inspector!
-    
+    [SerializeField] private WeaponHUD weaponHUD; 
+    [SerializeField] private SpriteRenderer heldWeaponRenderer;
+
+    [Header("Main Hand Grip")]
+    [Tooltip("The local point on the Right Arm sprite where the weapon attaches.")]
+    [SerializeField] private Vector3 rightHandGripOffset = new Vector3(0.3f, 0f, 0f);
+    [Tooltip("The local point on the Left Arm sprite where the weapon attaches.")]
+    [SerializeField] private Vector3 leftHandGripOffset = new Vector3(0.3f, 0f, 0f);
+
+    [Header("Off-Hand Grip")]
+    [Tooltip("Where the second hand should hold the weapon (Local to the Weapon Sprite).")]
+    [SerializeField] private Vector3 secondaryGripOffset = new Vector3(-0.3f, 0f, 0f);
+
     private PlayerLimbController limbController;
+    private bool isHoldingWithRightHand = false; 
 
     void Awake()
     {
@@ -20,9 +32,7 @@ public class WeaponSystem : MonoBehaviour
 
     void Start()
     {
-        // Force the UI to refresh immediately on start
-        // This fixes the bug where both slots look active initially
-        UpdateUI();
+        UpdateState();
     }
 
     void Update()
@@ -31,23 +41,16 @@ public class WeaponSystem : MonoBehaviour
         CheckArmStatus();
     }
 
+    void LateUpdate()
+    {
+        UpdateWeaponTransform();
+    }
+
     private void HandleInput()
     {
-        // Safety check for Keyboard
         if (Keyboard.current == null) return;
-
-        // Keyboard: 1 and 2 to switch slots
-        if (Keyboard.current.digit1Key.wasPressedThisFrame)
-        {
-            SetActiveSlot(0);
-        }
-        if (Keyboard.current.digit2Key.wasPressedThisFrame)
-        {
-            SetActiveSlot(1);
-        }
-
-        // Optional: Scroll wheel to switch
-        // Note: ReadValue returns a float, typically +/- 120 per notch
+        if (Keyboard.current.digit1Key.wasPressedThisFrame) SetActiveSlot(0);
+        if (Keyboard.current.digit2Key.wasPressedThisFrame) SetActiveSlot(1);
         if (Mouse.current != null)
         {
             float scroll = Mouse.current.scroll.y.ReadValue();
@@ -59,23 +62,17 @@ public class WeaponSystem : MonoBehaviour
     private void SetActiveSlot(int index)
     {
         if (index < 0 || index >= weaponSlots.Length) return;
-        
-        // Don't update if we are already on this slot (optimization)
         if (activeSlotIndex == index) return;
-
         activeSlotIndex = index;
-        UpdateUI();
+        UpdateState();
     }
 
-    // Called automatically in Update
     private void CheckArmStatus()
     {
-        // Rule: If player has NO arms, they cannot hold weapons.
         if (limbController != null && !limbController.CanAttack())
         {
             if (HasAnyWeapon())
             {
-                // Force drop everything if we lost our arms
                 DropWeapon(0);
                 DropWeapon(1);
             }
@@ -86,30 +83,31 @@ public class WeaponSystem : MonoBehaviour
     {
         return weaponSlots[0] != null || weaponSlots[1] != null;
     }
+    
+    public bool IsHoldingWeapon()
+    {
+        return weaponSlots[activeSlotIndex] != null;
+    }
+
+    public WeaponData GetActiveWeapon()
+    {
+        return weaponSlots[activeSlotIndex];
+    }
+
+    public bool IsHoldingWithRightHand()
+    {
+        return isHoldingWithRightHand;
+    }
 
     public bool TryPickupWeapon(WeaponData newData)
     {
         if (newData == null) return false;
+        if (limbController != null && !limbController.CanAttack()) return false;
 
-        // 1. Check if we have arms to hold it
-        if (limbController != null && !limbController.CanAttack())
-        {
-            Debug.Log("Cannot pick up weapon: No arms!");
-            return false;
-        }
+        if (weaponSlots[activeSlotIndex] != null) DropWeapon(activeSlotIndex);
 
-        // 2. Logic: Pickup into CURRENT slot.
-        // If current slot has a weapon, DROP it first (Swap).
-        if (weaponSlots[activeSlotIndex] != null)
-        {
-            DropWeapon(activeSlotIndex);
-        }
-
-        // 3. Equip new weapon
         weaponSlots[activeSlotIndex] = newData;
-        Debug.Log($"Picked up {newData.weaponName} into Slot {activeSlotIndex + 1}");
-        
-        UpdateUI();
+        UpdateState();
         return true;
     }
 
@@ -120,38 +118,101 @@ public class WeaponSystem : MonoBehaviour
         WeaponData weaponToDrop = weaponSlots[slotIndex];
         if (weaponToDrop == null) return;
 
-        // 1. Remove from inventory
         weaponSlots[slotIndex] = null;
 
-        // 2. Spawn in world
         if (weaponToDrop.pickupPrefab != null)
         {
             GameObject drop = Instantiate(weaponToDrop.pickupPrefab, transform.position, Quaternion.identity);
-            
-            // Try to find the pickup script to initialize physics
-            // Note: We use SendMessage or TryGetComponent depending on your setup
-            // For now, let's assume standard instantiation is enough, or use WeaponPickup if available
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
             if (pickupScript != null)
             {
-                // Throw it in a random direction
                 Vector2 randomDir = Random.insideUnitCircle.normalized;
                 pickupScript.InitializeDrop(randomDir);
             }
         }
-
-        UpdateUI();
-    }
-
-    private void UpdateUI()
-    {
-        if (weaponHUD != null)
-        {
-            weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
-        }
         else
         {
-            Debug.LogWarning("WeaponSystem: Weapon HUD reference is missing! Assign it in Inspector.");
+            Debug.LogWarning($"Dropped weapon '{weaponToDrop.weaponName}' but no Pickup Prefab was assigned!");
         }
+
+        UpdateState();
+    }
+
+    private void UpdateState()
+    {
+        if (weaponHUD != null) weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
+        
+        WeaponData activeWeapon = weaponSlots[activeSlotIndex];
+        if (heldWeaponRenderer != null)
+        {
+            if (activeWeapon != null && activeWeapon.heldSprite != null)
+            {
+                heldWeaponRenderer.sprite = activeWeapon.heldSprite;
+                heldWeaponRenderer.enabled = true;
+            }
+            else
+            {
+                heldWeaponRenderer.sprite = null;
+                heldWeaponRenderer.enabled = false;
+            }
+        }
+    }
+
+    private void UpdateWeaponTransform()
+    {
+        if (heldWeaponRenderer == null || !heldWeaponRenderer.enabled || limbController == null) return;
+
+        Transform mainAnchor = null;
+        Vector3 gripOffset = Vector3.zero;
+
+        // 1. Determine Main Hand (Holding the weapon)
+        if (limbController.GetArmData(false) != null) // Right
+        {
+            mainAnchor = limbController.GetRightArmSlot();
+            gripOffset = rightHandGripOffset;
+            isHoldingWithRightHand = true;
+        }
+        else if (limbController.GetArmData(true) != null) // Left
+        {
+            mainAnchor = limbController.GetLeftArmSlot();
+            gripOffset = leftHandGripOffset;
+            isHoldingWithRightHand = false;
+        }
+
+        // 2. Position Weapon on Main Hand
+        if (mainAnchor != null)
+        {
+            heldWeaponRenderer.transform.position = mainAnchor.TransformPoint(gripOffset);
+            heldWeaponRenderer.transform.rotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
+            
+            WeaponData activeWeapon = weaponSlots[activeSlotIndex];
+            if (activeWeapon != null)
+                heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
+
+            // 3. Position Off-Hand on Weapon (Inverse Kinematics-ish)
+            // If we are holding with Right, check if Left exists and snap it to weapon
+            if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
+            {
+                Transform offHand = limbController.GetLeftArmSlot();
+                SnapOffHand(offHand, heldWeaponRenderer.transform);
+            }
+            // If we are holding with Left, check if Right exists and snap it
+            else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
+            {
+                Transform offHand = limbController.GetRightArmSlot();
+                SnapOffHand(offHand, heldWeaponRenderer.transform);
+            }
+        }
+    }
+
+    private void SnapOffHand(Transform hand, Transform weaponTransform)
+    {
+        if (hand == null) return;
+        
+        // Position: Weapon Position + Local Offset transformed to world
+        hand.position = weaponTransform.TransformPoint(secondaryGripOffset);
+        
+        // Rotation: Match weapon rotation (flipped 180 because arms usually point down/in)
+        hand.rotation = weaponTransform.rotation * Quaternion.Euler(0, 0, 180f);
     }
 }
