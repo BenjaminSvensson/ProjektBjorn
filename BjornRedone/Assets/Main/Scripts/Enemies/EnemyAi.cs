@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyAnimationController))]
 public class EnemyAI : MonoBehaviour
 {
-    private enum State { Roam, Chase, Attack, Investigate }
+    private enum State { Roam, Chase, Attack, Investigate, Scavenge } // --- NEW State
 
     [Header("AI Settings")]
     public float detectionRadius = 5f;
@@ -15,6 +15,10 @@ public class EnemyAI : MonoBehaviour
     public float roamRadius = 3f;
     public float baseMoveSpeed = 2f;
     public float baseDamage = 5f;
+
+    [Header("Scavenging")] // --- NEW ---
+    [SerializeField] private float scavengeRadius = 6f;
+    [SerializeField] private float scavengeScanInterval = 1.0f; // How often to look for limbs
 
     [Header("Speed Multipliers")]
     [SerializeField] private float roamSpeedMult = 0.5f;
@@ -27,18 +31,14 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float bodyWidth = 0.5f;
 
     [Header("Stuck Detection")] 
-    [Tooltip("How often (in seconds) to check if we haven't moved.")]
     [SerializeField] private float stuckCheckInterval = 0.5f;
-    [Tooltip("If we moved less than this distance in the interval, we are stuck.")]
     [SerializeField] private float stuckThreshold = 0.1f;
-    [Tooltip("How long to force a random direction when stuck.")]
     [SerializeField] private float unstuckDuration = 1.0f;
 
     [Header("Timers")]
     public float attackCooldown = 1.5f;
     public float minRoamWaitTime = 1f;
     public float maxRoamWaitTime = 4f;
-    [Tooltip("How long the enemy stays suspicious after losing sight/reaching noise.")]
     public float investigateTime = 3f;
 
     // References
@@ -46,7 +46,7 @@ public class EnemyAI : MonoBehaviour
     private Rigidbody2D rb;
     private EnemyLimbController body;
     private EnemyAnimationController anim;
-    private Vector2 startPos; // The anchor point for roaming
+    private Vector2 startPos;
     
     // State
     private State currentState;
@@ -55,6 +55,10 @@ public class EnemyAI : MonoBehaviour
     private float stateTimer;
     private float attackTimer;
     private Vector3 originalScale;
+
+    // Scavenge State
+    private WorldLimb targetLimb;
+    private float scavengeScanTimer = 0f;
 
     // Avoidance State
     private float avoidanceCommitTimer = 0f;
@@ -67,7 +71,7 @@ public class EnemyAI : MonoBehaviour
     private Vector2 unstuckDir;
     private float forcingUnstuckTimer;
 
-    // --- NEW: Trapped State ---
+    // Trapped State
     private bool isTrapped = false;
 
     void Start()
@@ -79,7 +83,6 @@ public class EnemyAI : MonoBehaviour
         startPos = transform.position;
         originalScale = transform.localScale;
         
-        // Initialize lastKnownPlayerPos to prevent running to (0,0) on spawn
         lastKnownPlayerPos = transform.position;
         
         rb.freezeRotation = true; 
@@ -88,7 +91,6 @@ public class EnemyAI : MonoBehaviour
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p) player = p.transform;
 
-        // Initialize stuck check
         positionAtLastCheck = transform.position;
         stuckTimer = stuckCheckInterval;
 
@@ -99,26 +101,21 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null) return;
 
-        // --- NEW: Trapped Check ---
-        // If trapped, stop all movement immediately.
         if (isTrapped)
         {
             rb.linearVelocity = Vector2.zero;
             return;
         }
-        // --------------------------
 
-        // --- Stuck Detection Logic ---
         HandleStuckDetection();
 
-        // If we are forcing an unstuck maneuver, override normal logic
         if (isForcingUnstuck)
         {
             LogicUnstuck();
             return;
         }
 
-        // --- Normal Logic ---
+        // --- State Machine ---
         switch (currentState)
         {
             case State.Roam:
@@ -133,32 +130,119 @@ public class EnemyAI : MonoBehaviour
             case State.Investigate:
                 LogicInvestigate();
                 break;
+            case State.Scavenge: // --- NEW
+                LogicScavenge();
+                break;
         }
 
         // Cooldowns
         if (attackTimer > 0) attackTimer -= Time.deltaTime;
         if (avoidanceCommitTimer > 0) avoidanceCommitTimer -= Time.deltaTime;
+        if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
     }
 
-    // --- Stuck Detection Helper ---
+    // --- NEW: Scavenge Logic ---
+    void LogicScavenge()
+    {
+        // 1. Check if limb still exists (Player or other enemy might have taken it)
+        if (targetLimb == null)
+        {
+            PickNewRoamTarget();
+            return;
+        }
+
+        // 2. Check if we still see Player (Self-Preservation override)
+        if (CanSeePlayer())
+        {
+            currentState = State.Chase;
+            return;
+        }
+
+        // 3. Move towards limb
+        float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
+        if (!body.hasLegs) speed *= 0.3f; // Desperate crawl
+
+        MoveTowards(targetLimb.transform.position, speed);
+
+        // 4. Pickup Logic
+        float dist = Vector2.Distance(transform.position, targetLimb.transform.position);
+        if (dist < 0.8f) // Close enough to grab
+        {
+            bool attached = body.TryAttachLimb(targetLimb.GetLimbData(), targetLimb.IsShowingDamaged());
+            if (attached)
+            {
+                Destroy(targetLimb.gameObject);
+                Debug.Log("Enemy successfully scavenged a limb!");
+            }
+            // Done scavenging, go back to roaming
+            PickNewRoamTarget();
+        }
+    }
+
+    void ScanForLimbs()
+    {
+        if (scavengeScanTimer > 0) return;
+        scavengeScanTimer = scavengeScanInterval;
+
+        // Only scan if we actually need something
+        bool needArm = body.IsMissingArm();
+        bool needLeg = body.IsMissingLeg();
+
+        if (!needArm && !needLeg) return;
+
+        // Find limbs
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, scavengeRadius);
+        float closestDist = float.MaxValue;
+        WorldLimb bestCandidate = null;
+
+        foreach (var hit in hits)
+        {
+            // Check if it is a limb pickup
+            if (hit.CompareTag("LimbPickup")) 
+            {
+                WorldLimb limb = hit.GetComponent<WorldLimb>();
+                if (limb != null && limb.CanPickup())
+                {
+                    LimbType type = limb.GetLimbData().limbType;
+                    
+                    // Do we need this specific type?
+                    if ((type == LimbType.Arm && needArm) || (type == LimbType.Leg && needLeg))
+                    {
+                        // Can we see it? (Don't walk through walls for limbs)
+                        if (CanSeeObject(hit.transform.position))
+                        {
+                            float d = Vector2.Distance(transform.position, hit.transform.position);
+                            if (d < closestDist)
+                            {
+                                closestDist = d;
+                                bestCandidate = limb;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestCandidate != null)
+        {
+            targetLimb = bestCandidate;
+            currentState = State.Scavenge;
+        }
+    }
+    // ---------------------------
+
     void HandleStuckDetection()
     {
-        // Don't check if we are attacking (standing still is normal) 
-        // or already unstuck-ing.
         if (currentState == State.Attack || isForcingUnstuck) return;
 
         stuckTimer -= Time.deltaTime;
         if (stuckTimer <= 0)
         {
             float distMoved = Vector2.Distance(transform.position, positionAtLastCheck);
-            
-            // If we barely moved but we were trying to move...
             if (distMoved < stuckThreshold && rb.linearVelocity.magnitude > 0.1f)
             {
                 StartUnstuck();
             }
-
-            // Reset
             stuckTimer = stuckCheckInterval;
             positionAtLastCheck = transform.position;
         }
@@ -168,14 +252,11 @@ public class EnemyAI : MonoBehaviour
     {
         isForcingUnstuck = true;
         forcingUnstuckTimer = unstuckDuration;
-        
-        // Pick a random direction (simple but effective for wiggling out of corners)
         unstuckDir = Random.insideUnitCircle.normalized;
     }
 
     void LogicUnstuck()
     {
-        // Just move in the random direction, ignoring avoidance/targets
         float speed = baseMoveSpeed + body.moveSpeedBonus;
         rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, unstuckDir * speed, turningSpeed * Time.fixedDeltaTime);
         
@@ -183,14 +264,12 @@ public class EnemyAI : MonoBehaviour
         if (forcingUnstuckTimer <= 0)
         {
             isForcingUnstuck = false;
-            // Also pick a new roam target if we were roaming, just in case the old one was bad
             if (currentState == State.Roam) PickNewRoamTarget();
         }
     }
 
     void LogicRoam()
     {
-        // --- Editor Drag / Teleport Detection ---
         float distFromHome = Vector2.Distance(transform.position, startPos);
         if (distFromHome > roamRadius * 2.5f) 
         {
@@ -203,6 +282,11 @@ public class EnemyAI : MonoBehaviour
             currentState = State.Chase;
             return;
         }
+
+        // --- NEW: Scan for limbs while roaming ---
+        ScanForLimbs();
+        if (currentState == State.Scavenge) return; // Switched state? exit.
+        // -----------------------------------------
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * roamSpeedMult;
         if (!body.hasLegs) speed *= 0.2f;
@@ -224,7 +308,6 @@ public class EnemyAI : MonoBehaviour
         if (CanSeePlayer())
         {
             lastKnownPlayerPos = player.position;
-            
             if (distToPlayer < attackRange)
             {
                 currentState = State.Attack;
@@ -272,6 +355,11 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        // --- NEW: Scan for limbs while investigating ---
+        ScanForLimbs();
+        if (currentState == State.Scavenge) return;
+        // -----------------------------------------------
+
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult; 
         if (!body.hasLegs) speed *= 0.3f;
 
@@ -284,7 +372,6 @@ public class EnemyAI : MonoBehaviour
 
             if (stateTimer <= 0)
             {
-                // Update StartPos if we've traveled far to prevent backtracking
                 startPos = transform.position;
                 PickNewRoamTarget();
             }
@@ -301,14 +388,20 @@ public class EnemyAI : MonoBehaviour
         currentState = State.Investigate;
     }
 
-    private bool CanSeePlayer()
+    // Generic visibility check (used for Player AND Limbs)
+    private bool CanSeeObject(Vector2 targetPos)
     {
-        float dist = Vector2.Distance(transform.position, player.position);
+        float dist = Vector2.Distance(transform.position, targetPos);
         if (dist > detectionRadius) return false;
 
-        Vector2 dirToPlayer = (player.position - transform.position).normalized;
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, dirToPlayer, dist, obstacleLayer);
+        Vector2 dirToTarget = (targetPos - (Vector2)transform.position).normalized;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, dirToTarget, dist, obstacleLayer);
         return hit.collider == null;
+    }
+
+    private bool CanSeePlayer()
+    {
+        return CanSeeObject(player.position);
     }
 
     void PerformAttack()
@@ -317,7 +410,6 @@ public class EnemyAI : MonoBehaviour
 
         LimbData weapon = body.GetActiveWeaponLimb();
         float damage = baseDamage + body.attackDamageBonus;
-        
         float punchDuration = weapon != null ? weapon.punchDuration : 0.2f;
         anim.TriggerPunch((Vector2)player.position, punchDuration);
         
@@ -345,14 +437,11 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            // Use CircleCastAll to ensure we don't accidentally hit our own collider 
-            // and think we are blocked, which causes erratic movement.
             RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, bodyWidth / 2f, desiredDir, avoidDistance, obstacleLayer);
             bool obstacleDetected = false;
 
             foreach(var hit in hits)
             {
-                // If we hit something that IS NOT ME, it's an obstacle
                 if(hit.collider != null && hit.collider.gameObject != gameObject)
                 {
                     obstacleDetected = true;
@@ -392,9 +481,7 @@ public class EnemyAI : MonoBehaviour
 
     void PickNewRoamTarget()
     {
-        // Update startPos to current position to prevent backtracking to spawn
         startPos = transform.position;
-
         Vector2 randomPoint = Random.insideUnitCircle * roamRadius;
         Vector2 potentialTarget = startPos + randomPoint;
 
@@ -407,14 +494,10 @@ public class EnemyAI : MonoBehaviour
         stateTimer = Random.Range(minRoamWaitTime, maxRoamWaitTime);
     }
 
-    // --- NEW: Set Trapped State (called by DamageSource) ---
     public void SetTrapped(bool trapped)
     {
         isTrapped = trapped;
-        if (isTrapped)
-        {
-            rb.linearVelocity = Vector2.zero;
-        }
+        if (isTrapped) rb.linearVelocity = Vector2.zero;
     }
 
     void OnDrawGizmosSelected()
@@ -430,8 +513,12 @@ public class EnemyAI : MonoBehaviour
             Gizmos.DrawLine(transform.position, moveTarget);
             Gizmos.DrawWireSphere(moveTarget, 0.5f);
         }
+        else if (currentState == State.Scavenge && targetLimb != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawLine(transform.position, targetLimb.transform.position);
+        }
         
-        // Visualize the Home Base
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(startPos, 0.2f);
     }

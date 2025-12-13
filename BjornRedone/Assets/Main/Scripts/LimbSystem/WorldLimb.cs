@@ -27,10 +27,9 @@ public class WorldLimb : MonoBehaviour, IInteractable
     [Header("Physics Settings")]
     [SerializeField] private float throwForce = 5f;
     [SerializeField] private float pickupDespawnTime = 10f;
-    // --- NEW VARIABLE ---
+    
     [Tooltip("Time in seconds after being thrown before the limb can be picked up.")]
     [SerializeField] private float pickupDelay = 1.0f;
-    // --- END NEW VARIABLE ---
 
     // --- State ---
     private enum State { Idle, Attached, Thrown, Pickup }
@@ -132,18 +131,39 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (ySorter) ySorter.enabled = false;
     }
 
-    public void InitializeThrow(LimbData data, bool maintained, Vector2 direction)
+    // --- MODIFIED: Added optional isDamaged parameter ---
+    public void InitializeThrow(LimbData data, bool maintained, Vector2 direction, bool isDamaged = false)
     {
         limbData = data;
         currentState = State.Thrown;
         isMaintained = maintained;
-        isShowingDamaged = isMaintained; 
+        isShowingDamaged = isDamaged; 
 
         transform.SetParent(null);
 
         if(defaultVisual) defaultVisual.SetActive(false);
-        if(damagedVisual) damagedVisual.SetActive(isMaintained); 
-        if(brokenVisual) brokenVisual.SetActive(!isMaintained); 
+        if(damagedVisual) damagedVisual.SetActive(false);
+        if(brokenVisual) brokenVisual.SetActive(false);
+
+        // Visual Logic based on Maintained status
+        if (isMaintained)
+        {
+            // Usable limb - Show either Damaged or Default visual
+            if (isShowingDamaged)
+            {
+                if(damagedVisual) damagedVisual.SetActive(true);
+            }
+            else
+            {
+                if(defaultVisual) defaultVisual.SetActive(true);
+            }
+        }
+        else
+        {
+            // Debris - Show broken visual
+            if(brokenVisual) brokenVisual.SetActive(true);
+        }
+
         if(shadowGameObject) shadowGameObject.SetActive(true);
 
         if (sortingGroup) sortingGroup.enabled = true;
@@ -158,9 +178,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
             rb.AddTorque(Random.Range(-90f, 90f)); 
         }
 
-        // --- MODIFIED: Use the new variable ---
         StartCoroutine(BecomePickupAfterDelay(pickupDelay)); 
-        // --- END MODIFICATION ---
     }
 
     public void InitializeAsScenePickup(LimbData data, bool maintained = true)
@@ -230,7 +248,8 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (isMaintained)
         {
             gameObject.tag = "LimbPickup";
-            StartCoroutine(DespawnTimer(pickupDespawnTime));
+            // --- MODIFIED: Maintained/Usable limbs do NOT despawn now ---
+            // StartCoroutine(DespawnTimer(pickupDespawnTime)); 
         }
         else
         {

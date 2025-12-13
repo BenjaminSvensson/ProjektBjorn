@@ -102,6 +102,11 @@ public class PlayerAnimationController : MonoBehaviour
 
         // Get mouse position in world space
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+        
+        // --- FIX: Check for invalid mouse position (NaN) to prevent camera errors ---
+        if (float.IsNaN(mouseScreenPos.x) || float.IsNaN(mouseScreenPos.y)) return;
+        // --------------------------------------------------------------------------
+
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
 
         // --- 1. Flipping Logic ---

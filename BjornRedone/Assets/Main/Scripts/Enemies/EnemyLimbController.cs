@@ -31,7 +31,7 @@ public class EnemyLimbController : MonoBehaviour
     [Tooltip("Chance (0-1) that a detached limb spawns as a usable pickup. If false, it spawns as broken debris.")]
     [Range(0f, 1f)] public float maintainLimbChance = 0.3f; 
     
-    [Header("Alert Settings")] // --- NEW ---
+    [Header("Alert Settings")] 
     [Tooltip("Radius to alert other enemies when damaged.")]
     [SerializeField] private float damageAlertRadius = 10f;
     [Tooltip("Layer mask for enemies to alert.")]
@@ -48,7 +48,7 @@ public class EnemyLimbController : MonoBehaviour
     private WorldLimb currentRightLeg;
 
     // Health Logic State
-    private int initialLimbCount = 0; // Arms + Legs only (Head is treated as "Life")
+    private int initialLimbCount = 0; // Arms + Legs only
 
     // Stats calculated from limbs
     [HideInInspector] public float moveSpeedBonus = 0f;
@@ -74,10 +74,8 @@ public class EnemyLimbController : MonoBehaviour
         
         UpdateStats();
 
-        // Calculate how many non-head limbs we started with
         initialLimbCount = GetCurrentArmLegCount();
 
-        // NOW find all renderers, so we include the newly spawned limbs in the flash effect
         GetComponentsInChildren<SpriteRenderer>(renderers);
     }
 
@@ -85,30 +83,21 @@ public class EnemyLimbController : MonoBehaviour
     {
         currentHealth -= amount;
         
-        // --- NEW: Alert others ---
         AlertNearbyEnemies();
-        // -------------------------
 
-        // Feedback
         if (damageSound && audioSource) audioSource.PlayOneShot(damageSound);
         StartCoroutine(FlashDamage());
 
-        // --- NEW LOGIC: Limbs indicate Health ---
-        
         if (currentHealth <= 0)
         {
             Die();
         }
         else
         {
-            // Calculate how many limbs we *should* have based on health %
             float healthPercent = Mathf.Clamp01(currentHealth / maxHealth);
             int targetLimbCount = Mathf.CeilToInt(healthPercent * initialLimbCount);
-            
             int currentLimbs = GetCurrentArmLegCount();
 
-            // While we have more limbs than our health allows, lose them!
-            // This loop ensures that a massive hit (100% -> 10% health) drops multiple limbs at once.
             while (currentLimbs > targetLimbCount && currentLimbs > 0)
             {
                 LoseRandomArmOrLeg();
@@ -117,13 +106,69 @@ public class EnemyLimbController : MonoBehaviour
         }
     }
 
-    // --- NEW: Helper for alerting enemies ---
+    // --- NEW: Dynamic Attachment for AI Scavenging ---
+    public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
+    {
+        if (limbToAttach == null) return false;
+
+        bool attached = false;
+
+        if (limbToAttach.limbType == LimbType.Arm)
+        {
+            if (currentRightArm == null)
+            {
+                AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged);
+                attached = true;
+            }
+            else if (currentLeftArm == null)
+            {
+                AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged);
+                attached = true;
+            }
+        }
+        else if (limbToAttach.limbType == LimbType.Leg)
+        {
+            if (currentRightLeg == null)
+            {
+                AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged);
+                attached = true;
+            }
+            else if (currentLeftLeg == null)
+            {
+                AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged);
+                attached = true;
+            }
+        }
+
+        if (attached)
+        {
+            // Restore a chunk of health when regaining a limb!
+            float healthPerLimb = maxHealth / Mathf.Max(1, initialLimbCount);
+            currentHealth = Mathf.Min(currentHealth + healthPerLimb, maxHealth);
+            return true;
+        }
+
+        return false;
+    }
+
+    // --- NEW: Helper Methods for AI ---
+    public bool IsMissingArm()
+    {
+        return currentLeftArm == null || currentRightArm == null;
+    }
+
+    public bool IsMissingLeg()
+    {
+        return currentLeftLeg == null || currentRightLeg == null;
+    }
+    // ---------------------------------
+
     private void AlertNearbyEnemies()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageAlertRadius, enemyLayer);
         foreach (var hit in hits)
         {
-            if (hit.gameObject == gameObject) continue; // Don't alert self
+            if (hit.gameObject == gameObject) continue; 
             
             EnemyAI ai = hit.GetComponent<EnemyAI>();
             if (ai != null)
@@ -182,7 +227,9 @@ public class EnemyLimbController : MonoBehaviour
 
             // --- CHANGED: Use probability to decide if it's usable (maintained) or broken ---
             bool isMaintained = Random.value < maintainLimbChance;
-            pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir);
+            
+            // Pass the current damaged state to the thrown limb
+            pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir, limbToRemove.IsShowingDamaged());
 
             // Important: Remove its renderer from our list so we don't try to flash a destroyed object
             SpriteRenderer[] limbRenderers = limbToRemove.GetComponentsInChildren<SpriteRenderer>();
@@ -196,31 +243,44 @@ public class EnemyLimbController : MonoBehaviour
         }
     }
 
-    private void AttachLimb(LimbData data, LimbSlot slot)
+    // Helper for Internal (Start) and Dynamic (TryAttach)
+    private void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged)
     {
-        Transform parent = GetSlotTransform(slot);
-        GameObject obj = Instantiate(data.visualPrefab, parent);
-        WorldLimb limb = obj.GetComponent<WorldLimb>();
-        
-        // Initialize as "Attached" so it doesn't have physics
-        limb.InitializeAttached(data, false);
+        Transform parentSlot = GetSlotTransform(slot);
+        if (parentSlot == null) return;
 
-        // Sorting Order Logic
+        GameObject limbObj = Instantiate(limbData.visualPrefab, parentSlot.position, parentSlot.rotation, parentSlot);
+        WorldLimb limbComponent = limbObj.GetComponent<WorldLimb>();
+        
+        if (limbComponent == null) { Destroy(limbObj); return; }
+
+        SpriteRenderer sr = limbObj.GetComponentInChildren<SpriteRenderer>();
+        if (sr != null && flipSprite) sr.flipX = true;
+
+        limbComponent.InitializeAttached(limbData, isDamaged);
+
         int order = 0;
         switch (slot)
         {
-            case LimbSlot.Head: currentHead = limb; order = 10; break;
-            case LimbSlot.LeftArm: currentLeftArm = limb; order = 5; break;
-            case LimbSlot.RightArm: currentRightArm = limb; order = -5; break;
-            case LimbSlot.LeftLeg: currentLeftLeg = limb; order = -10; break;
-            case LimbSlot.RightLeg: currentRightLeg = limb; order = -10; break;
+            case LimbSlot.Head: currentHead = limbComponent; order = 10; break;
+            case LimbSlot.LeftArm: currentLeftArm = limbComponent; order = 5; break;
+            case LimbSlot.RightArm: currentRightArm = limbComponent; order = -5; break;
+            case LimbSlot.LeftLeg: currentLeftLeg = limbComponent; order = -10; break;
+            case LimbSlot.RightLeg: currentRightLeg = limbComponent; order = -10; break;
         }
 
-        // Apply sorting order
-        foreach (var sr in obj.GetComponentsInChildren<SpriteRenderer>())
-        {
-            sr.sortingOrder = order;
-        }
+        SpriteRenderer[] srs = limbObj.GetComponentsInChildren<SpriteRenderer>();
+        foreach (var r in srs) r.sortingOrder = order;
+
+        // Add to main renderer list for flashing
+        renderers.AddRange(srs);
+
+        UpdateStats();
+    }
+
+    private void AttachLimb(LimbData data, LimbSlot slot)
+    {
+        AttachToSlot(data, slot, false, false);
     }
 
     private void UpdateStats()
@@ -255,20 +315,16 @@ public class EnemyLimbController : MonoBehaviour
 
     private void Die()
     {
-        // Explosive death! Detach ALL remaining limbs.
         if (currentLeftArm) DetachLimb(LimbSlot.LeftArm);
         if (currentRightArm) DetachLimb(LimbSlot.RightArm);
         if (currentLeftLeg) DetachLimb(LimbSlot.LeftLeg);
         if (currentRightLeg) DetachLimb(LimbSlot.RightLeg);
         if (currentHead) DetachLimb(LimbSlot.Head);
-
-        // Destroy the torso/container
         Destroy(gameObject);
     }
 
     private IEnumerator FlashDamage()
     {
-        // Filter out nulls just in case a limb was destroyed mid-frame
         for (int i = renderers.Count - 1; i >= 0; i--)
         {
             if (renderers[i] == null) renderers.RemoveAt(i);
@@ -284,7 +340,6 @@ public class EnemyLimbController : MonoBehaviour
         }
     }
     
-    // --- Public Helpers for AI & Animation ---
     public LimbData GetActiveWeaponLimb()
     {
         if (currentLeftArm) return currentLeftArm.GetLimbData();
@@ -292,7 +347,6 @@ public class EnemyLimbController : MonoBehaviour
         return null; 
     }
 
-    // New getters for Animation Controller
     public Transform GetVisualsHolder() { return visualsHolder; }
     public Transform GetLeftArmSlot() { return leftArmSlot; }
     public Transform GetRightArmSlot() { return rightArmSlot; }
