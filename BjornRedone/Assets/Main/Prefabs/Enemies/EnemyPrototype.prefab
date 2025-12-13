@@ -429,8 +429,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 50
-  currentHealth: 50
+  maxHealth: 20
+  currentHealth: 20
   startingHead: {fileID: 11400000, guid: 0af1cd97961f64841aadc75c0adc4662, type: 2}
   startingLeftArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
   startingRightArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
@@ -442,7 +442,6 @@ MonoBehaviour:
   rightArmSlot: {fileID: 2355926064837032603}
   leftLegSlot: {fileID: 7786675115033756154}
   rightLegSlot: {fileID: 4552412400914023739}
-  limbDropChance: 0.4
   damageSound: {fileID: 8300000, guid: 0903410f06bd7b54b80a9c1c09dfcb2f, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   moveSpeedBonus: 0
@@ -475,6 +474,9 @@ MonoBehaviour:
     m_Bits: 1024
   avoidDistance: 0.4
   bodyWidth: 0.5
+  stuckCheckInterval: 0.5
+  stuckThreshold: 0.1
+  unstuckDuration: 1
   attackCooldown: 1
   minRoamWaitTime: 1
   maxRoamWaitTime: 4

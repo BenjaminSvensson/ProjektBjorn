@@ -26,7 +26,11 @@ public class EnemyLimbController : MonoBehaviour
     public Transform rightLegSlot;
 
     [Header("Damage Settings")]
+    [Tooltip("Chance (0-1) that a limb will detach when the enemy takes damage.")]
     [Range(0f, 1f)] public float limbDropChance = 0.4f;
+    [Tooltip("Chance (0-1) that a detached limb spawns as a usable pickup. If false, it spawns as broken debris.")]
+    [Range(0f, 1f)] public float maintainLimbChance = 0.3f; // New variable to control pickup rarity
+    
     [SerializeField] private AudioClip damageSound;
     [SerializeField] private Color damageFlashColor = Color.red;
 
@@ -36,6 +40,9 @@ public class EnemyLimbController : MonoBehaviour
     private WorldLimb currentRightArm;
     private WorldLimb currentLeftLeg;
     private WorldLimb currentRightLeg;
+
+    // Health Logic State
+    private int initialLimbCount = 0; // Arms + Legs only (Head is treated as "Life")
 
     // Stats calculated from limbs
     [HideInInspector] public float moveSpeedBonus = 0f;
@@ -61,6 +68,9 @@ public class EnemyLimbController : MonoBehaviour
         
         UpdateStats();
 
+        // Calculate how many non-head limbs we started with
+        initialLimbCount = GetCurrentArmLegCount();
+
         // NOW find all renderers, so we include the newly spawned limbs in the flash effect
         GetComponentsInChildren<SpriteRenderer>(renderers);
     }
@@ -73,19 +83,31 @@ public class EnemyLimbController : MonoBehaviour
         if (damageSound && audioSource) audioSource.PlayOneShot(damageSound);
         StartCoroutine(FlashDamage());
 
-        // Chance to lose a limb
-        if (Random.value < limbDropChance)
-        {
-            LoseRandomLimb();
-        }
-
+        // --- NEW LOGIC: Limbs indicate Health ---
+        
         if (currentHealth <= 0)
         {
             Die();
         }
+        else
+        {
+            // Calculate how many limbs we *should* have based on health %
+            float healthPercent = Mathf.Clamp01(currentHealth / maxHealth);
+            int targetLimbCount = Mathf.CeilToInt(healthPercent * initialLimbCount);
+            
+            int currentLimbs = GetCurrentArmLegCount();
+
+            // While we have more limbs than our health allows, lose them!
+            // This loop ensures that a massive hit (100% -> 10% health) drops multiple limbs at once.
+            while (currentLimbs > targetLimbCount && currentLimbs > 0)
+            {
+                LoseRandomArmOrLeg();
+                currentLimbs--;
+            }
+        }
     }
 
-    private void LoseRandomLimb()
+    private void LoseRandomArmOrLeg()
     {
         List<LimbSlot> availableSlots = new List<LimbSlot>();
         if (currentLeftArm) availableSlots.Add(LimbSlot.LeftArm);
@@ -98,12 +120,16 @@ public class EnemyLimbController : MonoBehaviour
             LimbSlot slot = availableSlots[Random.Range(0, availableSlots.Count)];
             DetachLimb(slot);
         }
-        else if (currentHead)
-        {
-            // If only head remains, losing it kills the enemy
-            DetachLimb(LimbSlot.Head);
-            Die();
-        }
+    }
+
+    private int GetCurrentArmLegCount()
+    {
+        int count = 0;
+        if (currentLeftArm) count++;
+        if (currentRightArm) count++;
+        if (currentLeftLeg) count++;
+        if (currentRightLeg) count++;
+        return count;
     }
 
     private void DetachLimb(LimbSlot slot)
@@ -127,7 +153,10 @@ public class EnemyLimbController : MonoBehaviour
             
             // Fling it away
             Vector2 flingDir = Random.insideUnitCircle.normalized;
-            pickupScript.InitializeThrow(limbToRemove.GetLimbData(), true, flingDir);
+
+            // --- CHANGED: Use probability to decide if it's usable (maintained) or broken ---
+            bool isMaintained = Random.value < maintainLimbChance;
+            pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir);
 
             // Important: Remove its renderer from our list so we don't try to flash a destroyed object
             SpriteRenderer[] limbRenderers = limbToRemove.GetComponentsInChildren<SpriteRenderer>();
@@ -200,7 +229,14 @@ public class EnemyLimbController : MonoBehaviour
 
     private void Die()
     {
+        // Explosive death! Detach ALL remaining limbs.
+        if (currentLeftArm) DetachLimb(LimbSlot.LeftArm);
+        if (currentRightArm) DetachLimb(LimbSlot.RightArm);
+        if (currentLeftLeg) DetachLimb(LimbSlot.LeftLeg);
+        if (currentRightLeg) DetachLimb(LimbSlot.RightLeg);
         if (currentHead) DetachLimb(LimbSlot.Head);
+
+        // Destroy the torso/container
         Destroy(gameObject);
     }
 

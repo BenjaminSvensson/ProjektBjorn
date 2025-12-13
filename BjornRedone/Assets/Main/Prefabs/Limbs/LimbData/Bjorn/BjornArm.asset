@@ -21,8 +21,8 @@ MonoBehaviour:
   punchVolume: 1
   attackDamageBonus: 1
   punchDuration: 0.1
-  attackCooldown: 0.5
+  attackCooldown: 0.7
   attackReach: 1
   impactSize: 1
-  knockbackForce: 5
+  knockbackForce: 2
   healthBonus: 0
