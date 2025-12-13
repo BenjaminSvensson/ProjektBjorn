@@ -79,6 +79,7 @@ public class DamageSource : MonoBehaviour
         // If this trap has already been triggered (e.g., a bullet), don't run again.
         if (isTriggered) return;
 
+        // --- Check for Player ---
         if (other.CompareTag(playerTag))
         {
             PlayerLimbController player = other.GetComponent<PlayerLimbController>();
@@ -100,10 +101,9 @@ public class DamageSource : MonoBehaviour
                     player.TakeDamage(damageAmount);
                     PlayDamageSound();
                     
-                    // --- NEW: Swap visuals ---
+                    // --- Swap visuals ---
                     if (openVisual != null) openVisual.SetActive(false);
                     if (closedVisual != null) closedVisual.SetActive(true);
-                    // --- END NEW ---
 
                     // Start coroutine to release player and destroy trap
                     StartCoroutine(BeartrapReleaseCoroutine(playerMovement));
@@ -134,6 +134,49 @@ public class DamageSource : MonoBehaviour
                         PlayDamageSound(); // For non-destroying spikes
                     }
                 }
+            }
+        }
+        // --- Check for Enemy ---
+        else if (other.GetComponent<EnemyLimbController>() != null)
+        {
+            EnemyLimbController enemy = other.GetComponent<EnemyLimbController>();
+            
+            // --- BEARTRAP LOGIC (Enemy) ---
+            if (isBeartrap)
+            {
+                isTriggered = true; 
+                EnemyAI enemyAI = other.GetComponent<EnemyAI>();
+                
+                if (enemyAI != null)
+                {
+                    Debug.Log("BEARTRAP! Enemy is trapped.");
+                    enemyAI.SetTrapped(true);
+                }
+                
+                enemy.TakeDamage(damageAmount);
+                PlayDamageSound();
+                
+                // --- Swap visuals ---
+                if (openVisual != null) openVisual.SetActive(false);
+                if (closedVisual != null) closedVisual.SetActive(true);
+
+                // Start coroutine to release enemy and destroy trap
+                StartCoroutine(BeartrapReleaseEnemyCoroutine(enemyAI));
+                return;
+            }
+            
+            // Note: Tick damage currently not implemented for enemies in this script, 
+            // but could be added easily. For now just instant.
+            enemy.TakeDamage(damageAmount);
+
+            if (destroyOnImpact)
+            {
+                isTriggered = true; 
+                StartCoroutine(PlaySoundAndDestroy());
+            }
+            else
+            {
+                PlayDamageSound();
             }
         }
     }
@@ -222,6 +265,27 @@ public class DamageSource : MonoBehaviour
         {
             Debug.Log("Player released from trap.");
             playerMovement.SetTrapped(false);
+        }
+        
+        // Fade out and destroy the trap
+        yield return StartCoroutine(FadeOut(fadeOutTime));
+        Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Coroutine to release the enemy from the trap.
+    /// </summary>
+    private IEnumerator BeartrapReleaseEnemyCoroutine(EnemyAI enemyAI)
+    {
+        // Disable collider
+        GetComponent<Collider2D>().enabled = false;
+
+        yield return new WaitForSeconds(trapDuration);
+        
+        if (enemyAI != null)
+        {
+            Debug.Log("Enemy released from trap.");
+            enemyAI.SetTrapped(false);
         }
         
         // Fade out and destroy the trap

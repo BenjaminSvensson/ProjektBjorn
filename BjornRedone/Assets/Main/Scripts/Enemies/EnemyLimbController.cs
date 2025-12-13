@@ -29,8 +29,14 @@ public class EnemyLimbController : MonoBehaviour
     [Tooltip("Chance (0-1) that a limb will detach when the enemy takes damage.")]
     [Range(0f, 1f)] public float limbDropChance = 0.4f;
     [Tooltip("Chance (0-1) that a detached limb spawns as a usable pickup. If false, it spawns as broken debris.")]
-    [Range(0f, 1f)] public float maintainLimbChance = 0.3f; // New variable to control pickup rarity
+    [Range(0f, 1f)] public float maintainLimbChance = 0.3f; 
     
+    [Header("Alert Settings")] // --- NEW ---
+    [Tooltip("Radius to alert other enemies when damaged.")]
+    [SerializeField] private float damageAlertRadius = 10f;
+    [Tooltip("Layer mask for enemies to alert.")]
+    [SerializeField] private LayerMask enemyLayer; 
+
     [SerializeField] private AudioClip damageSound;
     [SerializeField] private Color damageFlashColor = Color.red;
 
@@ -79,6 +85,10 @@ public class EnemyLimbController : MonoBehaviour
     {
         currentHealth -= amount;
         
+        // --- NEW: Alert others ---
+        AlertNearbyEnemies();
+        // -------------------------
+
         // Feedback
         if (damageSound && audioSource) audioSource.PlayOneShot(damageSound);
         StartCoroutine(FlashDamage());
@@ -103,6 +113,22 @@ public class EnemyLimbController : MonoBehaviour
             {
                 LoseRandomArmOrLeg();
                 currentLimbs--;
+            }
+        }
+    }
+
+    // --- NEW: Helper for alerting enemies ---
+    private void AlertNearbyEnemies()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageAlertRadius, enemyLayer);
+        foreach (var hit in hits)
+        {
+            if (hit.gameObject == gameObject) continue; // Don't alert self
+            
+            EnemyAI ai = hit.GetComponent<EnemyAI>();
+            if (ai != null)
+            {
+                ai.OnHearNoise(transform.position);
             }
         }
     }
@@ -274,4 +300,10 @@ public class EnemyLimbController : MonoBehaviour
     public Transform GetRightLegSlot() { return rightLegSlot; }
     public bool HasLeftArm() { return currentLeftArm != null; }
     public bool HasRightArm() { return currentRightArm != null; }
+    
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, damageAlertRadius);
+    }
 }

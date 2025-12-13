@@ -67,6 +67,9 @@ public class EnemyAI : MonoBehaviour
     private Vector2 unstuckDir;
     private float forcingUnstuckTimer;
 
+    // --- NEW: Trapped State ---
+    private bool isTrapped = false;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -95,6 +98,15 @@ public class EnemyAI : MonoBehaviour
     void FixedUpdate()
     {
         if (player == null) return;
+
+        // --- NEW: Trapped Check ---
+        // If trapped, stop all movement immediately.
+        if (isTrapped)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
+        // --------------------------
 
         // --- Stuck Detection Logic ---
         HandleStuckDetection();
@@ -178,17 +190,13 @@ public class EnemyAI : MonoBehaviour
 
     void LogicRoam()
     {
-        // --- FIX: Editor Drag / Teleport Detection ---
-        // If we are currently roaming, but our distance from our "Roam Anchor" (startPos)
-        // is way larger than our roam radius, it implies we were dragged or teleported.
-        // We should immediately reset our home to here.
+        // --- Editor Drag / Teleport Detection ---
         float distFromHome = Vector2.Distance(transform.position, startPos);
-        if (distFromHome > roamRadius * 2.5f) // 2.5x buffer
+        if (distFromHome > roamRadius * 2.5f) 
         {
             PickNewRoamTarget();
             return;
         }
-        // ---------------------------------------------
 
         if (CanSeePlayer())
         {
@@ -397,6 +405,16 @@ public class EnemyAI : MonoBehaviour
 
         currentState = State.Roam;
         stateTimer = Random.Range(minRoamWaitTime, maxRoamWaitTime);
+    }
+
+    // --- NEW: Set Trapped State (called by DamageSource) ---
+    public void SetTrapped(bool trapped)
+    {
+        isTrapped = trapped;
+        if (isTrapped)
+        {
+            rb.linearVelocity = Vector2.zero;
+        }
     }
 
     void OnDrawGizmosSelected()
