@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
   limbType: 1
   visualPrefab: {fileID: 1703309220703536604, guid: 259011a8f85881a498b363091c74d781, type: 3}
-  moveSpeedBonus: 0
+  moveSpeedBonus: -1
   punchSounds:
   - {fileID: 8300000, guid: 2de32ccd238868d46955bd4534a7d465, type: 3}
   - {fileID: 8300000, guid: 2c146a01d78658049bb6c1677594cc02, type: 3}
@@ -23,9 +23,9 @@ MonoBehaviour:
   punchPitch: 1
   punchVolume: 1
   attackDamageBonus: 5
-  punchDuration: 0.13
+  punchDuration: 0.15
   attackCooldown: 1
   attackReach: 0.7
   impactSize: 2
-  knockbackForce: 8
+  knockbackForce: 9
   healthBonus: 2

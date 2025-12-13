@@ -14,6 +14,8 @@ public class PlayerAttackController : MonoBehaviour
     [Header("Attack Settings")]
     [Tooltip("The layer(s) that can be hit by a punch. MAKE SURE ENEMIES ARE ON THIS LAYER.")]
     [SerializeField] private LayerMask hittableLayers;
+    [Tooltip("Minimum time (in seconds) between any two punches to prevent simultaneous attacks. Creates a rhythm.")]
+    [SerializeField] private float minPunchDelay = 0.15f;
     
     [Header("Audio")]
     [Tooltip("The AudioSource used for action sounds (punching). Assign this in the Inspector.")]
@@ -27,6 +29,8 @@ public class PlayerAttackController : MonoBehaviour
     // --- New: Independent Cooldowns ---
     private float leftArmCooldownTimer = 0f;
     private float rightArmCooldownTimer = 0f;
+    // Stops "shotgunning" attacks (attacks happening exact same frame)
+    private float globalCooldownTimer = 0f; 
     
     private Camera cam;
 
@@ -83,9 +87,10 @@ public class PlayerAttackController : MonoBehaviour
 
     void Update()
     {
-        // Decrement both timers independently
+        // Decrement timers independently
         if (leftArmCooldownTimer > 0) leftArmCooldownTimer -= Time.deltaTime;
         if (rightArmCooldownTimer > 0) rightArmCooldownTimer -= Time.deltaTime;
+        if (globalCooldownTimer > 0) globalCooldownTimer -= Time.deltaTime;
 
         if (isAttackHeld)
         {
@@ -98,6 +103,9 @@ public class PlayerAttackController : MonoBehaviour
 
     private void TryPunch()
     {
+        // 0. Check global rhythm delay first
+        if (globalCooldownTimer > 0) return;
+
         // 1. Gather status of both arms
         LimbData leftData = limbController.GetArmData(true);
         LimbData rightData = limbController.GetArmData(false);
@@ -170,6 +178,9 @@ public class PlayerAttackController : MonoBehaviour
             leftArmCooldownTimer = cooldown;
         else
             rightArmCooldownTimer = cooldown;
+            
+        // --- Set global rhythm delay ---
+        globalCooldownTimer = minPunchDelay;
 
         // Get mouse position safely
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
