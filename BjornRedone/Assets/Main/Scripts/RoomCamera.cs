@@ -14,7 +14,7 @@ public class RoomCamera : MonoBehaviour
     [SerializeField] private Transform target;
 
     [Header("Settings")]
-    [Tooltip("MUST match the 'Room Size' in your LevelGenerator.")]
+    [Tooltip("MUST match the 'Room Size' in your LevelGenerator (e.g., X=20, Y=10).")]
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
     
     [Tooltip("How long it takes the camera to move to the new room (in seconds).")]
@@ -35,6 +35,19 @@ public class RoomCamera : MonoBehaviour
     void Start()
     {
         cam = GetComponent<Camera>();
+
+        // Ensure background is solid color
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        
+        // Set background color to #5DB64A
+        if (ColorUtility.TryParseHtmlString("#5DB64A", out Color bgColor))
+        {
+            cam.backgroundColor = bgColor;
+        }
+        else
+        {
+            cam.backgroundColor = Color.black; // Fallback
+        }
 
         // If the player wasn't assigned, try to find them
         if (target == null)
@@ -132,5 +145,25 @@ public class RoomCamera : MonoBehaviour
         float centerY = gridY * roomSize.y;
 
         return new Vector3(centerX, centerY, fixedZ);
+    }
+
+    // Visual debugging to see the boundaries
+    void OnDrawGizmos()
+    {
+        if (cam == null) cam = GetComponent<Camera>();
+        
+        Gizmos.color = Color.green;
+        // Draw the Room Bounds at the camera's current grid position
+        Vector3 currentGridCenter = GetGridCenter(transform.position);
+        currentGridCenter.z = 0;
+        Gizmos.DrawWireCube(currentGridCenter, new Vector3(roomSize.x, roomSize.y, 1));
+
+        if (cam != null)
+        {
+            Gizmos.color = Color.yellow;
+            float camHeight = cam.orthographicSize * 2;
+            float camWidth = camHeight * cam.aspect;
+            Gizmos.DrawWireCube(transform.position, new Vector3(camWidth, camHeight, 1));
+        }
     }
 }

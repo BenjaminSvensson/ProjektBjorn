@@ -9,6 +9,11 @@ public class EnemyLimbController : MonoBehaviour
     public float maxHealth = 50f;
     public float currentHealth;
     
+    [Header("Loot")]
+    [SerializeField] private GameObject coinPrefab;
+    [SerializeField] private int minCoins = 1;
+    [SerializeField] private int maxCoins = 3;
+
     [Header("Limb Configuration")]
     public LimbData startingHead;
     public LimbData startingLeftArm;
@@ -39,15 +44,10 @@ public class EnemyLimbController : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer; 
 
     [Header("Audio - Vocals")]
-    [Tooltip("Vocal sounds (grunts/screams) played when damaged.")]
     [SerializeField] private AudioClip[] damageSounds;
-    [Tooltip("Sounds played randomly when idle/roaming.")]
     [SerializeField] private AudioClip[] idleSounds;
-    [Tooltip("Sounds played when spotting the player.")]
     [SerializeField] private AudioClip[] spotSounds;
-    [Tooltip("Sounds played when attacking.")]
     [SerializeField] private AudioClip[] attackSounds;
-    [Tooltip("Sounds played when fleeing.")] // --- NEW ---
     [SerializeField] private AudioClip[] fleeSounds;
     [SerializeField] private AudioClip[] deathSounds;
 
@@ -227,9 +227,7 @@ public class EnemyLimbController : MonoBehaviour
     public void PlayIdleSound() { PlayRandomClip(idleSounds, 0.8f); }
     public void PlaySpotSound() { PlayRandomClip(spotSounds, 1.2f); }
     public void PlayAttackSound() { PlayRandomClip(attackSounds); }
-    // --- NEW: Play Flee Sound ---
     public void PlayFleeSound() { PlayRandomClip(fleeSounds, 1.2f); }
-    // ----------------------------
 
     private void PlayRandomClip(AudioClip[] clips, float volumeScale = 1f)
     {
@@ -283,6 +281,7 @@ public class EnemyLimbController : MonoBehaviour
         foreach (var hit in hits)
         {
             if (hit.gameObject == gameObject) continue; 
+            
             EnemyAI ai = hit.GetComponent<EnemyAI>();
             if (ai != null) ai.OnHearNoise(transform.position);
         }
@@ -408,6 +407,21 @@ public class EnemyLimbController : MonoBehaviour
             if (clip != null) AudioSource.PlayClipAtPoint(clip, transform.position);
         }
 
+        // --- SPAWN COINS ---
+        if (coinPrefab != null)
+        {
+            int amount = Random.Range(minCoins, maxCoins + 1);
+            for (int i = 0; i < amount; i++)
+            {
+                GameObject coin = Instantiate(coinPrefab, transform.position, Quaternion.identity);
+                if (coin.TryGetComponent<CoinPickup>(out CoinPickup pickup))
+                {
+                    pickup.Initialize();
+                }
+            }
+        }
+        // -------------------
+
         if (currentLeftArm) DetachLimb(LimbSlot.LeftArm);
         if (currentRightArm) DetachLimb(LimbSlot.RightArm);
         if (currentLeftLeg) DetachLimb(LimbSlot.LeftLeg);
@@ -424,7 +438,9 @@ public class EnemyLimbController : MonoBehaviour
             if (renderers[i] == null) renderers.RemoveAt(i);
             else renderers[i].color = damageFlashColor;
         }
+        
         yield return new WaitForSeconds(0.1f);
+        
         for (int i = renderers.Count - 1; i >= 0; i--)
         {
             if (renderers[i] == null) renderers.RemoveAt(i);
