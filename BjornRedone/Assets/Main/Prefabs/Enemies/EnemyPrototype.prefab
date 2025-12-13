@@ -485,7 +485,7 @@ MonoBehaviour:
   baseDamage: 5
   fleeHealthThreshold: 0.25
   fleeSpeedMult: 1.2
-  cullingDistance: 30
+  cullingDistance: 20
   scavengeRadius: 6
   scavengeScanInterval: 1
   roamSpeedMult: 0.5
@@ -494,7 +494,11 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 1024
-  avoidDistance: 2
+  trapLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  avoidDistance: 2.5
+  trapAvoidDistance: 3.5
   bodyWidth: 1
   stuckCheckInterval: 0.3
   stuckThreshold: 0.1

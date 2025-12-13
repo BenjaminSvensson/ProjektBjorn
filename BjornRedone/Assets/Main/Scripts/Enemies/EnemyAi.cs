@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyAnimationController))]
 public class EnemyAI : MonoBehaviour
 {
-    private enum State { Roam, Chase, Attack, Investigate, Scavenge, Flee } // --- NEW State: Flee
+    private enum State { Roam, Chase, Attack, Investigate, Scavenge, Flee }
 
     [Header("AI Settings")]
     public float detectionRadius = 5f;
@@ -16,7 +16,7 @@ public class EnemyAI : MonoBehaviour
     public float baseMoveSpeed = 2f;
     public float baseDamage = 5f;
 
-    [Header("Flee Settings")] // --- NEW ---
+    [Header("Flee Settings")]
     [Tooltip("Percentage of health (0-1) below which the enemy will flee.")]
     [SerializeField] private float fleeHealthThreshold = 0.25f;
     [SerializeField] private float fleeSpeedMult = 1.2f;
@@ -36,7 +36,11 @@ public class EnemyAI : MonoBehaviour
 
     [Header("Obstacle Avoidance")]
     [SerializeField] private LayerMask obstacleLayer;
+    [Tooltip("Layer mask for dangerous objects (traps). AI will avoid these from further away.")]
+    [SerializeField] private LayerMask trapLayer;
     [SerializeField] private float avoidDistance = 1.5f;
+    [Tooltip("How far ahead to look for traps. Should be higher than Avoid Distance.")]
+    [SerializeField] private float trapAvoidDistance = 3.0f;
     [SerializeField] private float bodyWidth = 0.5f;
 
     [Header("Stuck Detection")] 
@@ -110,7 +114,6 @@ public class EnemyAI : MonoBehaviour
         positionAtLastCheck = transform.position;
         stuckTimer = stuckCheckInterval;
         
-        // Initialize audio timer
         idleSoundTimer = Random.Range(minIdleSoundInterval, maxIdleSoundInterval);
 
         PickNewRoamTarget();
@@ -120,7 +123,6 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null) return;
 
-        // Optimization Culling
         if (Vector2.Distance(transform.position, player.position) > cullingDistance)
         {
             rb.linearVelocity = Vector2.zero; 
@@ -159,7 +161,7 @@ public class EnemyAI : MonoBehaviour
             case State.Scavenge:
                 LogicScavenge();
                 break;
-            case State.Flee: // --- NEW
+            case State.Flee:
                 LogicFlee();
                 break;
         }
@@ -168,6 +170,17 @@ public class EnemyAI : MonoBehaviour
         if (avoidanceCommitTimer > 0) avoidanceCommitTimer -= Time.deltaTime;
         if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
     }
+
+    // --- NEW: Helper to centralize Flee Logic ---
+    bool ShouldFlee()
+    {
+        // Flee if health is low OR if we have no arms to fight with
+        bool lowHealth = (body.currentHealth / body.maxHealth) < fleeHealthThreshold;
+        bool noArms = !body.hasArms;
+        
+        return lowHealth || noArms;
+    }
+    // --------------------------------------------
 
     void HandleIdleSounds()
     {
@@ -189,9 +202,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (currentState != State.Chase && currentState != State.Flee)
         {
-            // Don't chase if we are trying to flee
-            float healthPct = body.currentHealth / body.maxHealth;
-            if (healthPct >= fleeHealthThreshold)
+            if (!ShouldFlee())
             {
                 currentState = State.Chase;
                 body.PlaySpotSound();
@@ -203,17 +214,15 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // --- NEW: Flee Logic ---
     void LogicFlee()
     {
-        // 1. Check if we healed enough to fight back
-        if (body.currentHealth / body.maxHealth >= fleeHealthThreshold)
+        // Stop fleeing if we are healthy AND have arms
+        if (!ShouldFlee())
         {
             currentState = State.Chase;
             return;
         }
 
-        // 2. If we can't see the player anymore, go back to Roaming (we escaped)
         if (!CanSeePlayer())
         {
             currentState = State.Roam;
@@ -221,13 +230,10 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        // 3. Move AWAY from player
         Vector2 dirAway = ((Vector2)transform.position - (Vector2)player.position).normalized;
         Vector2 fleeTarget = (Vector2)transform.position + dirAway * 3f;
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * fleeSpeedMult;
-        
-        // --- NO LEGS = NO MOVE ---
         if (!body.hasLegs) speed = 0f; 
         
         MoveTowards(fleeTarget, speed);
@@ -248,8 +254,6 @@ public class EnemyAI : MonoBehaviour
         }
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
-        
-        // --- NO LEGS = NO MOVE ---
         if (!body.hasLegs) speed = 0f; 
 
         MoveTowards(targetLimb.transform.position, speed);
@@ -272,7 +276,6 @@ public class EnemyAI : MonoBehaviour
         if (scavengeScanTimer > 0) return;
         scavengeScanTimer = scavengeScanInterval;
 
-        // If we can't move (no legs), we can't go get limbs anyway
         if (!body.hasLegs) return;
 
         bool needArm = body.IsMissingArm();
@@ -343,8 +346,6 @@ public class EnemyAI : MonoBehaviour
     void LogicUnstuck()
     {
         float speed = baseMoveSpeed + body.moveSpeedBonus;
-        
-        // --- NO LEGS = NO MOVE ---
         if (!body.hasLegs) speed = 0f;
 
         rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, unstuckDir * speed, turningSpeed * Time.fixedDeltaTime);
@@ -376,8 +377,6 @@ public class EnemyAI : MonoBehaviour
         if (currentState == State.Scavenge) return;
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * roamSpeedMult;
-        
-        // --- NO LEGS = NO MOVE ---
         if (!body.hasLegs) speed = 0f; 
 
         MoveTowards(moveTarget, speed);
@@ -392,14 +391,12 @@ public class EnemyAI : MonoBehaviour
 
     void LogicChase()
     {
-        // --- NEW: Check Health for Fleeing ---
-        float healthPct = body.currentHealth / body.maxHealth;
-        if (healthPct < fleeHealthThreshold)
+        // --- UPDATED: Use Helper ---
+        if (ShouldFlee())
         {
             currentState = State.Flee;
             return;
         }
-        // -------------------------------------
 
         float distToPlayer = Vector2.Distance(transform.position, player.position);
 
@@ -421,8 +418,6 @@ public class EnemyAI : MonoBehaviour
         }
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
-        
-        // --- NO LEGS = NO MOVE ---
         if (!body.hasLegs) speed = 0f;
 
         MoveTowards(player.position, speed);
@@ -430,14 +425,12 @@ public class EnemyAI : MonoBehaviour
 
     void LogicAttack()
     {
-        // --- NEW: Check Health for Fleeing ---
-        float healthPct = body.currentHealth / body.maxHealth;
-        if (healthPct < fleeHealthThreshold)
+        // --- UPDATED: Use Helper ---
+        if (ShouldFlee())
         {
             currentState = State.Flee;
             return;
         }
-        // -------------------------------------
 
         rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.deltaTime * 10f);
         
@@ -468,8 +461,6 @@ public class EnemyAI : MonoBehaviour
         if (currentState == State.Scavenge) return;
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult; 
-        
-        // --- NO LEGS = NO MOVE ---
         if (!body.hasLegs) speed = 0f;
 
         MoveTowards(moveTarget, speed);
@@ -539,14 +530,11 @@ public class EnemyAI : MonoBehaviour
 
     void MoveTowards(Vector2 target, float speed)
     {
-        // --- NEW: Optimization ---
-        // If speed is 0 (no legs), ensure we stop completely and skip calculation
         if (speed <= 0.01f)
         {
             rb.linearVelocity = Vector2.zero;
             return;
         }
-        // -------------------------
 
         Vector2 desiredDir = (target - (Vector2)transform.position).normalized;
 
@@ -556,32 +544,42 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, bodyWidth / 2f, desiredDir, avoidDistance, obstacleLayer);
-            bool obstacleDetected = false;
+            // Avoidance Logic
+            bool trapDetected = false;
+            
+            // 1. Trap Check
+            RaycastHit2D trapHit = Physics2D.CircleCast(transform.position, bodyWidth * 0.8f, desiredDir, trapAvoidDistance, trapLayer);
+            if (trapHit.collider != null) trapDetected = true;
 
-            foreach(var hit in hits)
+            // 2. Wall Check
+            bool wallDetected = false;
+            RaycastHit2D[] wallHits = Physics2D.CircleCastAll(transform.position, bodyWidth / 2f, desiredDir, avoidDistance, obstacleLayer);
+            foreach(var hit in wallHits)
             {
-                if(hit.collider != null && hit.collider.gameObject != gameObject)
-                {
-                    obstacleDetected = true;
-                    break;
+                if(hit.collider != null && hit.collider.gameObject != gameObject) 
+                { 
+                    wallDetected = true; 
+                    break; 
                 }
             }
 
-            if (obstacleDetected)
+            if (trapDetected || wallDetected)
             {
-                Vector2 leftDir = Quaternion.Euler(0, 0, 50) * desiredDir;
-                Vector2 rightDir = Quaternion.Euler(0, 0, -50) * desiredDir;
+                Vector2 leftDir = Quaternion.Euler(0, 0, 60) * desiredDir;
+                Vector2 rightDir = Quaternion.Euler(0, 0, -60) * desiredDir;
 
-                bool hitLeft = Physics2D.Raycast(transform.position, leftDir, avoidDistance, obstacleLayer);
-                bool hitRight = Physics2D.Raycast(transform.position, rightDir, avoidDistance, obstacleLayer);
+                bool hitLeft = Physics2D.Raycast(transform.position, leftDir, avoidDistance, obstacleLayer) ||
+                               Physics2D.Raycast(transform.position, leftDir, trapAvoidDistance, trapLayer);
+
+                bool hitRight = Physics2D.Raycast(transform.position, rightDir, avoidDistance, obstacleLayer) ||
+                                Physics2D.Raycast(transform.position, rightDir, trapAvoidDistance, trapLayer);
 
                 if (!hitLeft && !hitRight) committedAvoidDir = leftDir; 
                 else if (!hitLeft) committedAvoidDir = leftDir;
                 else if (!hitRight) committedAvoidDir = rightDir;
                 else committedAvoidDir = -desiredDir; 
 
-                avoidanceCommitTimer = 0.3f; 
+                avoidanceCommitTimer = 0.4f; 
                 desiredDir = committedAvoidDir;
             }
         }
@@ -640,7 +638,7 @@ public class EnemyAI : MonoBehaviour
         else if (currentState == State.Flee)
         {
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, 1f); // Visual indicator for fleeing
+            Gizmos.DrawWireSphere(transform.position, 1f); 
         }
         
         Gizmos.color = Color.blue;

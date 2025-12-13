@@ -17,6 +17,7 @@ public class EnemyLimbController : MonoBehaviour
     public LimbData startingRightLeg;
 
     [Header("Limb Slots (Assign in Inspector)")]
+    [Tooltip("The parent object for visual shaking.")]
     public Transform visualsHolder;
     public Transform headSlot;
     public Transform leftArmSlot;
@@ -24,31 +25,41 @@ public class EnemyLimbController : MonoBehaviour
     public Transform leftLegSlot;
     public Transform rightLegSlot;
 
-    [Header("Visuals - Torso")] // --- NEW ---
+    [Header("Visuals - Torso")]
     [SerializeField] private GameObject torsoDefaultVisual;
     [SerializeField] private GameObject torsoDamagedVisual;
     [Tooltip("Health percentage (0-1) to show damaged visuals for Head/Torso.")]
     [SerializeField] private float damageVisualThreshold = 0.4f;
 
     [Header("Damage Settings")]
+    [Tooltip("Chance (0-1) that a limb will detach when the enemy takes damage.")]
     [Range(0f, 1f)] public float limbDropChance = 0.4f;
+    [Tooltip("Chance (0-1) that a detached limb spawns as a usable pickup. If false, it spawns as broken debris.")]
     [Range(0f, 1f)] public float maintainLimbChance = 0.3f; 
     
     [Header("Alert Settings")] 
+    [Tooltip("Radius to alert other enemies when damaged.")]
     [SerializeField] private float damageAlertRadius = 10f;
+    [Tooltip("Layer mask for enemies to alert.")]
     [SerializeField] private LayerMask enemyLayer; 
 
     [Header("Audio - Vocals")]
+    [Tooltip("Vocal sounds (grunts/screams) played when damaged.")]
     [SerializeField] private AudioClip[] damageSounds;
+    [Tooltip("Sounds played randomly when idle/roaming.")]
     [SerializeField] private AudioClip[] idleSounds;
+    [Tooltip("Sounds played when spotting the player.")]
     [SerializeField] private AudioClip[] spotSounds;
+    [Tooltip("Sounds played when attacking.")]
     [SerializeField] private AudioClip[] attackSounds;
     [SerializeField] private AudioClip[] deathSounds;
 
     [Header("Audio - FX")]
+    [Tooltip("Visceral sounds (squish/impact) played alongside damage sounds.")]
     [SerializeField] private AudioClip[] bloodSounds; 
     [SerializeField] private Color damageFlashColor = Color.red;
 
+    // --- Audio Throttling ---
     private static float lastGlobalDamageSoundTime = 0f;
     private const float MIN_DAMAGE_SOUND_INTERVAL = 0.1f; 
 
@@ -59,13 +70,16 @@ public class EnemyLimbController : MonoBehaviour
     private WorldLimb currentLeftLeg;
     private WorldLimb currentRightLeg;
 
-    private int initialLimbCount = 0; 
+    // Health Logic State
+    private int initialLimbCount = 0; // Arms + Legs only
 
+    // Stats calculated from limbs
     [HideInInspector] public float moveSpeedBonus = 0f;
     [HideInInspector] public float attackDamageBonus = 0f;
     [HideInInspector] public bool hasLegs = false;
     [HideInInspector] public bool hasArms = false;
 
+    // Components
     private AudioSource audioSource;
     private List<SpriteRenderer> renderers = new List<SpriteRenderer>();
 
@@ -74,15 +88,14 @@ public class EnemyLimbController : MonoBehaviour
         currentHealth = maxHealth;
         audioSource = GetComponent<AudioSource>();
 
+        // Equip starting limbs FIRST
         if (startingHead) AttachLimb(startingHead, LimbSlot.Head);
         if (startingLeftArm) AttachLimb(startingLeftArm, LimbSlot.LeftArm);
         if (startingRightArm) AttachLimb(startingRightArm, LimbSlot.RightArm);
         if (startingLeftLeg) AttachLimb(startingLeftLeg, LimbSlot.LeftLeg);
         if (startingRightLeg) AttachLimb(startingRightLeg, LimbSlot.RightLeg);
         
-        // Ensure default visual is active
         UpdateTorsoVisuals(false);
-
         UpdateStats();
 
         initialLimbCount = GetCurrentArmLegCount();
@@ -94,15 +107,14 @@ public class EnemyLimbController : MonoBehaviour
     {
         currentHealth -= amount;
         
-        // --- NEW: Check Low Health Visuals ---
+        // Check Low Health Visuals
         bool isLowHealth = (currentHealth / maxHealth) <= damageVisualThreshold;
         UpdateTorsoVisuals(isLowHealth);
         if (currentHead != null)
         {
             currentHead.SetVisualState(isLowHealth);
         }
-        // -------------------------------------
-
+        
         AlertNearbyEnemies();
 
         if (BloodManager.Instance != null)
@@ -111,12 +123,14 @@ public class EnemyLimbController : MonoBehaviour
             BloodManager.Instance.SpawnBlood(transform.position, dir);
         }
 
+        // Play Damage Sound (Throttled)
         if (Time.time - lastGlobalDamageSoundTime > MIN_DAMAGE_SOUND_INTERVAL)
         {
             PlayRandomClip(damageSounds);
             lastGlobalDamageSoundTime = Time.time;
         }
 
+        // Play Blood Sound (Not Throttled)
         PlayRandomClip(bloodSounds);
 
         StartCoroutine(FlashDamage());
@@ -136,6 +150,56 @@ public class EnemyLimbController : MonoBehaviour
                 LoseRandomArmOrLeg();
                 currentLimbs--;
             }
+        }
+    }
+
+    private void LoseRandomArmOrLeg()
+    {
+        List<LimbSlot> armSlots = new List<LimbSlot>();
+        List<LimbSlot> legSlots = new List<LimbSlot>();
+
+        // Sort existing limbs into categories
+        if (currentLeftArm) armSlots.Add(LimbSlot.LeftArm);
+        if (currentRightArm) armSlots.Add(LimbSlot.RightArm);
+        if (currentLeftLeg) legSlots.Add(LimbSlot.LeftLeg);
+        if (currentRightLeg) legSlots.Add(LimbSlot.RightLeg);
+
+        LimbSlot slotToLose = (LimbSlot)(-1); // Invalid default
+
+        // --- NEW: Bias towards Arms ---
+        float armBias = 0.75f; // 75% chance to target an arm if both types exist
+
+        if (armSlots.Count > 0 && legSlots.Count > 0)
+        {
+            // We have both, pick based on bias
+            if (Random.value < armBias)
+            {
+                slotToLose = armSlots[Random.Range(0, armSlots.Count)];
+            }
+            else
+            {
+                slotToLose = legSlots[Random.Range(0, legSlots.Count)];
+            }
+        }
+        else if (armSlots.Count > 0)
+        {
+            // Only arms left
+            slotToLose = armSlots[Random.Range(0, armSlots.Count)];
+        }
+        else if (legSlots.Count > 0)
+        {
+            // Only legs left
+            slotToLose = legSlots[Random.Range(0, legSlots.Count)];
+        }
+        else
+        {
+            // No limbs left to lose
+            return;
+        }
+
+        if ((int)slotToLose != -1)
+        {
+            DetachLimb(slotToLose);
         }
     }
 
@@ -247,21 +311,6 @@ public class EnemyLimbController : MonoBehaviour
         }
     }
 
-    private void LoseRandomArmOrLeg()
-    {
-        List<LimbSlot> availableSlots = new List<LimbSlot>();
-        if (currentLeftArm) availableSlots.Add(LimbSlot.LeftArm);
-        if (currentRightArm) availableSlots.Add(LimbSlot.RightArm);
-        if (currentLeftLeg) availableSlots.Add(LimbSlot.LeftLeg);
-        if (currentRightLeg) availableSlots.Add(LimbSlot.RightLeg);
-
-        if (availableSlots.Count > 0)
-        {
-            LimbSlot slot = availableSlots[Random.Range(0, availableSlots.Count)];
-            DetachLimb(slot);
-        }
-    }
-
     private int GetCurrentArmLegCount()
     {
         int count = 0;
@@ -287,15 +336,19 @@ public class EnemyLimbController : MonoBehaviour
 
         if (limbToRemove != null)
         {
+            // Spawn the pickup
             GameObject pickup = Instantiate(limbToRemove.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
             WorldLimb pickupScript = pickup.GetComponent<WorldLimb>();
             
+            // Fling it away
             Vector2 flingDir = Random.insideUnitCircle.normalized;
 
             bool isMaintained = Random.value < maintainLimbChance;
             
+            // Pass 'true' for isDamaged. Severed enemy limbs are always damaged.
             pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir, true);
 
+            // Important: Remove its renderer from our list so we don't try to flash a destroyed object
             SpriteRenderer[] limbRenderers = limbToRemove.GetComponentsInChildren<SpriteRenderer>();
             foreach(var sr in limbRenderers)
             {
