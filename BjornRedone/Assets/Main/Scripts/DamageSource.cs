@@ -1,12 +1,7 @@
 using UnityEngine;
-using System.Collections; // We need this for Coroutines
-using System.Collections.Generic; // We need this for Lists
+using System.Collections; 
+using System.Collections.Generic; 
 
-/// <summary>
-/// Attach this script to any object that should damage the player on contact.
-/// The object must have a Collider2D set to "Is Trigger = true".
-/// The Player must have a Rigidbody2D and the tag "Player".
-/// </summary>
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(AudioSource))] 
 public class DamageSource : MonoBehaviour
@@ -48,35 +43,27 @@ public class DamageSource : MonoBehaviour
     [SerializeField] private AudioClip damageSound;
     private AudioSource audioSource;
 
-    // --- Private Variables ---
     private Coroutine tickDamageCoroutine;
     private PlayerLimbController currentlyTickingPlayer;
-    private bool isTriggered = false; // Prevents one-shot traps from firing multiple times
-    private List<SpriteRenderer> allRenderers = new List<SpriteRenderer>(); // For fading
+    private bool isTriggered = false; 
+    private List<SpriteRenderer> allRenderers = new List<SpriteRenderer>(); 
 
     void Awake()
     {
         audioSource = GetComponent<AudioSource>();
         audioSource.playOnAwake = false;
         
-        // Find all renderers for fading
         GetComponentsInChildren<SpriteRenderer>(allRenderers);
 
-        // --- NEW: Initialize visuals ---
         if (isBeartrap)
         {
             if (openVisual != null) openVisual.SetActive(true);
             if (closedVisual != null) closedVisual.SetActive(false);
         }
-        // --- END NEW ---
     }
 
-    /// <summary>
-    /// Called when another collider enters this trigger.
-    /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // If this trap has already been triggered (e.g., a bullet), don't run again.
         if (isTriggered) return;
 
         // --- Check for Player ---
@@ -86,10 +73,11 @@ public class DamageSource : MonoBehaviour
             
             if (player != null)
             {
-                // --- BEARTRAP LOGIC ---
+                Vector2 hitDir = (other.transform.position - transform.position).normalized;
+
                 if (isBeartrap)
                 {
-                    isTriggered = true; // This trap is used up
+                    isTriggered = true; 
                     PlayerMovement playerMovement = other.GetComponent<PlayerMovement>();
                     
                     if (playerMovement != null)
@@ -98,19 +86,17 @@ public class DamageSource : MonoBehaviour
                         playerMovement.SetTrapped(true);
                     }
                     
-                    player.TakeDamage(damageAmount);
+                    // --- PASS DIRECTION ---
+                    player.TakeDamage(damageAmount, hitDir);
                     PlayDamageSound();
                     
-                    // --- Swap visuals ---
                     if (openVisual != null) openVisual.SetActive(false);
                     if (closedVisual != null) closedVisual.SetActive(true);
 
-                    // Start coroutine to release player and destroy trap
                     StartCoroutine(BeartrapReleaseCoroutine(playerMovement));
-                    return; // Don't run any other logic
+                    return; 
                 }
                 
-                // --- TICK DAMAGE LOGIC ---
                 if (isTickDamage)
                 {
                     if (tickDamageCoroutine == null)
@@ -119,19 +105,18 @@ public class DamageSource : MonoBehaviour
                         tickDamageCoroutine = StartCoroutine(TickDamage(player));
                     }
                 }
-                // --- INSTANT DAMAGE LOGIC ---
                 else
                 {
-                    player.TakeDamage(damageAmount);
+                    player.TakeDamage(damageAmount, hitDir);
 
                     if (destroyOnImpact)
                     {
-                        isTriggered = true; // Mark as used
+                        isTriggered = true; 
                         StartCoroutine(PlaySoundAndDestroy());
                     }
                     else
                     {
-                        PlayDamageSound(); // For non-destroying spikes
+                        PlayDamageSound(); 
                     }
                 }
             }
@@ -140,8 +125,8 @@ public class DamageSource : MonoBehaviour
         else if (other.GetComponent<EnemyLimbController>() != null)
         {
             EnemyLimbController enemy = other.GetComponent<EnemyLimbController>();
+            Vector2 hitDir = (other.transform.position - transform.position).normalized;
             
-            // --- BEARTRAP LOGIC (Enemy) ---
             if (isBeartrap)
             {
                 isTriggered = true; 
@@ -153,21 +138,17 @@ public class DamageSource : MonoBehaviour
                     enemyAI.SetTrapped(true);
                 }
                 
-                enemy.TakeDamage(damageAmount);
+                enemy.TakeDamage(damageAmount, hitDir);
                 PlayDamageSound();
                 
-                // --- Swap visuals ---
                 if (openVisual != null) openVisual.SetActive(false);
                 if (closedVisual != null) closedVisual.SetActive(true);
 
-                // Start coroutine to release enemy and destroy trap
                 StartCoroutine(BeartrapReleaseEnemyCoroutine(enemyAI));
                 return;
             }
             
-            // Note: Tick damage currently not implemented for enemies in this script, 
-            // but could be added easily. For now just instant.
-            enemy.TakeDamage(damageAmount);
+            enemy.TakeDamage(damageAmount, hitDir);
 
             if (destroyOnImpact)
             {
@@ -181,9 +162,6 @@ public class DamageSource : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Called when another collider exits this trigger.
-    /// </summary>
     private void OnTriggerExit2D(Collider2D other)
     {
         if (isTickDamage && other.CompareTag(playerTag))
@@ -203,9 +181,6 @@ public class DamageSource : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// A Coroutine that applies damage repeatedly.
-    /// </summary>
     private IEnumerator TickDamage(PlayerLimbController player)
     {
         Debug.Log("Starting tick damage...");
@@ -218,31 +193,27 @@ public class DamageSource : MonoBehaviour
                 yield break; 
             }
             
-            Debug.Log($"Dealing {damageAmount} tick damage to the player!");
-            player.TakeDamage(damageAmount);
+            // NOTE: Tick damage doesn't have a distinct "direction" every frame usually, 
+            // but we can pass Vector2.zero or calculate fresh each time.
+            Vector2 hitDir = (player.transform.position - transform.position).normalized;
+            player.TakeDamage(damageAmount, hitDir);
             PlayDamageSound();
             
             yield return new WaitForSeconds(tickRate);
         }
     }
 
-    /// <summary>
-    /// Plays the sound, disables the object, fades it out, then destroys it.
-    /// </summary>
     private IEnumerator PlaySoundAndDestroy()
     {
-        // Disable collider so it can't be hit again
         GetComponent<Collider2D>().enabled = false;
         
         PlayDamageSound();
         
-        // Wait for the sound to play (or fade, whichever is longer)
         float soundLength = damageSound != null ? damageSound.length : 0f;
         float waitTime = Mathf.Max(soundLength, fadeOutTime);
 
         yield return StartCoroutine(FadeOut(fadeOutTime));
         
-        // Wait any remaining time needed for sound
         if (waitTime > fadeOutTime)
         {
             yield return new WaitForSeconds(waitTime - fadeOutTime);
@@ -251,12 +222,8 @@ public class DamageSource : MonoBehaviour
         Destroy(gameObject);
     }
     
-    /// <summary>
-    /// Coroutine to release the player from the trap.
-    /// </summary>
     private IEnumerator BeartrapReleaseCoroutine(PlayerMovement playerMovement)
     {
-        // Disable collider
         GetComponent<Collider2D>().enabled = false;
 
         yield return new WaitForSeconds(trapDuration);
@@ -267,17 +234,12 @@ public class DamageSource : MonoBehaviour
             playerMovement.SetTrapped(false);
         }
         
-        // Fade out and destroy the trap
         yield return StartCoroutine(FadeOut(fadeOutTime));
         Destroy(gameObject);
     }
 
-    /// <summary>
-    /// Coroutine to release the enemy from the trap.
-    /// </summary>
     private IEnumerator BeartrapReleaseEnemyCoroutine(EnemyAI enemyAI)
     {
-        // Disable collider
         GetComponent<Collider2D>().enabled = false;
 
         yield return new WaitForSeconds(trapDuration);
@@ -288,26 +250,17 @@ public class DamageSource : MonoBehaviour
             enemyAI.SetTrapped(false);
         }
         
-        // Fade out and destroy the trap
         yield return StartCoroutine(FadeOut(fadeOutTime));
         Destroy(gameObject);
     }
 
-    /// <summary>
-    /// Fades all sprites on this object and its children.
-    /// </summary>
     private IEnumerator FadeOut(float duration)
     {
         float timer = 0f;
         
-        // --- MODIFIED: We must re-find the renderers ---
-        // We only found them in Awake(), but the active
-        // visual (open/closed) has changed.
         allRenderers.Clear();
         GetComponentsInChildren<SpriteRenderer>(allRenderers);
-        // --- END MODIFICATION ---
 
-        // Get initial colors
         Dictionary<SpriteRenderer, Color> initialColors = new Dictionary<SpriteRenderer, Color>();
         foreach (var sr in allRenderers)
         {
@@ -327,7 +280,6 @@ public class DamageSource : MonoBehaviour
             yield return null;
         }
         
-        // Ensure final alpha is 0
         foreach (var entry in initialColors)
         {
             if(entry.Key != null)
@@ -335,9 +287,6 @@ public class DamageSource : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Plays the assigned damage sound, if one exists.
-    /// </summary>
     private void PlayDamageSound()
     {
         if (audioSource != null && damageSound != null)

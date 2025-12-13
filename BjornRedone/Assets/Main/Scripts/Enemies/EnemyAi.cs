@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyAnimationController))]
 public class EnemyAI : MonoBehaviour
 {
-    private enum State { Roam, Chase, Attack, Investigate, Scavenge } // --- NEW State
+    private enum State { Roam, Chase, Attack, Investigate, Scavenge }
 
     [Header("AI Settings")]
     public float detectionRadius = 5f;
@@ -16,9 +16,9 @@ public class EnemyAI : MonoBehaviour
     public float baseMoveSpeed = 2f;
     public float baseDamage = 5f;
 
-    [Header("Scavenging")] // --- NEW ---
+    [Header("Scavenging")]
     [SerializeField] private float scavengeRadius = 6f;
-    [SerializeField] private float scavengeScanInterval = 1.0f; // How often to look for limbs
+    [SerializeField] private float scavengeScanInterval = 1.0f; 
 
     [Header("Speed Multipliers")]
     [SerializeField] private float roamSpeedMult = 0.5f;
@@ -115,7 +115,6 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        // --- State Machine ---
         switch (currentState)
         {
             case State.Roam:
@@ -130,43 +129,37 @@ public class EnemyAI : MonoBehaviour
             case State.Investigate:
                 LogicInvestigate();
                 break;
-            case State.Scavenge: // --- NEW
+            case State.Scavenge:
                 LogicScavenge();
                 break;
         }
 
-        // Cooldowns
         if (attackTimer > 0) attackTimer -= Time.deltaTime;
         if (avoidanceCommitTimer > 0) avoidanceCommitTimer -= Time.deltaTime;
         if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
     }
 
-    // --- NEW: Scavenge Logic ---
     void LogicScavenge()
     {
-        // 1. Check if limb still exists (Player or other enemy might have taken it)
         if (targetLimb == null)
         {
             PickNewRoamTarget();
             return;
         }
 
-        // 2. Check if we still see Player (Self-Preservation override)
         if (CanSeePlayer())
         {
             currentState = State.Chase;
             return;
         }
 
-        // 3. Move towards limb
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
-        if (!body.hasLegs) speed *= 0.3f; // Desperate crawl
+        if (!body.hasLegs) speed *= 0.3f; 
 
         MoveTowards(targetLimb.transform.position, speed);
 
-        // 4. Pickup Logic
         float dist = Vector2.Distance(transform.position, targetLimb.transform.position);
-        if (dist < 0.8f) // Close enough to grab
+        if (dist < 0.8f) 
         {
             bool attached = body.TryAttachLimb(targetLimb.GetLimbData(), targetLimb.IsShowingDamaged());
             if (attached)
@@ -174,7 +167,6 @@ public class EnemyAI : MonoBehaviour
                 Destroy(targetLimb.gameObject);
                 Debug.Log("Enemy successfully scavenged a limb!");
             }
-            // Done scavenging, go back to roaming
             PickNewRoamTarget();
         }
     }
@@ -184,20 +176,17 @@ public class EnemyAI : MonoBehaviour
         if (scavengeScanTimer > 0) return;
         scavengeScanTimer = scavengeScanInterval;
 
-        // Only scan if we actually need something
         bool needArm = body.IsMissingArm();
         bool needLeg = body.IsMissingLeg();
 
         if (!needArm && !needLeg) return;
 
-        // Find limbs
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, scavengeRadius);
         float closestDist = float.MaxValue;
         WorldLimb bestCandidate = null;
 
         foreach (var hit in hits)
         {
-            // Check if it is a limb pickup
             if (hit.CompareTag("LimbPickup")) 
             {
                 WorldLimb limb = hit.GetComponent<WorldLimb>();
@@ -205,10 +194,8 @@ public class EnemyAI : MonoBehaviour
                 {
                     LimbType type = limb.GetLimbData().limbType;
                     
-                    // Do we need this specific type?
                     if ((type == LimbType.Arm && needArm) || (type == LimbType.Leg && needLeg))
                     {
-                        // Can we see it? (Don't walk through walls for limbs)
                         if (CanSeeObject(hit.transform.position))
                         {
                             float d = Vector2.Distance(transform.position, hit.transform.position);
@@ -229,7 +216,6 @@ public class EnemyAI : MonoBehaviour
             currentState = State.Scavenge;
         }
     }
-    // ---------------------------
 
     void HandleStuckDetection()
     {
@@ -283,10 +269,8 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        // --- NEW: Scan for limbs while roaming ---
         ScanForLimbs();
-        if (currentState == State.Scavenge) return; // Switched state? exit.
-        // -----------------------------------------
+        if (currentState == State.Scavenge) return;
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * roamSpeedMult;
         if (!body.hasLegs) speed *= 0.2f;
@@ -355,10 +339,8 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        // --- NEW: Scan for limbs while investigating ---
         ScanForLimbs();
         if (currentState == State.Scavenge) return;
-        // -----------------------------------------------
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult; 
         if (!body.hasLegs) speed *= 0.3f;
@@ -388,7 +370,6 @@ public class EnemyAI : MonoBehaviour
         currentState = State.Investigate;
     }
 
-    // Generic visibility check (used for Player AND Limbs)
     private bool CanSeeObject(Vector2 targetPos)
     {
         float dist = Vector2.Distance(transform.position, targetPos);
@@ -422,7 +403,8 @@ public class EnemyAI : MonoBehaviour
             if (hit.CompareTag("Player"))
             {
                 PlayerLimbController pc = hit.GetComponent<PlayerLimbController>();
-                if (pc) pc.TakeDamage(damage);
+                // --- PASS DIRECTION HERE ---
+                if (pc) pc.TakeDamage(damage, dirToPlayer);
             }
         }
     }

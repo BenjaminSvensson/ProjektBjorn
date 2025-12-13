@@ -745,6 +745,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1818502933}
   - component: {fileID: 1818502932}
+  - component: {fileID: 1818502934}
   m_Layer: 0
   m_Name: GameHandeler
   m_TagString: Untagged
@@ -826,6 +827,25 @@ Transform:
   - {fileID: 619394802}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1818502934
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1818502931}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1321f6d7b5dd4b0478c59187d8f71d9f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BloodManager
+  bloodParticlePrefab: {fileID: 3723307590414735412, guid: bd7e781b4585a3047b592af4f68b4150, type: 3}
+  bloodSplatPrefabs:
+  - {fileID: 2541339990440168484, guid: 12bba7085d8f6a14a8511d743c926dca, type: 3}
+  - {fileID: 2223334475334203099, guid: 3784ea16952e2474bba5ed09478682b0, type: 3}
+  rotationOffset: 0
+  splatLifetime: 15
+  particleLifetime: 0.3
 --- !u!1001 &1917270266
 PrefabInstance:
   m_ObjectHideFlags: 0

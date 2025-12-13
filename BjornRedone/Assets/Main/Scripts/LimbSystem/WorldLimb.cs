@@ -3,10 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 
-/// <summary>
-/// This script is attached to the limb prefab. It controls the limb's
-/// visual state and its physical state (attached, thrown, or pickup).
-/// </summary>
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(SortingGroup))]
 [RequireComponent(typeof(DynamicYSorter))]
@@ -31,7 +27,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
     [Tooltip("Time in seconds after being thrown before the limb can be picked up.")]
     [SerializeField] private float pickupDelay = 1.0f;
 
-    // --- State ---
     private enum State { Idle, Attached, Thrown, Pickup }
     private State currentState = State.Idle;
     
@@ -46,7 +41,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
     private bool isShowingDamaged = false;
     private List<SpriteRenderer> brokenVisualRenderers = new List<SpriteRenderer>();
 
-    // --- IInteractable Implementation ---
     [Header("Interaction")]
     [Tooltip("The text that will appear on the interaction prompt.")]
     [SerializeField] private string interactionText = "Pick Up Limb";
@@ -54,7 +48,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
     public void Interact(PlayerLimbController player)
     {
-        // Only allow interaction if this is a usable pickup
         if (CanPickup())
         {
             bool attached = player.TryAttachLimb(limbData, isShowingDamaged);
@@ -64,7 +57,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
             }
         }
     }
-    // --- End IInteractable ---
 
     void Awake()
     {
@@ -131,7 +123,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (ySorter) ySorter.enabled = false;
     }
 
-    // --- MODIFIED: Added optional isDamaged parameter ---
     public void InitializeThrow(LimbData data, bool maintained, Vector2 direction, bool isDamaged = false)
     {
         limbData = data;
@@ -145,10 +136,8 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if(damagedVisual) damagedVisual.SetActive(false);
         if(brokenVisual) brokenVisual.SetActive(false);
 
-        // Visual Logic based on Maintained status
         if (isMaintained)
         {
-            // Usable limb - Show either Damaged or Default visual
             if (isShowingDamaged)
             {
                 if(damagedVisual) damagedVisual.SetActive(true);
@@ -160,7 +149,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
         }
         else
         {
-            // Debris - Show broken visual
             if(brokenVisual) brokenVisual.SetActive(true);
         }
 
@@ -170,7 +158,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (ySorter) ySorter.enabled = true;
 
         col.enabled = true;
-        col.isTrigger = false; // Start as solid (so it can bounce)
+        col.isTrigger = false; 
         if (rb)
         {
             rb.bodyType = RigidbodyType2D.Dynamic;
@@ -245,11 +233,17 @@ public class WorldLimb : MonoBehaviour, IInteractable
         
         col.isTrigger = true;
 
+        // --- NEW: Splat on land ---
+        if (BloodManager.Instance != null && (isShowingDamaged || !isMaintained))
+        {
+            // Small splat for a limb hitting the ground
+            BloodManager.Instance.SpawnBlood(transform.position, Vector2.down, 0.7f);
+        }
+        // --------------------------
+
         if (isMaintained)
         {
             gameObject.tag = "LimbPickup";
-            // --- MODIFIED: Maintained/Usable limbs do NOT despawn now ---
-            // StartCoroutine(DespawnTimer(pickupDespawnTime)); 
         }
         else
         {

@@ -79,11 +79,21 @@ public class EnemyLimbController : MonoBehaviour
         GetComponentsInChildren<SpriteRenderer>(renderers);
     }
 
-    public void TakeDamage(float amount)
+    // --- MODIFIED: Added hitDirection parameter ---
+    public void TakeDamage(float amount, Vector2 hitDirection = default)
     {
         currentHealth -= amount;
         
         AlertNearbyEnemies();
+
+        // --- NEW: Blood Spread ---
+        if (BloodManager.Instance != null)
+        {
+            // If no direction provided (e.g. trap), pick random
+            Vector2 dir = hitDirection == Vector2.zero ? Random.insideUnitCircle.normalized : hitDirection;
+            BloodManager.Instance.SpawnBlood(transform.position, dir);
+        }
+        // -------------------------
 
         if (damageSound && audioSource) audioSource.PlayOneShot(damageSound);
         StartCoroutine(FlashDamage());
@@ -106,7 +116,6 @@ public class EnemyLimbController : MonoBehaviour
         }
     }
 
-    // --- NEW: Dynamic Attachment for AI Scavenging ---
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
         if (limbToAttach == null) return false;
@@ -142,7 +151,6 @@ public class EnemyLimbController : MonoBehaviour
 
         if (attached)
         {
-            // Restore a chunk of health when regaining a limb!
             float healthPerLimb = maxHealth / Mathf.Max(1, initialLimbCount);
             currentHealth = Mathf.Min(currentHealth + healthPerLimb, maxHealth);
             return true;
@@ -151,7 +159,6 @@ public class EnemyLimbController : MonoBehaviour
         return false;
     }
 
-    // --- NEW: Helper Methods for AI ---
     public bool IsMissingArm()
     {
         return currentLeftArm == null || currentRightArm == null;
@@ -161,7 +168,6 @@ public class EnemyLimbController : MonoBehaviour
     {
         return currentLeftLeg == null || currentRightLeg == null;
     }
-    // ---------------------------------
 
     private void AlertNearbyEnemies()
     {
@@ -218,20 +224,15 @@ public class EnemyLimbController : MonoBehaviour
 
         if (limbToRemove != null)
         {
-            // Spawn the pickup
             GameObject pickup = Instantiate(limbToRemove.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
             WorldLimb pickupScript = pickup.GetComponent<WorldLimb>();
             
-            // Fling it away
             Vector2 flingDir = Random.insideUnitCircle.normalized;
 
-            // --- CHANGED: Use probability to decide if it's usable (maintained) or broken ---
             bool isMaintained = Random.value < maintainLimbChance;
             
-            // Pass the current damaged state to the thrown limb
             pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir, limbToRemove.IsShowingDamaged());
 
-            // Important: Remove its renderer from our list so we don't try to flash a destroyed object
             SpriteRenderer[] limbRenderers = limbToRemove.GetComponentsInChildren<SpriteRenderer>();
             foreach(var sr in limbRenderers)
             {
@@ -243,7 +244,6 @@ public class EnemyLimbController : MonoBehaviour
         }
     }
 
-    // Helper for Internal (Start) and Dynamic (TryAttach)
     private void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged)
     {
         Transform parentSlot = GetSlotTransform(slot);
@@ -272,7 +272,6 @@ public class EnemyLimbController : MonoBehaviour
         SpriteRenderer[] srs = limbObj.GetComponentsInChildren<SpriteRenderer>();
         foreach (var r in srs) r.sortingOrder = order;
 
-        // Add to main renderer list for flashing
         renderers.AddRange(srs);
 
         UpdateStats();

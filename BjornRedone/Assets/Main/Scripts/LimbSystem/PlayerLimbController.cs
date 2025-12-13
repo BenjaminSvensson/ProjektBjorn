@@ -84,20 +84,15 @@ public class PlayerLimbController : MonoBehaviour
             Debug.LogError("VisualsHolder is not assigned in PlayerLimbController!");
         }
 
-        // Spawn starting limbs, but tell AttachToSlot NOT to update stats yet.
         if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
         if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false);
         if(startingArm) AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false);
         if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false);
         if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false);
 
-        // Now, update stats ONCE, after all limbs are attached.
         UpdatePlayerStats();
     }
 
-    /// <summary>
-    /// Attaches a limb prefab to a specific slot.
-    /// </summary>
     void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged, bool updateStats = true)
     {
         Transform parentSlot = GetSlotTransform(slot);
@@ -159,15 +154,10 @@ public class PlayerLimbController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Called when picking up a limb.
-    /// </summary>
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
         if (limbToAttach == null) return false;
 
-        // Note: This calls AttachToSlot with the default updateStats = true,
-        // so it will correctly update stats when picking up a limb.
         if (limbToAttach.limbType == LimbType.Arm)
         {
             if (currentRightArm == null)
@@ -197,15 +187,21 @@ public class PlayerLimbController : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Call this when the player takes damage.
-    /// </summary>
-    public void TakeDamage(float damageAmount)
+    // --- MODIFIED: Added hitDirection parameter ---
+    public void TakeDamage(float damageAmount, Vector2 hitDirection = default)
     {
         if (audioSource != null && damageSound != null)
         {
             audioSource.PlayOneShot(damageSound);
         }
+
+        // --- NEW: Blood Spread ---
+        if (BloodManager.Instance != null)
+        {
+            Vector2 dir = hitDirection == Vector2.zero ? Random.insideUnitCircle.normalized : hitDirection;
+            BloodManager.Instance.SpawnBlood(transform.position, dir);
+        }
+        // -------------------------
 
         if (flashCoroutine != null)
         {
@@ -244,9 +240,6 @@ public class PlayerLimbController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Detaches a limb from a slot and spawns a pickup.
-    /// </summary>
     void DetachLimb(LimbSlot slot)
     {
         WorldLimb limbToDetach = null;
@@ -296,9 +289,6 @@ public class PlayerLimbController : MonoBehaviour
         UpdatePlayerStats();
     }
 
-    /// <summary>
-    /// Recalculates all player stats based on current limbs and applies them.
-    /// </summary>
     void UpdatePlayerStats()
     {
         float totalMoveSpeed = 0f;
@@ -333,12 +323,10 @@ public class PlayerLimbController : MonoBehaviour
             playerMovement.SetMoveSpeed(totalMoveSpeed);
         }
 
-        // Crawl State Logic
         canCrawl = (legCount == 0 && armCount > 0);
 
         Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}, Arms={armCount}, CanCrawl={canCrawl}");
 
-        // --- Helplessness Check ---
         if (legCount == 0 && armCount == 0)
         {
             if (currentHead != null)
@@ -377,8 +365,6 @@ public class PlayerLimbController : MonoBehaviour
         if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos;
     }
 
-    // --- PUBLIC GETTERS for PlayerAttackController ---
-    
     public bool CanAttack()
     {
         return currentLeftArm != null || currentRightArm != null;
@@ -401,7 +387,6 @@ public class PlayerLimbController : MonoBehaviour
         }
     }
 
-    // --- PUBLIC GETTERS for PlayerAnimationController ---
     public Transform GetVisualsHolder() { return visualsHolder; }
     public Transform GetLeftArmSlot() { return leftArmSlot; }
     public Transform GetRightArmSlot() { return rightArmSlot; }
@@ -409,9 +394,6 @@ public class PlayerLimbController : MonoBehaviour
     public Transform GetRightLegSlot() { return rightLegSlot; }
 
 
-    /// <summary>
-    /// Shakes the visualsHolder transform for a short duration.
-    /// </summary>
     private IEnumerator ShakeVisuals()
     {
         isShaking = true;
@@ -438,19 +420,14 @@ public class PlayerLimbController : MonoBehaviour
         isShaking = false;
     }
 
-    /// <summary>
-    /// Flashes all player sprites (body and limbs) to the flashColor.
-    /// </summary>
     private IEnumerator FlashDamageCoroutine()
     {
-        // 1. Find all renderers
         currentRenderers.Clear();
         if (visualsHolder != null)
         {
             visualsHolder.GetComponentsInChildren<SpriteRenderer>(currentRenderers);
         }
 
-        // 2. Set to flash color
         foreach (var renderer in currentRenderers)
         {
             if (renderer != null)
@@ -459,10 +436,8 @@ public class PlayerLimbController : MonoBehaviour
             }
         }
 
-        // 3. Wait
         yield return new WaitForSeconds(flashDuration);
 
-        // 4. Reset to white
         foreach (var renderer in currentRenderers)
         {
             if (renderer != null)
@@ -471,6 +446,6 @@ public class PlayerLimbController : MonoBehaviour
             }
         }
         
-        flashCoroutine = null; // Mark as finished
+        flashCoroutine = null; 
     }
 }
