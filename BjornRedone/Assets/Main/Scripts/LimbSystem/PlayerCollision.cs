@@ -3,58 +3,62 @@ using UnityEngine;
 /// <summary>
 /// This script goes on a child GameObject of the Player.
 /// It should have a Collider2D.
-/// It detects collision with limb pickups (both triggers and solid physics objects).
+/// It detects collision with pickups (limbs, coins, weapons).
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class PlayerCollision : MonoBehaviour
 {
-    [Header("Required Reference")]
+    [Header("Required References")]
     [SerializeField] private PlayerLimbController limbController;
+    [SerializeField] private WeaponSystem weaponSystem;
 
     void Awake()
     {
-        if (limbController == null)
-        {
-            // If not assigned, try to find it on the parent
-            limbController = GetComponentInParent<PlayerLimbController>();
-        }
-        if (limbController == null)
-        {
-            Debug.LogError("PlayerCollision could not find the PlayerLimbController!");
-        }
+        if (limbController == null) limbController = GetComponentInParent<PlayerLimbController>();
+        if (weaponSystem == null) weaponSystem = GetComponentInParent<WeaponSystem>();
+        
+        if (limbController == null) Debug.LogError("PlayerCollision: Missing PlayerLimbController!");
     }
 
-    // Handle Trigger pickups (Legacy or if isTrigger is true)
+    // Handle Trigger pickups
     void OnTriggerEnter2D(Collider2D other)
     {
-        HandleLimbCollision(other.gameObject);
+        HandleCollision(other.gameObject);
     }
 
-    // --- NEW: Handle Physical pickups (Solid objects you can push) ---
+    // Handle Physical pickups
     void OnCollisionEnter2D(Collision2D collision)
     {
-        HandleLimbCollision(collision.gameObject);
+        HandleCollision(collision.gameObject);
     }
 
-    private void HandleLimbCollision(GameObject otherObj)
+    private void HandleCollision(GameObject otherObj)
     {
-        // Check if we collided with a limb pickup
+        // 1. Check for LIMBS
         WorldLimb worldLimb = otherObj.GetComponent<WorldLimb>();
         if (worldLimb != null && worldLimb.CanPickup())
         {
-            // Try to attach this limb
             if (limbController != null)
             {
-                // Check if the limb is damaged and pass it
-                bool isDamaged = worldLimb.IsShowingDamaged();
-                bool attached = limbController.TryAttachLimb(worldLimb.GetLimbData(), isDamaged);
-                
-                // Only destroy the pickup if we successfully attached it
-                if (attached)
+                bool attached = limbController.TryAttachLimb(worldLimb.GetLimbData(), worldLimb.IsShowingDamaged());
+                if (attached) Destroy(otherObj);
+            }
+            return; // Handled
+        }
+
+        // 2. Check for WEAPONS
+        WeaponPickup weaponPickup = otherObj.GetComponent<WeaponPickup>();
+        if (weaponPickup != null && weaponPickup.CanPickup())
+        {
+            if (weaponSystem != null)
+            {
+                bool pickedUp = weaponSystem.TryPickupWeapon(weaponPickup.GetWeaponData());
+                if (pickedUp)
                 {
                     Destroy(otherObj);
                 }
             }
+            return; // Handled
         }
     }
 }

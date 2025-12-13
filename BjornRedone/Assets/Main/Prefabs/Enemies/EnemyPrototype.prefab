@@ -519,7 +519,7 @@ MonoBehaviour:
   minIdleSoundInterval: 3
   maxIdleSoundInterval: 8
   minFleeSoundInterval: 0.6
-  attackCooldown: 1
+  attackCooldown: 0.5
   minRoamWaitTime: 0.1
   maxRoamWaitTime: 1
   investigateTime: 3
