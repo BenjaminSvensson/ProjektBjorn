@@ -236,7 +236,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.35
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -333,7 +333,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.35
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -433,7 +433,7 @@ MonoBehaviour:
   currentHealth: 15
   coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
   minCoins: 1
-  maxCoins: 3
+  maxCoins: 5
   startingHead: {fileID: 11400000, guid: 0af1cd97961f64841aadc75c0adc4662, type: 2}
   startingLeftArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
   startingRightArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
@@ -492,7 +492,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
   detectionRadius: 5.3
   hearingRadius: 8.5
-  attackRange: 1.4
+  attackRange: 1.8
   roamRadius: 3
   baseMoveSpeed: 2.8
   baseDamage: 5

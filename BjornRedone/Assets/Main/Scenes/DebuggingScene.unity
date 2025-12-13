@@ -727,7 +727,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: ffcf4c76ed513dd47a1eb150bb6e8bf0, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.463
+  m_Volume: 0.3
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -1079,6 +1079,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 548611861996895180, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Volume
+      value: 0.35
+      objectReference: {fileID: 0}
     - target: {fileID: 1377067640258601991, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_Name
       value: Player
@@ -1122,6 +1126,10 @@ PrefabInstance:
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6162117553466222711, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Volume
+      value: 0.35
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
