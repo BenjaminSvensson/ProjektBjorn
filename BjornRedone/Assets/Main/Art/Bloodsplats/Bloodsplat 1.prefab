@@ -106,6 +106,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BloodSplat
   deceleration: 5
   spreadSpeed: 5
-  maxScale: 0.45
+  maxScale: 0.6
   lifetime: 15
   randomizeRotation: 1

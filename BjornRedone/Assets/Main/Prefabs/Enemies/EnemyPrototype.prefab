@@ -450,10 +450,13 @@ MonoBehaviour:
     m_Bits: 512
   damageSounds:
   - {fileID: 8300000, guid: 0903410f06bd7b54b80a9c1c09dfcb2f, type: 3}
-  bloodSounds:
-  - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
+  idleSounds: []
+  spotSounds: []
+  attackSounds: []
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
+  bloodSounds:
+  - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   moveSpeedBonus: 0
   attackDamageBonus: 0
@@ -473,14 +476,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
   detectionRadius: 3.5
   hearingRadius: 6
-  attackRange: 1
+  attackRange: 1.2
   roamRadius: 3
   baseMoveSpeed: 2
   baseDamage: 5
   scavengeRadius: 6
   scavengeScanInterval: 1
   roamSpeedMult: 0.5
-  chaseSpeedMult: 1.4
+  chaseSpeedMult: 1.8
   turningSpeed: 5
   obstacleLayer:
     serializedVersion: 2
@@ -490,6 +493,8 @@ MonoBehaviour:
   stuckCheckInterval: 0.3
   stuckThreshold: 0.1
   unstuckDuration: 0.6
+  minIdleSoundInterval: 3
+  maxIdleSoundInterval: 8
   attackCooldown: 1
   minRoamWaitTime: 0.1
   maxRoamWaitTime: 1

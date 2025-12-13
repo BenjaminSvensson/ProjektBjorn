@@ -37,13 +37,26 @@ public class EnemyLimbController : MonoBehaviour
     [Tooltip("Layer mask for enemies to alert.")]
     [SerializeField] private LayerMask enemyLayer; 
 
-    [Header("Audio")]
+    [Header("Audio - Vocals")]
     [Tooltip("Vocal sounds (grunts/screams) played when damaged.")]
     [SerializeField] private AudioClip[] damageSounds;
+    [Tooltip("Sounds played randomly when idle/roaming.")]
+    [SerializeField] private AudioClip[] idleSounds;
+    [Tooltip("Sounds played when spotting the player.")]
+    [SerializeField] private AudioClip[] spotSounds;
+    [Tooltip("Sounds played when attacking.")]
+    [SerializeField] private AudioClip[] attackSounds;
+    [SerializeField] private AudioClip[] deathSounds;
+
+    [Header("Audio - FX")]
     [Tooltip("Visceral sounds (squish/impact) played alongside damage sounds.")]
     [SerializeField] private AudioClip[] bloodSounds; 
-    [SerializeField] private AudioClip[] deathSounds;
     [SerializeField] private Color damageFlashColor = Color.red;
+
+    // --- Audio Throttling ---
+    // Static variable shared by ALL enemies to prevent ear-bleeding when multiple are hit at once
+    private static float lastGlobalDamageSoundTime = 0f;
+    private const float MIN_DAMAGE_SOUND_INTERVAL = 0.1f; 
 
     // --- State ---
     private WorldLimb currentHead;
@@ -96,19 +109,17 @@ public class EnemyLimbController : MonoBehaviour
             BloodManager.Instance.SpawnBlood(transform.position, dir);
         }
 
-        // --- Play Random Damage Sound (Vocal) ---
-        if (damageSounds != null && damageSounds.Length > 0 && audioSource != null)
+        // --- Play Damage Sound (Throttled) ---
+        // Only play vocal damage sound if enough time has passed since the last enemy screamed
+        if (Time.time - lastGlobalDamageSoundTime > MIN_DAMAGE_SOUND_INTERVAL)
         {
-            AudioClip clip = damageSounds[Random.Range(0, damageSounds.Length)];
-            if (clip != null) audioSource.PlayOneShot(clip);
+            PlayRandomClip(damageSounds);
+            lastGlobalDamageSoundTime = Time.time;
         }
 
-        // --- NEW: Play Random Blood Sound (Squish) ---
-        if (bloodSounds != null && bloodSounds.Length > 0 && audioSource != null)
-        {
-            AudioClip clip = bloodSounds[Random.Range(0, bloodSounds.Length)];
-            if (clip != null) audioSource.PlayOneShot(clip);
-        }
+        // --- Play Blood Sound (Not Throttled) ---
+        // Squish sounds are fine to overlap, they add texture
+        PlayRandomClip(bloodSounds);
 
         StartCoroutine(FlashDamage());
 
@@ -126,6 +137,36 @@ public class EnemyLimbController : MonoBehaviour
             {
                 LoseRandomArmOrLeg();
                 currentLimbs--;
+            }
+        }
+    }
+
+    // --- Audio Helper Methods for AI ---
+    public void PlayIdleSound()
+    {
+        PlayRandomClip(idleSounds, 0.8f); // Slightly lower volume for idle
+    }
+
+    public void PlaySpotSound()
+    {
+        PlayRandomClip(spotSounds, 1.2f); // Slightly louder for alert
+    }
+
+    public void PlayAttackSound()
+    {
+        PlayRandomClip(attackSounds);
+    }
+
+    private void PlayRandomClip(AudioClip[] clips, float volumeScale = 1f)
+    {
+        if (clips != null && clips.Length > 0 && audioSource != null)
+        {
+            AudioClip clip = clips[Random.Range(0, clips.Length)];
+            if (clip != null)
+            {
+                // Varied pitch prevents repetitive machine-gun effect
+                audioSource.pitch = Random.Range(0.9f, 1.1f);
+                audioSource.PlayOneShot(clip, volumeScale);
             }
         }
     }

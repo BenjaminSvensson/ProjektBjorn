@@ -35,6 +35,10 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float stuckThreshold = 0.1f;
     [SerializeField] private float unstuckDuration = 1.0f;
 
+    [Header("Audio Behavior")] // --- NEW ---
+    [SerializeField] private float minIdleSoundInterval = 3f;
+    [SerializeField] private float maxIdleSoundInterval = 8f;
+
     [Header("Timers")]
     public float attackCooldown = 1.5f;
     public float minRoamWaitTime = 1f;
@@ -55,6 +59,9 @@ public class EnemyAI : MonoBehaviour
     private float stateTimer;
     private float attackTimer;
     private Vector3 originalScale;
+
+    // Audio State
+    private float idleSoundTimer;
 
     // Scavenge State
     private WorldLimb targetLimb;
@@ -93,6 +100,9 @@ public class EnemyAI : MonoBehaviour
 
         positionAtLastCheck = transform.position;
         stuckTimer = stuckCheckInterval;
+        
+        // Initialize audio timer
+        idleSoundTimer = Random.Range(minIdleSoundInterval, maxIdleSoundInterval);
 
         PickNewRoamTarget();
     }
@@ -108,6 +118,7 @@ public class EnemyAI : MonoBehaviour
         }
 
         HandleStuckDetection();
+        HandleIdleSounds(); // --- NEW ---
 
         if (isForcingUnstuck)
         {
@@ -139,6 +150,35 @@ public class EnemyAI : MonoBehaviour
         if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
     }
 
+    // --- NEW: Idle Sound Logic ---
+    void HandleIdleSounds()
+    {
+        // Only make idle noises in passive states
+        if (currentState == State.Roam || currentState == State.Investigate)
+        {
+            idleSoundTimer -= Time.deltaTime;
+            if (idleSoundTimer <= 0)
+            {
+                // Only play sound if player is somewhat close (optimization)
+                if (Vector2.Distance(transform.position, player.position) < 15f)
+                {
+                    body.PlayIdleSound();
+                }
+                idleSoundTimer = Random.Range(minIdleSoundInterval, maxIdleSoundInterval);
+            }
+        }
+    }
+
+    // --- Helper to switch state and play sound ---
+    void SwitchToChaseState()
+    {
+        if (currentState != State.Chase)
+        {
+            currentState = State.Chase;
+            body.PlaySpotSound(); // Trigger "Spot" sound
+        }
+    }
+
     void LogicScavenge()
     {
         if (targetLimb == null)
@@ -149,7 +189,7 @@ public class EnemyAI : MonoBehaviour
 
         if (CanSeePlayer())
         {
-            currentState = State.Chase;
+            SwitchToChaseState();
             return;
         }
 
@@ -265,7 +305,7 @@ public class EnemyAI : MonoBehaviour
 
         if (CanSeePlayer())
         {
-            currentState = State.Chase;
+            SwitchToChaseState();
             return;
         }
 
@@ -320,7 +360,7 @@ public class EnemyAI : MonoBehaviour
 
         if (distToPlayer > attackRange * 1.2f)
         {
-            currentState = State.Chase;
+            SwitchToChaseState(); // Go back to chase
             return;
         }
 
@@ -335,7 +375,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (CanSeePlayer())
         {
-            currentState = State.Chase;
+            SwitchToChaseState();
             return;
         }
 
@@ -389,6 +429,10 @@ public class EnemyAI : MonoBehaviour
     {
         if (!body.hasArms) return; 
 
+        // --- NEW: Play Attack Sound ---
+        body.PlayAttackSound();
+        // ------------------------------
+
         LimbData weapon = body.GetActiveWeaponLimb();
         float damage = baseDamage + body.attackDamageBonus;
         float punchDuration = weapon != null ? weapon.punchDuration : 0.2f;
@@ -403,8 +447,7 @@ public class EnemyAI : MonoBehaviour
             if (hit.CompareTag("Player"))
             {
                 PlayerLimbController pc = hit.GetComponent<PlayerLimbController>();
-                // --- PASS DIRECTION HERE ---
-                if (pc) pc.TakeDamage(damage, dirToPlayer);
+                if (pc) pc.TakeDamage(damage);
             }
         }
     }
