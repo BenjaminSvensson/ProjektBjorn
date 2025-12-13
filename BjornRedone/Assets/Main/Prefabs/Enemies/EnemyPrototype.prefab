@@ -442,9 +442,18 @@ MonoBehaviour:
   rightArmSlot: {fileID: 2355926064837032603}
   leftLegSlot: {fileID: 7786675115033756154}
   rightLegSlot: {fileID: 4552412400914023739}
-  limbDropChance: 0.4
-  maintainLimbChance: 0.3
-  damageSound: {fileID: 8300000, guid: 0903410f06bd7b54b80a9c1c09dfcb2f, type: 3}
+  limbDropChance: 0.2
+  maintainLimbChance: 0.05
+  damageAlertRadius: 10
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  damageSounds:
+  - {fileID: 8300000, guid: 0903410f06bd7b54b80a9c1c09dfcb2f, type: 3}
+  bloodSounds:
+  - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
+  deathSounds:
+  - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   moveSpeedBonus: 0
   attackDamageBonus: 0
@@ -468,14 +477,16 @@ MonoBehaviour:
   roamRadius: 3
   baseMoveSpeed: 2
   baseDamage: 5
+  scavengeRadius: 6
+  scavengeScanInterval: 1
   roamSpeedMult: 0.5
   chaseSpeedMult: 1.4
   turningSpeed: 5
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 1024
-  avoidDistance: 0.4
-  bodyWidth: 0.5
+  avoidDistance: 0.8
+  bodyWidth: 1
   stuckCheckInterval: 0.3
   stuckThreshold: 0.1
   unstuckDuration: 0.6

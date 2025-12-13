@@ -37,7 +37,12 @@ public class EnemyLimbController : MonoBehaviour
     [Tooltip("Layer mask for enemies to alert.")]
     [SerializeField] private LayerMask enemyLayer; 
 
-    [SerializeField] private AudioClip damageSound;
+    [Header("Audio")]
+    [Tooltip("Vocal sounds (grunts/screams) played when damaged.")]
+    [SerializeField] private AudioClip[] damageSounds;
+    [Tooltip("Visceral sounds (squish/impact) played alongside damage sounds.")]
+    [SerializeField] private AudioClip[] bloodSounds; 
+    [SerializeField] private AudioClip[] deathSounds;
     [SerializeField] private Color damageFlashColor = Color.red;
 
     // --- State ---
@@ -79,23 +84,32 @@ public class EnemyLimbController : MonoBehaviour
         GetComponentsInChildren<SpriteRenderer>(renderers);
     }
 
-    // --- MODIFIED: Added hitDirection parameter ---
     public void TakeDamage(float amount, Vector2 hitDirection = default)
     {
         currentHealth -= amount;
         
         AlertNearbyEnemies();
 
-        // --- NEW: Blood Spread ---
         if (BloodManager.Instance != null)
         {
-            // If no direction provided (e.g. trap), pick random
             Vector2 dir = hitDirection == Vector2.zero ? Random.insideUnitCircle.normalized : hitDirection;
             BloodManager.Instance.SpawnBlood(transform.position, dir);
         }
-        // -------------------------
 
-        if (damageSound && audioSource) audioSource.PlayOneShot(damageSound);
+        // --- Play Random Damage Sound (Vocal) ---
+        if (damageSounds != null && damageSounds.Length > 0 && audioSource != null)
+        {
+            AudioClip clip = damageSounds[Random.Range(0, damageSounds.Length)];
+            if (clip != null) audioSource.PlayOneShot(clip);
+        }
+
+        // --- NEW: Play Random Blood Sound (Squish) ---
+        if (bloodSounds != null && bloodSounds.Length > 0 && audioSource != null)
+        {
+            AudioClip clip = bloodSounds[Random.Range(0, bloodSounds.Length)];
+            if (clip != null) audioSource.PlayOneShot(clip);
+        }
+
         StartCoroutine(FlashDamage());
 
         if (currentHealth <= 0)
@@ -224,15 +238,19 @@ public class EnemyLimbController : MonoBehaviour
 
         if (limbToRemove != null)
         {
+            // Spawn the pickup
             GameObject pickup = Instantiate(limbToRemove.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
             WorldLimb pickupScript = pickup.GetComponent<WorldLimb>();
             
+            // Fling it away
             Vector2 flingDir = Random.insideUnitCircle.normalized;
 
             bool isMaintained = Random.value < maintainLimbChance;
             
-            pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir, limbToRemove.IsShowingDamaged());
+            // Pass 'true' for isDamaged. Severed enemy limbs are always damaged.
+            pickupScript.InitializeThrow(limbToRemove.GetLimbData(), isMaintained, flingDir, true);
 
+            // Important: Remove its renderer from our list so we don't try to flash a destroyed object
             SpriteRenderer[] limbRenderers = limbToRemove.GetComponentsInChildren<SpriteRenderer>();
             foreach(var sr in limbRenderers)
             {
@@ -314,6 +332,23 @@ public class EnemyLimbController : MonoBehaviour
 
     private void Die()
     {
+        // --- NEW: Extra Big Blood Splash on Death ---
+        if (BloodManager.Instance != null)
+        {
+            // Spawn with intensity multiplier of 2.5
+            BloodManager.Instance.SpawnBlood(transform.position, Random.insideUnitCircle.normalized, 2.5f);
+        }
+
+        // --- Play Random Death Sound ---
+        if (deathSounds != null && deathSounds.Length > 0)
+        {
+            AudioClip clip = deathSounds[Random.Range(0, deathSounds.Length)];
+            if (clip != null)
+            {
+                AudioSource.PlayClipAtPoint(clip, transform.position);
+            }
+        }
+
         if (currentLeftArm) DetachLimb(LimbSlot.LeftArm);
         if (currentRightArm) DetachLimb(LimbSlot.RightArm);
         if (currentLeftLeg) DetachLimb(LimbSlot.LeftLeg);
