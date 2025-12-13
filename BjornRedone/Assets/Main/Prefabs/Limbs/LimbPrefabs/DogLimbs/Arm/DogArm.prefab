@@ -252,7 +252,7 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -288,8 +288,8 @@ MonoBehaviour:
   brokenVisual: {fileID: 6753134318681120763}
   shadowGameObject: {fileID: 20196419967631131}
   throwForce: 1
-  pickupDespawnTime: 10
   pickupDelay: 0.5
+  brokenLimbLifetime: 30
   interactionText: Pick Up Limb
 --- !u!210 &5776033817896907670
 SortingGroup:

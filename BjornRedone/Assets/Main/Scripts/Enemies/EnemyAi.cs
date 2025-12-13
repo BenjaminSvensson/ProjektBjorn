@@ -51,6 +51,8 @@ public class EnemyAI : MonoBehaviour
     [Header("Audio Behavior")] 
     [SerializeField] private float minIdleSoundInterval = 3f;
     [SerializeField] private float maxIdleSoundInterval = 8f;
+    [Tooltip("Minimum time (seconds) between flee sounds to prevent spam.")]
+    [SerializeField] private float minFleeSoundInterval = 0.6f;
 
     [Header("Timers")]
     public float attackCooldown = 1.5f;
@@ -75,6 +77,7 @@ public class EnemyAI : MonoBehaviour
 
     // Audio State
     private float idleSoundTimer;
+    private float fleeSoundTimer;
 
     // Scavenge State
     private WorldLimb targetLimb;
@@ -169,6 +172,7 @@ public class EnemyAI : MonoBehaviour
         if (attackTimer > 0) attackTimer -= Time.deltaTime;
         if (avoidanceCommitTimer > 0) avoidanceCommitTimer -= Time.deltaTime;
         if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
+        if (fleeSoundTimer > 0) fleeSoundTimer -= Time.deltaTime;
     }
 
     bool ShouldFlee()
@@ -200,7 +204,13 @@ public class EnemyAI : MonoBehaviour
         if (currentState != State.Flee)
         {
             currentState = State.Flee;
-            body.PlayFleeSound();
+            
+            // Only play sound if cooldown is ready
+            if (fleeSoundTimer <= 0)
+            {
+                body.PlayFleeSound();
+                fleeSoundTimer = minFleeSoundInterval;
+            }
         }
     }
     // ---------------------------------------

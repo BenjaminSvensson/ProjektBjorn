@@ -129,6 +129,7 @@ MonoBehaviour:
   damageSound: {fileID: 8300000, guid: 0903410f06bd7b54b80a9c1c09dfcb2f, type: 3}
   flashDuration: 0.2
   flashColor: {r: 1, g: 0, b: 0, a: 1}
+  limbAttachSound: {fileID: 8300000, guid: 2bb216c992b988745a460098ea18a328, type: 3}
   headOrder: 5
   leftArmOrder: 10
   rightArmOrder: -5
@@ -159,8 +160,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   baseMoveSpeed: 5
   sprintSpeedMultiplier: 1.4
-  crawlSpeed: 4
-  crawlReach: 4
+  crawlSpeed: 6
+  crawlReach: 6
   actionAudioSource: {fileID: 6162117553466222711}
   crawlPlantSound: {fileID: 8300000, guid: eb987dcb6372fe0469e230b2ddaa73a7, type: 3}
 --- !u!114 &6376795585293446948
@@ -783,8 +784,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 4410727576077583496, guid: 57cc55fc9c9b6de4c92f17af53c52a6f, type: 3}
-  m_Color: {r: 1, g: 0.8066038, b: 0.8066038, a: 1}
+  m_Sprite: {fileID: -5472449202409352453, guid: 793e6e7a930346a4c87b5c12e3db9000, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

@@ -100,8 +100,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
     {
         limbData = data;
         currentState = State.Attached;
-        
-        // Use the new helper to set visuals
         SetVisualState(isDamaged);
         
         col.enabled = false;
@@ -111,12 +109,10 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (ySorter) ySorter.enabled = false;
     }
 
-    // --- NEW: Public method to update visual state dynamically ---
     public void SetVisualState(bool isDamaged)
     {
         isShowingDamaged = isDamaged;
 
-        // If we are attached or a functional pickup, update the "Alive" visuals
         if (currentState == State.Attached || (currentState == State.Pickup && isMaintained) || (currentState == State.Thrown && isMaintained))
         {
             if (brokenVisual) brokenVisual.SetActive(false);
@@ -133,7 +129,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
             }
         }
     }
-    // -------------------------------------------------------------
 
     public void InitializeThrow(LimbData data, bool maintained, Vector2 direction, bool isDamaged = false)
     {
@@ -150,7 +145,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
         if (isMaintained)
         {
-            SetVisualState(isDamaged); // Reuse logic
+            SetVisualState(isDamaged); 
         }
         else
         {
@@ -200,9 +195,17 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (ySorter) ySorter.enabled = true;
 
         col.enabled = true;
-        col.isTrigger = true; 
+        // --- CHANGED: IsTrigger false so player can push it ---
+        col.isTrigger = false; 
         
-        if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
+        if (rb) 
+        {
+            // --- CHANGED: Dynamic so it has physics ---
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.gravityScale = 0f;
+            rb.linearDamping = 10f; // CORRECTED: linearDrag -> drag
+            rb.angularDamping = 10f;
+        }
 
         if (isMaintained)
         {
@@ -222,12 +225,15 @@ public class WorldLimb : MonoBehaviour, IInteractable
         
         if (rb)
         {
-            rb.bodyType = RigidbodyType2D.Kinematic;
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0;
+            // --- CHANGED: Stay Dynamic but add drag to stop sliding ---
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.gravityScale = 0f;
+            rb.linearDamping = 10f; // CORRECTED: linearDrag -> drag
+            rb.angularDamping = 10f;
         }
         
-        col.isTrigger = true;
+        // --- CHANGED: Solid collider ---
+        col.isTrigger = false;
 
         // Splat on land
         if (BloodManager.Instance != null && (isShowingDamaged || !isMaintained))

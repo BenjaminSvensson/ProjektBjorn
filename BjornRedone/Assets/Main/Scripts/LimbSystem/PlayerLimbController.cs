@@ -22,6 +22,9 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private float flashDuration = 0.2f;
     [SerializeField] private Color flashColor = Color.red;
 
+    [Header("Audio")] // --- NEW ---
+    [SerializeField] private AudioClip limbAttachSound;
+
     [Header("Sorting Orders (Relative to Body)")]
     [SerializeField] private int headOrder = 10;
     [SerializeField] private int leftArmOrder = 5;
@@ -237,6 +240,14 @@ public class PlayerLimbController : MonoBehaviour
             torsoHealth = Mathf.Min(torsoHealth + 10f, maxTorsoHealth);
             PickNextWeakLimb();
             UpdateDamageVisuals();
+            
+            // --- NEW: Play Attach Sound ---
+            if (audioSource != null && limbAttachSound != null)
+            {
+                audioSource.PlayOneShot(limbAttachSound);
+            }
+            // ------------------------------
+
             return true;
         }
         return false;
@@ -367,13 +378,11 @@ public class PlayerLimbController : MonoBehaviour
         else return (currentRightArm != null) ? currentRightArm.GetLimbData() : null;
     }
 
-    // --- Getters (Ensured to be unique) ---
     public Transform GetVisualsHolder() { return visualsHolder; }
     public Transform GetLeftArmSlot() { return leftArmSlot; }
     public Transform GetRightArmSlot() { return rightArmSlot; }
     public Transform GetLeftLegSlot() { return leftLegSlot; }
     public Transform GetRightLegSlot() { return rightLegSlot; }
-    // --------------------------------------
 
     private IEnumerator ShakeVisuals()
     {

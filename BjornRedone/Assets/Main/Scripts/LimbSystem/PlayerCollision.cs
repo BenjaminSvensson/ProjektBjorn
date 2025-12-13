@@ -2,8 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// This script goes on a child GameObject of the Player.
-/// It should have a Collider2D set to "Is Trigger = true"
-/// and is responsible for detecting limb pickups.
+/// It should have a Collider2D.
+/// It detects collision with limb pickups (both triggers and solid physics objects).
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class PlayerCollision : MonoBehaviour
@@ -24,25 +24,36 @@ public class PlayerCollision : MonoBehaviour
         }
     }
 
+    // Handle Trigger pickups (Legacy or if isTrigger is true)
     void OnTriggerEnter2D(Collider2D other)
     {
+        HandleLimbCollision(other.gameObject);
+    }
+
+    // --- NEW: Handle Physical pickups (Solid objects you can push) ---
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        HandleLimbCollision(collision.gameObject);
+    }
+
+    private void HandleLimbCollision(GameObject otherObj)
+    {
         // Check if we collided with a limb pickup
-        WorldLimb worldLimb = other.GetComponent<WorldLimb>();
+        WorldLimb worldLimb = otherObj.GetComponent<WorldLimb>();
         if (worldLimb != null && worldLimb.CanPickup())
         {
             // Try to attach this limb
             if (limbController != null)
             {
-                // --- MODIFIED: Check if the limb is damaged and pass it ---
+                // Check if the limb is damaged and pass it
                 bool isDamaged = worldLimb.IsShowingDamaged();
                 bool attached = limbController.TryAttachLimb(worldLimb.GetLimbData(), isDamaged);
                 
                 // Only destroy the pickup if we successfully attached it
                 if (attached)
                 {
-                    Destroy(other.gameObject);
+                    Destroy(otherObj);
                 }
-                // --- END MODIFICATION ---
             }
         }
     }
