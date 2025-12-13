@@ -32,9 +32,7 @@ public class PlayerMovement : MonoBehaviour
     private float currentMoveSpeed;
     private bool isSprinting = false;
 
-    // --- THIS IS THE MISSING VARIABLE ---
     private bool isTrapped = false;
-    // --- END ---
 
     void Awake()
     {

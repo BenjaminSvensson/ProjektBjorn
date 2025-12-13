@@ -982,6 +982,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5153551983711765627, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: startingArm
+      value: 
+      objectReference: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}
+    - target: {fileID: 5153551983711765627, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: maintainLimbChance
       value: 0.788
       objectReference: {fileID: 0}

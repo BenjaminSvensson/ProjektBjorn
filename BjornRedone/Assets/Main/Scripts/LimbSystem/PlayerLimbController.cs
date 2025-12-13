@@ -5,7 +5,6 @@ using System.Collections.Generic;
 [RequireComponent(typeof(AudioSource))]
 public class PlayerLimbController : MonoBehaviour
 {
-    // ... (all variables at the top are the same) ...
     [Header("Visuals (Assign in Inspector)")]
     [Tooltip("The parent GameObject that holds all limb slots. This is what will shake.")]
     [SerializeField] private Transform visualsHolder;
@@ -85,7 +84,6 @@ public class PlayerLimbController : MonoBehaviour
             Debug.LogError("VisualsHolder is not assigned in PlayerLimbController!");
         }
 
-        // --- MODIFICATION ---
         // Spawn starting limbs, but tell AttachToSlot NOT to update stats yet.
         if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
         if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false);
@@ -95,13 +93,11 @@ public class PlayerLimbController : MonoBehaviour
 
         // Now, update stats ONCE, after all limbs are attached.
         UpdatePlayerStats();
-        // --- END MODIFICATION ---
     }
 
     /// <summary>
     /// Attaches a limb prefab to a specific slot.
     /// </summary>
-    // --- MODIFIED: Added 'updateStats' parameter ---
     void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged, bool updateStats = true)
     {
         Transform parentSlot = GetSlotTransform(slot);
@@ -157,17 +153,14 @@ public class PlayerLimbController : MonoBehaviour
             sr_renderer.sortingOrder = sortingOrder;
         }
 
-        // --- MODIFICATION ---
-        // Only update stats if allowed (defaults to true for pickups)
         if (updateStats)
         {
             UpdatePlayerStats();
         }
-        // --- END MODIFICATION ---
     }
 
     /// <summary>
-    // Called when picking up a limb.
+    /// Called when picking up a limb.
     /// </summary>
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
@@ -346,7 +339,6 @@ public class PlayerLimbController : MonoBehaviour
         Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}, Arms={armCount}, CanCrawl={canCrawl}");
 
         // --- Helplessness Check ---
-        // (This is now safe to run because it's only called after all limbs are attached)
         if (legCount == 0 && armCount == 0)
         {
             if (currentHead != null)
@@ -384,8 +376,6 @@ public class PlayerLimbController : MonoBehaviour
         StopAllCoroutines();
         if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos;
     }
-
-// ... (rest of the script is unchanged: Getters, ShakeVisuals, FlashDamageCoroutine) ...
 
     // --- PUBLIC GETTERS for PlayerAttackController ---
     
