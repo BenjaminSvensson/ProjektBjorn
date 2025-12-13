@@ -106,8 +106,8 @@ MonoBehaviour:
   brokenVisual: {fileID: 2989056784420397970}
   shadowGameObject: {fileID: 7221240211202065772}
   throwForce: 1
-  pickupDespawnTime: 60
   pickupDelay: 0.5
+  brokenLimbLifetime: 10
   interactionText: Pick Up Limb
 --- !u!210 &1314142435997360402
 SortingGroup:

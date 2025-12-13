@@ -22,10 +22,13 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
     [Header("Physics Settings")]
     [SerializeField] private float throwForce = 5f;
-    [SerializeField] private float pickupDespawnTime = 10f;
     
     [Tooltip("Time in seconds after being thrown before the limb can be picked up.")]
     [SerializeField] private float pickupDelay = 1.0f;
+    
+    [Header("Debris Settings")]
+    [Tooltip("How long broken/unusable limbs stay in the world before fading out.")]
+    [SerializeField] private float brokenLimbLifetime = 10f; 
 
     private enum State { Idle, Attached, Thrown, Pickup }
     private State currentState = State.Idle;
@@ -89,10 +92,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
             {
                 InitializeAsScenePickup(startingLimbData, false);
             }
-        }
-        else if (currentState == State.Idle && startingLimbData == null)
-        {
-            Debug.LogError($"WorldLimb '{gameObject.name}' was placed in the scene but has no 'Starting Limb Data' assigned!", this);
         }
     }
 
@@ -233,13 +232,13 @@ public class WorldLimb : MonoBehaviour, IInteractable
         
         col.isTrigger = true;
 
-        // --- NEW: Splat on land ---
+        // --- Splat on land ---
         if (BloodManager.Instance != null && (isShowingDamaged || !isMaintained))
         {
-            // Small splat for a limb hitting the ground
-            BloodManager.Instance.SpawnBlood(transform.position, Vector2.down, 0.7f);
+            // Randomize downward direction slightly
+            Vector2 randomDown = Quaternion.Euler(0, 0, Random.Range(-45f, 45f)) * Vector2.down;
+            BloodManager.Instance.SpawnBlood(transform.position, randomDown, 0.7f);
         }
-        // --------------------------
 
         if (isMaintained)
         {
@@ -248,27 +247,28 @@ public class WorldLimb : MonoBehaviour, IInteractable
         else
         {
             gameObject.tag = "Untagged";
-            StartCoroutine(FadeOutBrokenLimb(2.0f));
+            // Use configurable lifetime instead of hardcoded 2.0f
+            StartCoroutine(FadeOutBrokenLimb(brokenLimbLifetime));
         }
-    }
-
-    private IEnumerator DespawnTimer(float duration)
-    {
-        yield return new WaitForSeconds(duration);
-        Destroy(gameObject);
     }
 
     private IEnumerator FadeOutBrokenLimb(float duration)
     {
-        yield return new WaitForSeconds(duration); 
+        // Wait for the bulk of the duration before starting to fade
+        // We always fade over the last 2 seconds
+        float fadeTime = 2.0f; 
+        float waitTime = Mathf.Max(0, duration - fadeTime);
+
+        yield return new WaitForSeconds(waitTime); 
 
         float timer = 0f;
-        while (timer < duration)
+        while (timer < fadeTime)
         {
-            float alpha = Mathf.Lerp(1f, 0f, timer / duration);
+            float alpha = Mathf.Lerp(1f, 0f, timer / fadeTime);
             foreach (var sr in brokenVisualRenderers)
             {
-                sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, alpha);
+                if (sr != null)
+                    sr.color = new Color(sr.color.r, sr.color.g, sr.color.b, alpha);
             }
             timer += Time.deltaTime;
             yield return null;
