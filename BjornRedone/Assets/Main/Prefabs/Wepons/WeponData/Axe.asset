@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
-  m_Name: Knife
+  m_Name: Axe
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: Knife
-  icon: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
-  pickupPrefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
-  heldSprite: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
-  heldScale: {x: 1, y: 1, z: 1}
+  icon: {fileID: 6837264084253483469, guid: 3c97936413e48ff47abe8cafb8c2b890, type: 3}
+  pickupPrefab: {fileID: 7779890851109100925, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
+  heldSprite: {fileID: 6837264084253483469, guid: 3c97936413e48ff47abe8cafb8c2b890, type: 3}
+  heldScale: {x: 0.3, y: 0.3, z: 0.3}
   type: 0
-  attackStyle: 0
-  meleeDamageBonus: 0
+  attackStyle: 1
+  meleeDamageBonus: 7
   meleeImpactSounds:
-  - {fileID: 8300000, guid: 9d7ab24ac4a239c46aaab65c648f133b, type: 3}
-  attackSpeedMultiplier: 3
-  knockbackMultiplier: 0.5
+  - {fileID: 8300000, guid: 8427cc21ef7630e42bdcc668af8dacd9, type: 3}
+  attackSpeedMultiplier: 0.9
+  knockbackMultiplier: 0.6
   swingArc: 90
   projectilePrefab: {fileID: 0}
   fireRate: 0.2

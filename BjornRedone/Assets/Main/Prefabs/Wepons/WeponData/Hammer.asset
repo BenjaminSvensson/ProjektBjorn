@@ -19,10 +19,10 @@ MonoBehaviour:
   heldScale: {x: 1.3, y: 1.3, z: 11.3}
   type: 0
   attackStyle: 1
-  meleeDamageBonus: 10
+  meleeDamageBonus: 13
   meleeImpactSounds: []
-  attackSpeedMultiplier: 0.4
-  knockbackMultiplier: 1
+  attackSpeedMultiplier: 0.5
+  knockbackMultiplier: 1.4
   swingArc: 90
   projectilePrefab: {fileID: 0}
   fireRate: 0.2

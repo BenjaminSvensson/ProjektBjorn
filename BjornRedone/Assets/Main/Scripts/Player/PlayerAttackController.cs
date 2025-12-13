@@ -235,7 +235,13 @@ public class PlayerAttackController : MonoBehaviour
         
         if (weapon != null && hasWeaponBonus && weapon.attackStyle == MeleeAttackStyle.Swing)
         {
-            animController.TriggerSwing(armTransform, calculatedDuration, mouseWorldPos, weapon.swingArc);
+            // --- UPDATED: Calculate swing direction based on looking direction ---
+            // If mouse is LEFT of player (<), we need a POSITIVE arc for Up-to-Down.
+            // If mouse is RIGHT of player (>), we need a NEGATIVE arc for Up-to-Down.
+            float swingDirection = (mouseWorldPos.x < transform.position.x) ? 1f : -1f;
+            float finalArc = Mathf.Abs(weapon.swingArc) * swingDirection;
+
+            animController.TriggerSwing(armTransform, calculatedDuration, mouseWorldPos, finalArc);
             StartCoroutine(DelayedSwingHit(armTransform, mouseWorldPos, damage, knockback, armData, weapon.swingArc, calculatedDuration * 0.5f));
         }
         else
