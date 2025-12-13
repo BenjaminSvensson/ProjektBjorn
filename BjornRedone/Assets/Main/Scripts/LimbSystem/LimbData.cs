@@ -18,8 +18,8 @@ public class LimbData : ScriptableObject
     public float moveSpeedBonus = 0f;
     
     [Header("Arm Audio")]
-    [Tooltip("Sound to play on punch impact.")]
-    public AudioClip punchSound;
+    [Tooltip("List of sounds to play randomly on punch impact.")]
+    public AudioClip[] punchSounds; // Changed from single AudioClip to Array
     [Tooltip("The pitch of the punch sound. Higher = faster/lighter, Lower = slower/heavier.")]
     [Range(0.1f, 3f)]
     public float punchPitch = 1.0f;
