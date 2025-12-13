@@ -16,6 +16,10 @@ public class EnemyAI : MonoBehaviour
     public float baseMoveSpeed = 2f;
     public float baseDamage = 5f;
 
+    [Header("Optimization")] // --- NEW ---
+    [Tooltip("If the player is further than this distance, the AI logic will stop running.")]
+    [SerializeField] private float cullingDistance = 20f; 
+
     [Header("Scavenging")]
     [SerializeField] private float scavengeRadius = 6f;
     [SerializeField] private float scavengeScanInterval = 1.0f; 
@@ -35,7 +39,7 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float stuckThreshold = 0.1f;
     [SerializeField] private float unstuckDuration = 1.0f;
 
-    [Header("Audio Behavior")] // --- NEW ---
+    [Header("Audio Behavior")] 
     [SerializeField] private float minIdleSoundInterval = 3f;
     [SerializeField] private float maxIdleSoundInterval = 8f;
 
@@ -111,6 +115,15 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null) return;
 
+        // --- NEW: Optimization Culling ---
+        // If player is too far, stop physics and AI calculations.
+        if (Vector2.Distance(transform.position, player.position) > cullingDistance)
+        {
+            rb.linearVelocity = Vector2.zero; // Stop any residual movement
+            return; // Skip the rest of FixedUpdate
+        }
+        // ---------------------------------
+
         if (isTrapped)
         {
             rb.linearVelocity = Vector2.zero;
@@ -118,7 +131,7 @@ public class EnemyAI : MonoBehaviour
         }
 
         HandleStuckDetection();
-        HandleIdleSounds(); // --- NEW ---
+        HandleIdleSounds();
 
         if (isForcingUnstuck)
         {

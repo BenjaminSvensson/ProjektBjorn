@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq; // Used for ordering
 using UnityEngine.InputSystem; 
@@ -27,6 +26,19 @@ public class LevelGenerator : MonoBehaviour
         public float maxScale = 1.1f;
     }
 
+    // --- NEW: Enemy Spawn Configuration ---
+    [System.Serializable]
+    public class EnemySpawnData
+    {
+        public string name = "Enemy";
+        public GameObject prefab;
+        [Tooltip("Cost to spawn this enemy. Higher cost = stronger enemy.")]
+        public int cost = 1;
+        [Tooltip("Minimum distance from start (0,0) required for this enemy to appear.")]
+        public int minDistanceReq = 0;
+    }
+    // --------------------------------------
+
     [Header("Generation Settings")]
     [Tooltip("The total number of rooms to generate (including start and boss rooms).")]
     [SerializeField] private int totalRooms = 20;
@@ -34,15 +46,22 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private int numberOfBossRooms = 1;
     [Tooltip("The exact size of one room. ALL room prefabs must be this size!")]
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
-    // --- NEW: Retry Settings ---
     [Tooltip("How many times to retry generating if the room count target isn't met.")]
     [SerializeField] private int maxGenerationAttempts = 10;
-    // --- END NEW ---
 
     [Header("Room Prefabs")]
     [SerializeField] private Room startRoomPrefab;
     [SerializeField] private List<Room> normalRoomPrefabs;
     [SerializeField] private List<Room> bossRoomPrefabs;
+
+    [Header("Enemy Spawning")] // --- NEW ---
+    [Tooltip("List of enemies and their costs.")]
+    [SerializeField] private List<EnemySpawnData> enemySpawnList;
+    [Tooltip("Base budget for the first room (usually low).")]
+    [SerializeField] private int baseEnemyBudget = 2;
+    [Tooltip("How much the budget increases per grid unit distance from start.")]
+    [SerializeField] private int enemyBudgetPerDistance = 2;
+    // --------------------------------------
 
     [Header("Environment Population")]
     [SerializeField] private List<EnvironmentProp> environmentProps;
@@ -77,7 +96,6 @@ public class LevelGenerator : MonoBehaviour
     {
         int attempts = 0;
 
-        // --- NEW: Retry Loop ---
         while (attempts < maxGenerationAttempts)
         {
             // 1. Run a single generation attempt
@@ -100,7 +118,6 @@ public class LevelGenerator : MonoBehaviour
         {
             Debug.LogError("Failed to generate a complete level after " + maxGenerationAttempts + " attempts.");
         }
-        // --- END NEW ---
     }
 
     private void RunGenerationAttempt()
@@ -122,7 +139,6 @@ public class LevelGenerator : MonoBehaviour
         int normalRoomsToBuild = totalRooms - numberOfBossRooms - 1; 
         int roomsBuilt = 0;
         
-        // Safety break to prevent infinite loops if something goes wrong
         int safetyCounter = 0;
         while (roomsBuilt < normalRoomsToBuild && frontier.Count > 0 && safetyCounter < 1000)
         {
@@ -228,11 +244,31 @@ public class LevelGenerator : MonoBehaviour
 
     private void PopulateRooms()
     {
-        if (environmentProps == null || environmentProps.Count == 0) return;
-
         foreach (Room room in allRooms)
         {
-            room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
+            // --- NEW: Enemy Spawning ---
+            // Calculate Manhattan distance from (0,0) as difficulty
+            int distance = Mathf.Abs(room.gridPos.x) + Mathf.Abs(room.gridPos.y);
+            
+            // Only spawn enemies if distance > 0 (Skip Start Room)
+            if (distance > 0)
+            {
+                // Calculate budget: Base + (Dist * Multiplier)
+                int roomBudget = baseEnemyBudget + (distance * enemyBudgetPerDistance);
+                
+                // Call spawn method on room
+                if (enemySpawnList != null && enemySpawnList.Count > 0)
+                {
+                    room.SpawnEnemies(enemySpawnList, roomBudget, roomSize);
+                }
+            }
+            // ---------------------------
+
+            // Spawn Environment Props
+            if (environmentProps != null && environmentProps.Count > 0)
+            {
+                room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
+            }
         }
     }
 

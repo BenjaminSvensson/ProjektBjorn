@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq; // Added for filtering enemies
 
 /// <summary>
 /// This script goes on the root of EVERY room prefab.
@@ -31,6 +32,10 @@ public class Room : MonoBehaviour
     [Tooltip("Distance from the room edge where props CANNOT spawn. Increase this if props are spawning in walls.")]
     [SerializeField] private float wallPadding = 2.5f;
 
+    [Header("Spawning Rules")] // --- NEW ---
+    [Tooltip("If false, no enemies will procedurally spawn here (Use for Boss Rooms or Puzzle Rooms).")]
+    public bool allowEnemySpawning = true;
+
     [HideInInspector]
     public Vector2Int gridPos; // Set by the LevelGenerator
 
@@ -57,11 +62,68 @@ public class Room : MonoBehaviour
     }
 
     /// <summary>
+    /// Called by LevelGenerator to spawn enemies based on budget.
+    /// </summary>
+    public void SpawnEnemies(List<LevelGenerator.EnemySpawnData> allEnemies, int budget, Vector2 roomSize)
+    {
+        if (!allowEnemySpawning) return;
+
+        // 1. Calculate boundaries (reuse logic from props)
+        float halfWidth = (roomSize.x / 2f) - wallPadding;
+        float halfHeight = (roomSize.y / 2f) - wallPadding;
+
+        // 2. Filter enemies:
+        //    - Must fit within current remaining budget (initially full budget)
+        //    - Must meet minimum distance requirement
+        // We actually filter just by MinDistance here, and check budget in the loop.
+        int distFromStart = Mathf.Abs(gridPos.x) + Mathf.Abs(gridPos.y);
+        
+        List<LevelGenerator.EnemySpawnData> validEnemies = allEnemies
+            .Where(e => e.minDistanceReq <= distFromStart)
+            .ToList();
+
+        if (validEnemies.Count == 0) return;
+
+        int currentSpent = 0;
+        int safetyLoop = 0;
+
+        while (currentSpent < budget && safetyLoop < 50)
+        {
+            safetyLoop++;
+
+            // Pick a random enemy from the valid list
+            var enemyData = validEnemies[Random.Range(0, validEnemies.Count)];
+
+            // Can we afford it?
+            if (currentSpent + enemyData.cost <= budget)
+            {
+                // Spawn it!
+                float x = Random.Range(-halfWidth, halfWidth);
+                float y = Random.Range(-halfHeight, halfHeight);
+                Vector3 spawnPos = new Vector3(x, y, 0);
+
+                if (enemyData.prefab != null)
+                {
+                    Instantiate(enemyData.prefab, transform.position + spawnPos, Quaternion.identity, transform);
+                    currentSpent += enemyData.cost;
+                }
+            }
+            else
+            {
+                // If we can't afford this one, try to find a cheaper one?
+                // For simplicity, we just try again next loop. 
+                // If all are too expensive, the loop limit will break us out eventually.
+                
+                // Optimization: If the cheapest enemy is too expensive, just break immediately.
+                int minCost = validEnemies.Min(e => e.cost);
+                if (currentSpent + minCost > budget) break;
+            }
+        }
+    }
+
+    /// <summary>
     /// Called by the LevelGenerator to spawn environment props randomly.
     /// </summary>
-    /// <param name="props">The list of possible props to spawn.</param>
-    /// <param name="roomSize">The (X, Y) size of the room.</param>
-    /// <param name="density">The number of spawn attempts per square unit.</param>
     public void PopulateRoom(List<LevelGenerator.EnvironmentProp> props, Vector2 roomSize, float density)
     {
         if (props == null || props.Count == 0) return;
@@ -71,7 +133,6 @@ public class Room : MonoBehaviour
         int spawnAttempts = Mathf.RoundToInt(roomArea * density);
 
         // 2. Define the spawn boundaries (in local space)
-        // --- FIXED: Use the customized wallPadding variable ---
         float halfWidth = (roomSize.x / 2f) - wallPadding;
         float halfHeight = (roomSize.y / 2f) - wallPadding;
 
@@ -92,31 +153,23 @@ public class Room : MonoBehaviour
                     GameObject obj = Instantiate(prop.prefab, transform);
                     obj.transform.localPosition = spawnPos;
                     
-                    // --- MODIFIED: This now RESPECTS original prefab scale ---
-                    
-                    // 1. Get the prefab's original scale
+                    // --- Scale Logic ---
                     Vector3 originalScale = obj.transform.localScale;
-
-                    // 2. Get the random new scale *multiplier*
                     float scaleMultiplier = Random.Range(prop.minScale, prop.maxScale);
-                    
-                    // 3. Get the flip multiplier
                     float flipMultiplier = 1f;
                     if (prop.allowRandomFlip && Random.value < 0.5f)
                     {
                         flipMultiplier = -1f;
                     }
 
-                    // 4. Apply multipliers to the *original* scale
                     obj.transform.localScale = new Vector3(
                         originalScale.x * scaleMultiplier * flipMultiplier,
                         originalScale.y * scaleMultiplier,
-                        originalScale.z // Preserve original Z scale
+                        originalScale.z 
                     );
-                    // --- END MODIFICATION ---
+                    // ---
 
                     // 7. IMPORTANT: We break from the *inner* loop.
-                    // This means we only spawn ONE prop per random spot.
                     break;
                 }
             }
