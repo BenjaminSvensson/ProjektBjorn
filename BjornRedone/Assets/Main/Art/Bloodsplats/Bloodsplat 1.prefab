@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 75047990174039471}
   - component: {fileID: 1408418940803564372}
+  - component: {fileID: -4653584619258605142}
   m_Layer: 0
   m_Name: Bloodsplat 1
   m_TagString: Untagged
@@ -79,10 +80,10 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: -32768
   m_MaskInteraction: 0
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 1, g: 0, b: 0, a: 0.7607843}
+  m_Color: {r: 0.6698113, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -91,3 +92,20 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!114 &-4653584619258605142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2223334475334203099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea19cd3a37328c41be7c271650f0694, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BloodSplat
+  deceleration: 5
+  spreadSpeed: 5
+  maxScale: 0.45
+  lifetime: 15
+  randomizeRotation: 1

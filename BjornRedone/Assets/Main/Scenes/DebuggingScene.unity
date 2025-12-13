@@ -844,8 +844,10 @@ MonoBehaviour:
   - {fileID: 2541339990440168484, guid: 12bba7085d8f6a14a8511d743c926dca, type: 3}
   - {fileID: 2223334475334203099, guid: 3784ea16952e2474bba5ed09478682b0, type: 3}
   rotationOffset: 0
-  splatLifetime: 15
   particleLifetime: 0.3
+  dropletsPerHit: 5
+  dropletSpeed: 4
+  spreadAngle: 45
 --- !u!1001 &1917270266
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1020,7 +1022,7 @@ PrefabInstance:
     - target: {fileID: 5153551983711765627, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: startingArm
       value: 
-      objectReference: {fileID: 11400000, guid: c4029b8e4e7129c4b9225fa695af5594, type: 2}
+      objectReference: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
