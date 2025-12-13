@@ -28,7 +28,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
     
     [Header("Debris Settings")]
     [Tooltip("How long broken/unusable limbs stay in the world before fading out.")]
-    [SerializeField] private float brokenLimbLifetime = 10f; 
+    [SerializeField] private float brokenLimbLifetime = 30f; 
 
     private enum State { Idle, Attached, Thrown, Pickup }
     private State currentState = State.Idle;
@@ -74,6 +74,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
             brokenVisual.GetComponentsInChildren<SpriteRenderer>(brokenVisualRenderers);
         }
 
+        // Hide all initially
         if(defaultVisual) defaultVisual.SetActive(false);
         if(damagedVisual) damagedVisual.SetActive(false);
         if(brokenVisual) brokenVisual.SetActive(false);
@@ -99,21 +100,9 @@ public class WorldLimb : MonoBehaviour, IInteractable
     {
         limbData = data;
         currentState = State.Attached;
-        isShowingDamaged = isDamaged; 
         
-        if (isDamaged)
-        {
-            if(defaultVisual) defaultVisual.SetActive(false);
-            if(damagedVisual) damagedVisual.SetActive(true);
-        }
-        else
-        {
-            if(defaultVisual) defaultVisual.SetActive(true);
-            if(damagedVisual) damagedVisual.SetActive(false);
-        }
-        
-        if(brokenVisual) brokenVisual.SetActive(false);
-        if(shadowGameObject) shadowGameObject.SetActive(false);
+        // Use the new helper to set visuals
+        SetVisualState(isDamaged);
         
         col.enabled = false;
         if (rb) rb.bodyType = RigidbodyType2D.Kinematic;
@@ -121,6 +110,30 @@ public class WorldLimb : MonoBehaviour, IInteractable
         if (sortingGroup) sortingGroup.enabled = false;
         if (ySorter) ySorter.enabled = false;
     }
+
+    // --- NEW: Public method to update visual state dynamically ---
+    public void SetVisualState(bool isDamaged)
+    {
+        isShowingDamaged = isDamaged;
+
+        // If we are attached or a functional pickup, update the "Alive" visuals
+        if (currentState == State.Attached || (currentState == State.Pickup && isMaintained) || (currentState == State.Thrown && isMaintained))
+        {
+            if (brokenVisual) brokenVisual.SetActive(false);
+            
+            if (isShowingDamaged)
+            {
+                if(defaultVisual) defaultVisual.SetActive(false);
+                if(damagedVisual) damagedVisual.SetActive(true);
+            }
+            else
+            {
+                if(defaultVisual) defaultVisual.SetActive(true);
+                if(damagedVisual) damagedVisual.SetActive(false);
+            }
+        }
+    }
+    // -------------------------------------------------------------
 
     public void InitializeThrow(LimbData data, bool maintained, Vector2 direction, bool isDamaged = false)
     {
@@ -137,14 +150,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
         if (isMaintained)
         {
-            if (isShowingDamaged)
-            {
-                if(damagedVisual) damagedVisual.SetActive(true);
-            }
-            else
-            {
-                if(defaultVisual) defaultVisual.SetActive(true);
-            }
+            SetVisualState(isDamaged); // Reuse logic
         }
         else
         {
@@ -180,16 +186,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
         if (isMaintained)
         {
-            if (startAsDamaged)
-            {
-                if(damagedVisual) damagedVisual.SetActive(true);
-                isShowingDamaged = true; 
-            }
-            else
-            {
-                if(defaultVisual) defaultVisual.SetActive(true);
-                isShowingDamaged = false; 
-            }
+            SetVisualState(startAsDamaged);
         }
         else
         {
@@ -232,10 +229,9 @@ public class WorldLimb : MonoBehaviour, IInteractable
         
         col.isTrigger = true;
 
-        // --- Splat on land ---
+        // Splat on land
         if (BloodManager.Instance != null && (isShowingDamaged || !isMaintained))
         {
-            // Randomize downward direction slightly
             Vector2 randomDown = Quaternion.Euler(0, 0, Random.Range(-45f, 45f)) * Vector2.down;
             BloodManager.Instance.SpawnBlood(transform.position, randomDown, 0.7f);
         }
@@ -247,15 +243,12 @@ public class WorldLimb : MonoBehaviour, IInteractable
         else
         {
             gameObject.tag = "Untagged";
-            // Use configurable lifetime instead of hardcoded 2.0f
             StartCoroutine(FadeOutBrokenLimb(brokenLimbLifetime));
         }
     }
 
     private IEnumerator FadeOutBrokenLimb(float duration)
     {
-        // Wait for the bulk of the duration before starting to fade
-        // We always fade over the last 2 seconds
         float fadeTime = 2.0f; 
         float waitTime = Mathf.Max(0, duration - fadeTime);
 

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq; // Used for ordering
 using UnityEngine.InputSystem; 
+using UnityEngine.SceneManagement; // --- NEW: Required for Scene reloading ---
 
 public enum Direction { Top, Bottom, Left, Right }
 
@@ -26,7 +27,7 @@ public class LevelGenerator : MonoBehaviour
         public float maxScale = 1.1f;
     }
 
-    // --- NEW: Enemy Spawn Configuration ---
+    // --- Enemy Spawn Configuration ---
     [System.Serializable]
     public class EnemySpawnData
     {
@@ -54,14 +55,13 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private List<Room> normalRoomPrefabs;
     [SerializeField] private List<Room> bossRoomPrefabs;
 
-    [Header("Enemy Spawning")] // --- NEW ---
+    [Header("Enemy Spawning")]
     [Tooltip("List of enemies and their costs.")]
     [SerializeField] private List<EnemySpawnData> enemySpawnList;
     [Tooltip("Base budget for the first room (usually low).")]
     [SerializeField] private int baseEnemyBudget = 2;
     [Tooltip("How much the budget increases per grid unit distance from start.")]
     [SerializeField] private int enemyBudgetPerDistance = 2;
-    // --------------------------------------
 
     [Header("Environment Population")]
     [SerializeField] private List<EnvironmentProp> environmentProps;
@@ -85,10 +85,20 @@ public class LevelGenerator : MonoBehaviour
 
     void Update()
     {
-        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+        if (Keyboard.current == null) return;
+
+        // 'R' -> Regenerate Layout (Keeps Player state)
+        if (Keyboard.current.rKey.wasPressedThisFrame)
         {
             Debug.Log("--- [DEBUG] Regenerating Level via 'R' key! ---");
             GenerateLevel();
+        }
+
+        // 'T' -> Reload Scene (Full Reset)
+        if (Keyboard.current.tKey.wasPressedThisFrame)
+        {
+            Debug.Log("--- [DEBUG] Reloading Scene via 'T' key! ---");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
     }
 
@@ -246,7 +256,7 @@ public class LevelGenerator : MonoBehaviour
     {
         foreach (Room room in allRooms)
         {
-            // --- NEW: Enemy Spawning ---
+            // --- Enemy Spawning ---
             // Calculate Manhattan distance from (0,0) as difficulty
             int distance = Mathf.Abs(room.gridPos.x) + Mathf.Abs(room.gridPos.y);
             

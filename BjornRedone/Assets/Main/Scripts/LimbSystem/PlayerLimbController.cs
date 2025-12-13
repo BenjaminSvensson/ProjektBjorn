@@ -11,6 +11,12 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeMagnitude = 0.1f;
 
+    [Header("Visuals - Torso")] // --- NEW ---
+    [SerializeField] private GameObject torsoDefaultVisual;
+    [SerializeField] private GameObject torsoDamagedVisual;
+    [Tooltip("Health percentage (0-1) to show damaged visuals for Head/Torso.")]
+    [SerializeField] private float damageVisualThreshold = 0.4f;
+
     [Header("Damage Feedback")]
     [SerializeField] private AudioClip damageSound;
     [SerializeField] private float flashDuration = 0.2f;
@@ -33,6 +39,7 @@ public class PlayerLimbController : MonoBehaviour
     public float baseMoveSpeed = 5f;
     public float baseAttackDamage = 1f;
     public float torsoHealth = 100f; 
+    private float maxTorsoHealth; // Used for threshold check
 
     [Header("Starting Limbs (Prefabs)")]
     public LimbData startingHead;
@@ -65,6 +72,8 @@ public class PlayerLimbController : MonoBehaviour
         playerMovement = GetComponent<PlayerMovement>();
         rb = GetComponent<Rigidbody2D>(); 
         audioSource = GetComponent<AudioSource>();
+        
+        maxTorsoHealth = torsoHealth; // Capture max health
 
         if (playerMovement == null)
         {
@@ -90,6 +99,7 @@ public class PlayerLimbController : MonoBehaviour
         if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false);
         if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false);
 
+        UpdateTorsoVisuals(false);
         UpdatePlayerStats();
     }
 
@@ -158,17 +168,19 @@ public class PlayerLimbController : MonoBehaviour
     {
         if (limbToAttach == null) return false;
 
+        bool attached = false;
+
         if (limbToAttach.limbType == LimbType.Arm)
         {
             if (currentRightArm == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged);
-                return true; 
+                attached = true;
             }
             else if (currentLeftArm == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged);
-                return true; 
+                attached = true;
             }
         }
         else if (limbToAttach.limbType == LimbType.Leg)
@@ -176,18 +188,31 @@ public class PlayerLimbController : MonoBehaviour
             if (currentRightLeg == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged);
-                return true; 
+                attached = true;
             }
             else if (currentLeftLeg == null)
             {
                 AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged);
-                return true; 
+                attached = true;
             }
         }
+
+        if (attached)
+        {
+            // Restore some health on pickup
+            torsoHealth = Mathf.Min(torsoHealth + 10f, maxTorsoHealth);
+            
+            // Update visuals (might heal out of damaged state)
+            bool isLowHealth = (torsoHealth / maxTorsoHealth) <= damageVisualThreshold;
+            UpdateTorsoVisuals(isLowHealth);
+            if (currentHead != null) currentHead.SetVisualState(isLowHealth);
+
+            return true;
+        }
+
         return false;
     }
 
-    // --- MODIFIED: Added hitDirection parameter ---
     public void TakeDamage(float damageAmount, Vector2 hitDirection = default)
     {
         if (audioSource != null && damageSound != null)
@@ -195,13 +220,11 @@ public class PlayerLimbController : MonoBehaviour
             audioSource.PlayOneShot(damageSound);
         }
 
-        // --- NEW: Blood Spread ---
         if (BloodManager.Instance != null)
         {
             Vector2 dir = hitDirection == Vector2.zero ? Random.insideUnitCircle.normalized : hitDirection;
             BloodManager.Instance.SpawnBlood(transform.position, dir);
         }
-        // -------------------------
 
         if (flashCoroutine != null)
         {
@@ -233,11 +256,24 @@ public class PlayerLimbController : MonoBehaviour
         else
         {
             torsoHealth -= damageAmount;
+            
+            // --- NEW: Visuals Check ---
+            bool isLowHealth = (torsoHealth / maxTorsoHealth) <= damageVisualThreshold;
+            UpdateTorsoVisuals(isLowHealth);
+            if (currentHead != null) currentHead.SetVisualState(isLowHealth);
+            // --------------------------
+
             if (torsoHealth <= 0)
             {
                 Die();
             }
         }
+    }
+
+    private void UpdateTorsoVisuals(bool isDamaged)
+    {
+        if (torsoDefaultVisual) torsoDefaultVisual.SetActive(!isDamaged);
+        if (torsoDamagedVisual) torsoDamagedVisual.SetActive(isDamaged);
     }
 
     void DetachLimb(LimbSlot slot)
@@ -275,7 +311,8 @@ public class PlayerLimbController : MonoBehaviour
             WorldLimb worldLimb = thrownLimbObj.GetComponent<WorldLimb>();
             if (worldLimb)
             {
-                worldLimb.InitializeThrow(limbToDetach.GetLimbData(), isMaintained, throwDirection);
+                // Pass current damage state to thrown limb
+                worldLimb.InitializeThrow(limbToDetach.GetLimbData(), isMaintained, throwDirection, limbToDetach.IsShowingDamaged());
             }
             
             Destroy(limbToDetach.gameObject);
@@ -325,8 +362,6 @@ public class PlayerLimbController : MonoBehaviour
 
         canCrawl = (legCount == 0 && armCount > 0);
 
-        Debug.Log($"Stats Updated: Speed={totalMoveSpeed}, Legs={legCount}, Arms={armCount}, CanCrawl={canCrawl}");
-
         if (legCount == 0 && armCount == 0)
         {
             if (currentHead != null)
@@ -352,7 +387,7 @@ public class PlayerLimbController : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("Player has died! (Lost their head or torso)");
+        Debug.Log("Player has died!");
         this.enabled = false;
         if (playerMovement) playerMovement.enabled = false;
 
