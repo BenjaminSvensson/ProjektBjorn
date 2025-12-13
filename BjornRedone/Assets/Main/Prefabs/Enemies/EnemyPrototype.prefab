@@ -429,8 +429,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 20
-  currentHealth: 20
+  maxHealth: 15
+  currentHealth: 15
   startingHead: {fileID: 11400000, guid: 0af1cd97961f64841aadc75c0adc4662, type: 2}
   startingLeftArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
   startingRightArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
@@ -444,7 +444,7 @@ MonoBehaviour:
   rightLegSlot: {fileID: 4552412400914023739}
   torsoDefaultVisual: {fileID: 6618888275553776718}
   torsoDamagedVisual: {fileID: 3175672554633027530}
-  damageVisualThreshold: 0.4
+  damageVisualThreshold: 0.3
   limbDropChance: 0.4
   maintainLimbChance: 0.2
   damageAlertRadius: 10
@@ -452,10 +452,20 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   damageSounds:
-  - {fileID: 8300000, guid: 0903410f06bd7b54b80a9c1c09dfcb2f, type: 3}
-  idleSounds: []
-  spotSounds: []
+  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
+  - {fileID: 8300000, guid: 48a0b08f74dee744a927f59907030c82, type: 3}
+  - {fileID: 8300000, guid: ea60473b98b3f3848bce01d2fa38544b, type: 3}
+  - {fileID: 8300000, guid: 661633bb9caa537498a81a54687a3485, type: 3}
+  - {fileID: 8300000, guid: 62799f7d5c270624ea0007ba339580ea, type: 3}
+  idleSounds:
+  - {fileID: 8300000, guid: 20570c881034cf34d9172e3e9b91b7c6, type: 3}
+  - {fileID: 8300000, guid: 076e5811bb91275478177cd94639f218, type: 3}
+  - {fileID: 8300000, guid: 719eab725997e3547887c19002d6fb9e, type: 3}
+  spotSounds:
+  - {fileID: 8300000, guid: 6a221fe9073aa9640a08dc1dafa0e315, type: 3}
   attackSounds: []
+  fleeSounds:
+  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   bloodSounds:
@@ -481,15 +491,15 @@ MonoBehaviour:
   hearingRadius: 8.5
   attackRange: 1.4
   roamRadius: 3
-  baseMoveSpeed: 2
+  baseMoveSpeed: 2.8
   baseDamage: 5
   fleeHealthThreshold: 0.25
-  fleeSpeedMult: 1.2
+  fleeSpeedMult: 1.8
   cullingDistance: 20
   scavengeRadius: 6
   scavengeScanInterval: 1
   roamSpeedMult: 0.5
-  chaseSpeedMult: 2.2
+  chaseSpeedMult: 2.6
   turningSpeed: 5
   obstacleLayer:
     serializedVersion: 2
@@ -606,8 +616,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 4410727576077583496, guid: 57cc55fc9c9b6de4c92f17af53c52a6f, type: 3}
-  m_Color: {r: 1, g: 0.5801887, b: 0.5801887, a: 1}
+  m_Sprite: {fileID: -5472449202409352453, guid: 793e6e7a930346a4c87b5c12e3db9000, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

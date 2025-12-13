@@ -171,16 +171,12 @@ public class EnemyAI : MonoBehaviour
         if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
     }
 
-    // --- NEW: Helper to centralize Flee Logic ---
     bool ShouldFlee()
     {
-        // Flee if health is low OR if we have no arms to fight with
         bool lowHealth = (body.currentHealth / body.maxHealth) < fleeHealthThreshold;
         bool noArms = !body.hasArms;
-        
         return lowHealth || noArms;
     }
-    // --------------------------------------------
 
     void HandleIdleSounds()
     {
@@ -198,6 +194,17 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    // --- NEW: Helper for Flee Transition ---
+    void SwitchToFleeState()
+    {
+        if (currentState != State.Flee)
+        {
+            currentState = State.Flee;
+            body.PlayFleeSound();
+        }
+    }
+    // ---------------------------------------
+
     void SwitchToChaseState()
     {
         if (currentState != State.Chase && currentState != State.Flee)
@@ -209,14 +216,13 @@ public class EnemyAI : MonoBehaviour
             }
             else
             {
-                currentState = State.Flee;
+                SwitchToFleeState();
             }
         }
     }
 
     void LogicFlee()
     {
-        // Stop fleeing if we are healthy AND have arms
         if (!ShouldFlee())
         {
             currentState = State.Chase;
@@ -391,10 +397,10 @@ public class EnemyAI : MonoBehaviour
 
     void LogicChase()
     {
-        // --- UPDATED: Use Helper ---
+        // --- UPDATED: Use Flee Helper ---
         if (ShouldFlee())
         {
-            currentState = State.Flee;
+            SwitchToFleeState();
             return;
         }
 
@@ -425,10 +431,10 @@ public class EnemyAI : MonoBehaviour
 
     void LogicAttack()
     {
-        // --- UPDATED: Use Helper ---
+        // --- UPDATED: Use Flee Helper ---
         if (ShouldFlee())
         {
-            currentState = State.Flee;
+            SwitchToFleeState();
             return;
         }
 
@@ -544,14 +550,11 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            // Avoidance Logic
             bool trapDetected = false;
             
-            // 1. Trap Check
             RaycastHit2D trapHit = Physics2D.CircleCast(transform.position, bodyWidth * 0.8f, desiredDir, trapAvoidDistance, trapLayer);
             if (trapHit.collider != null) trapDetected = true;
 
-            // 2. Wall Check
             bool wallDetected = false;
             RaycastHit2D[] wallHits = Physics2D.CircleCastAll(transform.position, bodyWidth / 2f, desiredDir, avoidDistance, obstacleLayer);
             foreach(var hit in wallHits)

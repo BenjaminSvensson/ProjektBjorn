@@ -534,10 +534,10 @@ MonoBehaviour:
   enemySpawnList:
   - name: Prototype
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
-    cost: 4
+    cost: 1
     minDistanceReq: 0
-  baseEnemyBudget: 2
-  enemyBudgetPerDistance: 2
+  baseEnemyBudget: 4
+  enemyBudgetPerDistance: 0
   environmentProps:
   - prefab: {fileID: 7915102392887708610, guid: 8c4452de4dfd70346a334c909e57774c, type: 3}
     spawnChance: 0.22
@@ -663,6 +663,22 @@ PrefabInstance:
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5942276766501040186, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: -5472449202409352453, guid: 793e6e7a930346a4c87b5c12e3db9000, type: 3}
+    - target: {fileID: 5942276766501040186, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5942276766501040186, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5942276766501040186, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Color.r
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
