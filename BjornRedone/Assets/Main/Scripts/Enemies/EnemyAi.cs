@@ -26,7 +26,7 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float avoidDistance = 1.5f;
     [SerializeField] private float bodyWidth = 0.5f;
 
-    [Header("Stuck Detection")] // --- NEW ---
+    [Header("Stuck Detection")] 
     [Tooltip("How often (in seconds) to check if we haven't moved.")]
     [SerializeField] private float stuckCheckInterval = 0.5f;
     [Tooltip("If we moved less than this distance in the interval, we are stuck.")]
@@ -46,7 +46,7 @@ public class EnemyAI : MonoBehaviour
     private Rigidbody2D rb;
     private EnemyLimbController body;
     private EnemyAnimationController anim;
-    private Vector2 startPos;
+    private Vector2 startPos; // The anchor point for roaming
     
     // State
     private State currentState;
@@ -60,7 +60,7 @@ public class EnemyAI : MonoBehaviour
     private float avoidanceCommitTimer = 0f;
     private Vector2 committedAvoidDir;
 
-    // Stuck State --- NEW ---
+    // Stuck State 
     private Vector2 positionAtLastCheck;
     private float stuckTimer;
     private bool isForcingUnstuck = false;
@@ -76,7 +76,11 @@ public class EnemyAI : MonoBehaviour
         startPos = transform.position;
         originalScale = transform.localScale;
         
+        // Initialize lastKnownPlayerPos to prevent running to (0,0) on spawn
+        lastKnownPlayerPos = transform.position;
+        
         rb.freezeRotation = true; 
+        rb.gravityScale = 0f; 
         
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p) player = p.transform;
@@ -92,7 +96,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null) return;
 
-        // --- NEW: Stuck Detection Logic ---
+        // --- Stuck Detection Logic ---
         HandleStuckDetection();
 
         // If we are forcing an unstuck maneuver, override normal logic
@@ -101,7 +105,6 @@ public class EnemyAI : MonoBehaviour
             LogicUnstuck();
             return;
         }
-        // --- END NEW ---
 
         // --- Normal Logic ---
         switch (currentState)
@@ -125,7 +128,7 @@ public class EnemyAI : MonoBehaviour
         if (avoidanceCommitTimer > 0) avoidanceCommitTimer -= Time.deltaTime;
     }
 
-    // --- NEW: Stuck Detection Helper ---
+    // --- Stuck Detection Helper ---
     void HandleStuckDetection()
     {
         // Don't check if we are attacking (standing still is normal) 
@@ -140,8 +143,6 @@ public class EnemyAI : MonoBehaviour
             // If we barely moved but we were trying to move...
             if (distMoved < stuckThreshold && rb.linearVelocity.magnitude > 0.1f)
             {
-                // We are stuck!
-                Debug.Log("Enemy stuck! Forcing unstuck maneuver.");
                 StartUnstuck();
             }
 
@@ -174,10 +175,21 @@ public class EnemyAI : MonoBehaviour
             if (currentState == State.Roam) PickNewRoamTarget();
         }
     }
-    // --- END NEW ---
 
     void LogicRoam()
     {
+        // --- FIX: Editor Drag / Teleport Detection ---
+        // If we are currently roaming, but our distance from our "Roam Anchor" (startPos)
+        // is way larger than our roam radius, it implies we were dragged or teleported.
+        // We should immediately reset our home to here.
+        float distFromHome = Vector2.Distance(transform.position, startPos);
+        if (distFromHome > roamRadius * 2.5f) // 2.5x buffer
+        {
+            PickNewRoamTarget();
+            return;
+        }
+        // ---------------------------------------------
+
         if (CanSeePlayer())
         {
             currentState = State.Chase;
@@ -264,6 +276,8 @@ public class EnemyAI : MonoBehaviour
 
             if (stateTimer <= 0)
             {
+                // Update StartPos if we've traveled far to prevent backtracking
+                startPos = transform.position;
                 PickNewRoamTarget();
             }
         }
@@ -323,8 +337,22 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            RaycastHit2D hit = Physics2D.CircleCast(transform.position, bodyWidth / 2f, desiredDir, avoidDistance, obstacleLayer);
-            if (hit.collider != null)
+            // Use CircleCastAll to ensure we don't accidentally hit our own collider 
+            // and think we are blocked, which causes erratic movement.
+            RaycastHit2D[] hits = Physics2D.CircleCastAll(transform.position, bodyWidth / 2f, desiredDir, avoidDistance, obstacleLayer);
+            bool obstacleDetected = false;
+
+            foreach(var hit in hits)
+            {
+                // If we hit something that IS NOT ME, it's an obstacle
+                if(hit.collider != null && hit.collider.gameObject != gameObject)
+                {
+                    obstacleDetected = true;
+                    break;
+                }
+            }
+
+            if (obstacleDetected)
             {
                 Vector2 leftDir = Quaternion.Euler(0, 0, 50) * desiredDir;
                 Vector2 rightDir = Quaternion.Euler(0, 0, -50) * desiredDir;
@@ -356,6 +384,9 @@ public class EnemyAI : MonoBehaviour
 
     void PickNewRoamTarget()
     {
+        // Update startPos to current position to prevent backtracking to spawn
+        startPos = transform.position;
+
         Vector2 randomPoint = Random.insideUnitCircle * roamRadius;
         Vector2 potentialTarget = startPos + randomPoint;
 
@@ -375,11 +406,15 @@ public class EnemyAI : MonoBehaviour
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, hearingRadius);
         
-        if (currentState == State.Investigate)
+        if (currentState == State.Investigate || currentState == State.Roam)
         {
             Gizmos.color = Color.magenta;
             Gizmos.DrawLine(transform.position, moveTarget);
             Gizmos.DrawWireSphere(moveTarget, 0.5f);
         }
+        
+        // Visualize the Home Base
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(startPos, 0.2f);
     }
 }
