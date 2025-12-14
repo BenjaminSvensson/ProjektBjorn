@@ -580,17 +580,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 104739855b1e45540bbcb0f95c1094d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LootContainer
-  maxHealth: 20
+  maxHealth: 10
   activeVisual: {fileID: 4856303025146483599}
   destroyedVisual: {fileID: 2829496640755710442}
-  minItemsToDrop: 2
-  maxItemsToDrop: 4
+  minItemsToDrop: 1
+  maxItemsToDrop: 3
   dropSpreadForce: 8
-  dropChanceOnHit: 0.6
+  dropChanceOnHit: 0.8
   lootTable:
-  - name: Coin
-    prefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
-    weight: 5
   - name: Knife
     prefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
     weight: 1.5

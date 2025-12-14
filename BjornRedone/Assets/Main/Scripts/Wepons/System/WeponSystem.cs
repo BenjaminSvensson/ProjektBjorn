@@ -24,6 +24,7 @@ public class WeaponSystem : MonoBehaviour
 
     private PlayerLimbController limbController;
     private bool isHoldingWithRightHand = false; 
+    private Camera cam;
 
     // --- Independent Cooldowns per Slot ---
     private float[] slotCooldowns = new float[2]; 
@@ -31,6 +32,8 @@ public class WeaponSystem : MonoBehaviour
     void Awake()
     {
         limbController = GetComponent<PlayerLimbController>();
+        cam = Camera.main;
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
     }
 
     void Start()
@@ -79,14 +82,35 @@ public class WeaponSystem : MonoBehaviour
     private void HandleInput()
     {
         if (Keyboard.current == null) return;
+        
+        // Slot Switching
         if (Keyboard.current.digit1Key.wasPressedThisFrame) SetActiveSlot(0);
         if (Keyboard.current.digit2Key.wasPressedThisFrame) SetActiveSlot(1);
+        
         if (Mouse.current != null)
         {
             float scroll = Mouse.current.scroll.y.ReadValue();
             if (scroll > 0) SetActiveSlot(0);
             if (scroll < 0) SetActiveSlot(1);
         }
+
+        // --- NEW: Throw Weapon Input ---
+        if (Keyboard.current.qKey.wasPressedThisFrame)
+        {
+            ThrowActiveWeapon();
+        }
+    }
+
+    private void ThrowActiveWeapon()
+    {
+        if (!IsHoldingWeapon()) return;
+
+        // Calculate direction towards mouse
+        Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
+
+        DropWeapon(activeSlotIndex, throwDir);
     }
 
     private void SetActiveSlot(int index)
@@ -144,7 +168,12 @@ public class WeaponSystem : MonoBehaviour
         return true;
     }
 
-    public void DropWeapon(int slotIndex)
+    /// <summary>
+    /// Drops the weapon in the specified slot.
+    /// </summary>
+    /// <param name="slotIndex">Index of the slot to drop.</param>
+    /// <param name="dropDir">Optional direction to throw the weapon. If null, random direction is used.</param>
+    public void DropWeapon(int slotIndex, Vector2? dropDir = null)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
         
@@ -160,8 +189,9 @@ public class WeaponSystem : MonoBehaviour
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
             if (pickupScript != null)
             {
-                Vector2 randomDir = Random.insideUnitCircle.normalized;
-                pickupScript.InitializeDrop(randomDir);
+                // Use provided direction OR random direction if none provided (e.g. replaced/dropped by damage)
+                Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
+                pickupScript.InitializeDrop(finalDir);
             }
         }
         else
