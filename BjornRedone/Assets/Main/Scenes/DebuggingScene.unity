@@ -1824,6 +1824,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 5538954897991334371, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 5538954897991334371, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 5538954897991334371, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.85
+      objectReference: {fileID: 0}
+    - target: {fileID: 5538954897991334371, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.68
       objectReference: {fileID: 0}
@@ -1863,6 +1875,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5538954897991334371, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7779890851109100925, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
       propertyPath: m_Name
       value: Axe
@@ -1888,7 +1904,15 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 1482678988472418271, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: sprintSpeedMultiplier
+      value: 1.8
+      objectReference: {fileID: 0}
     - target: {fileID: 1941010952993928232, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: weaponSystem
+      value: 
+      objectReference: {fileID: 1970201062}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: weaponSystem
       value: 
       objectReference: {fileID: 1970201062}
@@ -1931,6 +1955,10 @@ PrefabInstance:
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5153551983711765627, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: torsoHealth
+      value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 6162117553466222711, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_Volume

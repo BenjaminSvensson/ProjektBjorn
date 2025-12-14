@@ -224,15 +224,19 @@ public class PlayerLimbController : MonoBehaviour
 
         bool attached = false;
 
-        if (limbToAttach.limbType == LimbType.Arm)
-        {
-            if (currentRightArm == null) { AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged); attached = true; }
-            else if (currentLeftArm == null) { AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged); attached = true; }
-        }
-        else if (limbToAttach.limbType == LimbType.Leg)
+        // --- UNIVERSAL UPDATE ---
+        // 1. Check Legs (Prioritize filling legs for Universal types)
+        if (limbToAttach.limbType == LimbType.Leg || limbToAttach.limbType == LimbType.Universal)
         {
             if (currentRightLeg == null) { AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged); attached = true; }
             else if (currentLeftLeg == null) { AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged); attached = true; }
+        }
+
+        // 2. Check Arms (If Universal wasn't used for a leg, or if it's an Arm type)
+        if (!attached && (limbToAttach.limbType == LimbType.Arm || limbToAttach.limbType == LimbType.Universal))
+        {
+            if (currentRightArm == null) { AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged); attached = true; }
+            else if (currentLeftArm == null) { AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged); attached = true; }
         }
 
         if (attached)

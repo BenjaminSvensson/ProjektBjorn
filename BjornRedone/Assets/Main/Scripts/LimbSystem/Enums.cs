@@ -5,7 +5,8 @@ public enum LimbType
 {
     Head,
     Arm,
-    Leg
+    Leg,
+    Universal // Can be attached to either Arm or Leg slots
 }
 
 /// <summary>

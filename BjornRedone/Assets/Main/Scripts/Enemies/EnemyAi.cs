@@ -328,7 +328,14 @@ public class EnemyAI : MonoBehaviour
                 {
                     LimbType type = limb.GetLimbData().limbType;
                     
-                    if ((type == LimbType.Arm && needArm) || (type == LimbType.Leg && needLeg))
+                    // --- UNIVERSAL LOGIC UPDATE ---
+                    // Accept the limb if it is the specific type we need, OR if it is Universal and we need anything.
+                    bool isUseful = false;
+                    if (type == LimbType.Arm && needArm) isUseful = true;
+                    else if (type == LimbType.Leg && needLeg) isUseful = true;
+                    else if (type == LimbType.Universal && (needArm || needLeg)) isUseful = true;
+
+                    if (isUseful)
                     {
                         if (CanSeeObject(hit.transform.position))
                         {

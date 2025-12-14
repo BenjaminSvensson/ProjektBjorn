@@ -9,9 +9,10 @@ public class LimbData : ScriptableObject
     public LimbType limbType;
 
     [Tooltip("The prefab to spawn (must have WorldLimb.cs on it)")]
-    public GameObject visualPrefab;
+    public GameObject visualPrefab; // Kept as visualPrefab per your request
 
     [Header("--- Limb-Specific Stats ---")]
+    public float maxHealth = 20f;
 
     [Header("Leg Stats")]
     [Tooltip("Bonus added to player's base move speed. ONLY APPLIES TO LEGS.")]
@@ -19,7 +20,7 @@ public class LimbData : ScriptableObject
     
     [Header("Arm Audio")]
     [Tooltip("List of sounds to play randomly on punch impact.")]
-    public AudioClip[] punchSounds; // Changed from single AudioClip to Array
+    public AudioClip[] punchSounds; 
     [Tooltip("The pitch of the punch sound. Higher = faster/lighter, Lower = slower/heavier.")]
     [Range(0.1f, 3f)]
     public float punchPitch = 1.0f;

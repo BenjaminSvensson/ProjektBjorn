@@ -12,8 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfc652f006a04b3479f2c4452d4ab38b, type: 3}
   m_Name: DogArm
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
-  limbType: 1
+  limbType: 3
   visualPrefab: {fileID: 1703309220703536604, guid: 52a99a6dbdb02bb4f90b3c9b5e59d6b4, type: 3}
+  maxHealth: 20
   moveSpeedBonus: 0
   punchSounds:
   - {fileID: 8300000, guid: 8d12348ab12ba2147bf988775c31ec10, type: 3}

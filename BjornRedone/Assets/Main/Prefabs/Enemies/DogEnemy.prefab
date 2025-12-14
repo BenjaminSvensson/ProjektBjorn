@@ -719,8 +719,8 @@ MonoBehaviour:
   startingHead: {fileID: 11400000, guid: 3318dea2cd4b3bd4dac60d6689471c69, type: 2}
   startingLeftArm: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}
   startingRightArm: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}
-  startingLeftLeg: {fileID: 11400000, guid: 88a34a72b058da64da26349622d20fd7, type: 2}
-  startingRightLeg: {fileID: 11400000, guid: 88a34a72b058da64da26349622d20fd7, type: 2}
+  startingLeftLeg: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}
+  startingRightLeg: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}
   visualsHolder: {fileID: 7436224658638264974}
   headSlot: {fileID: 1199876398467638194}
   leftArmSlot: {fileID: 4991905698635412072}

@@ -248,15 +248,18 @@ public class EnemyLimbController : MonoBehaviour
 
         bool attached = false;
 
-        if (limbToAttach.limbType == LimbType.Arm)
-        {
-            if (currentRightArm == null) { AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged); attached = true; }
-            else if (currentLeftArm == null) { AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged); attached = true; }
-        }
-        else if (limbToAttach.limbType == LimbType.Leg)
+        // 1. Try filling Legs first (applies to Leg AND Universal)
+        if (limbToAttach.limbType == LimbType.Leg || limbToAttach.limbType == LimbType.Universal)
         {
             if (currentRightLeg == null) { AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged); attached = true; }
             else if (currentLeftLeg == null) { AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged); attached = true; }
+        }
+
+        // 2. Try filling Arms if not already attached (applies to Arm AND Universal)
+        if (!attached && (limbToAttach.limbType == LimbType.Arm || limbToAttach.limbType == LimbType.Universal))
+        {
+            if (currentRightArm == null) { AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged); attached = true; }
+            else if (currentLeftArm == null) { AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged); attached = true; }
         }
 
         if (attached)
@@ -312,6 +315,7 @@ public class EnemyLimbController : MonoBehaviour
 
         if (limbToRemove != null)
         {
+            // Use visualPrefab from LimbData
             GameObject pickup = Instantiate(limbToRemove.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
             WorldLimb pickupScript = pickup.GetComponent<WorldLimb>();
             Vector2 flingDir = Random.insideUnitCircle.normalized;
@@ -335,6 +339,7 @@ public class EnemyLimbController : MonoBehaviour
         Transform parentSlot = GetSlotTransform(slot);
         if (parentSlot == null) return;
 
+        // Use visualPrefab from LimbData
         GameObject limbObj = Instantiate(limbData.visualPrefab, parentSlot.position, parentSlot.rotation, parentSlot);
         WorldLimb limbComponent = limbObj.GetComponent<WorldLimb>();
         if (limbComponent == null) { Destroy(limbObj); return; }
