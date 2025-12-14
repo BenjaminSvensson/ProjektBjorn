@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 4463692447353982933}
   - component: {fileID: 132117502489907895}
   - component: {fileID: 621164380810242327}
+  - component: {fileID: 7714741620026003899}
+  - component: {fileID: 8686836582574064627}
   m_Layer: 0
   m_Name: Hammer
   m_TagString: Untagged
@@ -123,6 +125,31 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: 080307f9d798fe74c98acd2bb6c62cb0, type: 2}
   throwForce: 4
   pickupCooldown: 1
+--- !u!210 &7714741620026003899
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3091896305283139794}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &8686836582574064627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3091896305283139794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
 --- !u!1 &3688191007623834262
 GameObject:
   m_ObjectHideFlags: 0

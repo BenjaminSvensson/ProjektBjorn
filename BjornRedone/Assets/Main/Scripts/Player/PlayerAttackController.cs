@@ -283,6 +283,7 @@ public class PlayerAttackController : MonoBehaviour
         {
             Collider2D hit = hitBuffer[i];
             
+            // --- UPDATED: Check for Enemies ---
             if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
             {
                 enemy.TakeDamage(damage, dir);
@@ -291,6 +292,11 @@ public class PlayerAttackController : MonoBehaviour
                     enemyRb.linearVelocity = Vector2.zero; 
                     enemyRb.AddForce(dir * knockback, ForceMode2D.Impulse);
                 }
+            }
+            // --- NEW: Check for Loot Containers ---
+            else if (hit.TryGetComponent<LootContainer>(out LootContainer container))
+            {
+                container.TakeDamage(damage, dir);
             }
         }
     }

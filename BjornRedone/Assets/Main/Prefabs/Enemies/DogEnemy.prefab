@@ -731,7 +731,7 @@ MonoBehaviour:
   torsoDamagedVisual: {fileID: 4314834548482925863}
   damageVisualThreshold: 0.3
   limbDropChance: 0.4
-  maintainLimbChance: 0.2
+  maintainLimbChance: 0.25
   damageAlertRadius: 10
   enemyLayer:
     serializedVersion: 2

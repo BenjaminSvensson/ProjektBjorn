@@ -103,6 +103,8 @@ GameObject:
   - component: {fileID: 6461568571174332539}
   - component: {fileID: 1726092705303593016}
   - component: {fileID: 3190237298960594280}
+  - component: {fileID: 4629047863099156941}
+  - component: {fileID: 6381459114156740048}
   m_Layer: 0
   m_Name: Knife
   m_TagString: Untagged
@@ -214,3 +216,28 @@ MonoBehaviour:
   weaponData: {fileID: 11400000, guid: 18277db910d0c8847ab9a16232347cdc, type: 2}
   throwForce: 5
   pickupCooldown: 1
+--- !u!210 &4629047863099156941
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8406546666599770303}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &6381459114156740048
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8406546666599770303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
