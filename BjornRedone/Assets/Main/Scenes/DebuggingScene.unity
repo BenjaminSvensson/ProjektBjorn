@@ -1458,6 +1458,10 @@ MonoBehaviour:
     prefab: {fileID: 8447582695004223394, guid: c6d08eb7ad69dfb4fb038600c260ced9, type: 3}
     cost: 4
     minDistanceReq: 0
+  - name: Hedgehog
+    prefab: {fileID: 8447582695004223394, guid: 22733423fca786e4bac7110703f6ea8d, type: 3}
+    cost: 4
+    minDistanceReq: 2
   baseEnemyBudget: 2
   enemyBudgetPerDistance: 2
   environmentProps:

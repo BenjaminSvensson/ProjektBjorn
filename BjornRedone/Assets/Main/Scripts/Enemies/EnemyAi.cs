@@ -16,6 +16,14 @@ public class EnemyAI : MonoBehaviour
     public float baseMoveSpeed = 2f;
     public float baseDamage = 5f;
 
+    [Header("Movement Behavior")] // --- NEW ---
+    [Tooltip("If true, the enemy will try to keep a specific distance from the player instead of rushing in.")]
+    [SerializeField] private bool maintainDistance = false;
+    [Tooltip("The distance to maintain from the player (only if maintainDistance is true).")]
+    [SerializeField] private float preferredDistance = 4f;
+    [Tooltip("Buffer zone to prevent jittering when maintaining distance.")]
+    [SerializeField] private float distanceBuffer = 0.5f;
+
     [Header("Flee Settings")]
     [Tooltip("Percentage of health (0-1) below which the enemy will flee.")]
     [SerializeField] private float fleeHealthThreshold = 0.25f;
@@ -459,7 +467,41 @@ public class EnemyAI : MonoBehaviour
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
         if (!body.hasLegs) speed = 0f;
 
-        MoveTowards(player.position, speed);
+        // --- UPDATED MOVEMENT LOGIC ---
+        if (maintainDistance)
+        {
+            if (distToPlayer > preferredDistance + distanceBuffer)
+            {
+                // Too far, move closer
+                MoveTowards(player.position, speed);
+            }
+            else if (distToPlayer < preferredDistance - distanceBuffer)
+            {
+                // Too close, back away
+                Vector2 dirAway = ((Vector2)transform.position - (Vector2)player.position).normalized;
+                Vector2 fleePos = (Vector2)transform.position + dirAway;
+                MoveTowards(fleePos, speed);
+            }
+            else
+            {
+                // In sweet spot, stop moving
+                rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, turningSpeed * Time.fixedDeltaTime);
+                
+                // Ensure we face the player even when standing still
+                float dirX = player.position.x - transform.position.x;
+                if (Mathf.Abs(dirX) > 0.1f)
+                {
+                    Vector3 scale = transform.localScale;
+                    scale.x = Mathf.Abs(scale.x) * (dirX > 0 ? 1 : -1);
+                    transform.localScale = scale;
+                }
+            }
+        }
+        else
+        {
+            // Original "Rush" behavior
+            MoveTowards(player.position, speed);
+        }
     }
 
     void LogicAttack()
@@ -471,10 +513,24 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
-        rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.deltaTime * 10f);
-        
         float distToPlayer = Vector2.Distance(transform.position, player.position);
 
+        // --- UPDATED: Allow movement during attack if maintaining distance ---
+        if (maintainDistance && distToPlayer < preferredDistance - distanceBuffer)
+        {
+            // Back away while attacking
+            float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
+            if (!body.hasLegs) speed = 0f;
+            
+            Vector2 dirAway = ((Vector2)transform.position - (Vector2)player.position).normalized;
+            MoveTowards((Vector2)transform.position + dirAway, speed);
+        }
+        else
+        {
+            // Stop moving to attack (Default behavior)
+            rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.deltaTime * 10f);
+        }
+        
         if (distToPlayer > attackRange * 1.2f)
         {
             SwitchToChaseState(); // Go back to chase

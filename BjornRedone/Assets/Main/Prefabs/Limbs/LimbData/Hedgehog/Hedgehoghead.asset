@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfc652f006a04b3479f2c4452d4ab38b, type: 3}
+  m_Name: Hedgehoghead
+  m_EditorClassIdentifier: Assembly-CSharp::LimbData
+  limbType: 0
+  visualPrefab: {fileID: 5463483987274889270, guid: d9750f95e485a9a4fafb40baec4ee7b9, type: 3}
+  maxHealth: 20
+  moveSpeedBonus: 0
+  punchSounds: []
+  punchPitch: 1
+  punchVolume: 1
+  attackDamageBonus: 0
+  punchDuration: 0.2
+  attackCooldown: 0.5
+  attackReach: 0
+  impactSize: 0
+  knockbackForce: 5
+  healthBonus: 0
