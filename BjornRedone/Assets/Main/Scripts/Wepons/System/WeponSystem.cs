@@ -182,20 +182,17 @@ public class WeaponSystem : MonoBehaviour
         // 2. Position Weapon on Main Hand
         if (mainAnchor != null)
         {
-            heldWeaponRenderer.transform.position = mainAnchor.TransformPoint(gripOffset);
-            
-            // Base Rotation: Match arm + 180 Z (to point barrel forward instead of backward)
+            Vector3 targetPos = mainAnchor.TransformPoint(gripOffset);
             Quaternion finalRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
 
-            // --- FLIP FIX: If player is facing left (flipped sprite), flip weapon Y to keep it upright ---
-            // We check the scale of the visuals holder to determine facing direction.
+            // FLIP FIX: If player is facing left, flip 180 on Y axis
             if (limbController.GetVisualsHolder() != null && limbController.GetVisualsHolder().localScale.x < 0)
             {
-                // Changing rotation to Y-axis 180 flip based on request
                 finalRotation *= Quaternion.Euler(0, 180, 0);
             }
             
-            heldWeaponRenderer.transform.rotation = finalRotation;
+            // --- OPTIMIZATION: Set position and rotation in one go to prevent double transform update ---
+            heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalRotation);
             
             WeaponData activeWeapon = weaponSlots[activeSlotIndex];
             if (activeWeapon != null)
@@ -225,16 +222,16 @@ public class WeaponSystem : MonoBehaviour
     {
         if (hand == null) return;
         
-        // Compensate for weapon scale
         Vector3 compensatedOffset = new Vector3(
             secondaryGripOffset.x / weaponScale.x,
             secondaryGripOffset.y / weaponScale.y,
             secondaryGripOffset.z / weaponScale.z
         );
 
-        hand.position = weaponTransform.TransformPoint(compensatedOffset);
-        
-        // Rotation: Match weapon rotation (flipped 180Z because arms usually point down/in)
-        hand.rotation = weaponTransform.rotation * Quaternion.Euler(0, 0, 180f);
+        Vector3 targetPos = weaponTransform.TransformPoint(compensatedOffset);
+        Quaternion targetRot = weaponTransform.rotation * Quaternion.Euler(0, 0, 180f);
+
+        // --- OPTIMIZATION ---
+        hand.SetPositionAndRotation(targetPos, targetRot);
     }
 }

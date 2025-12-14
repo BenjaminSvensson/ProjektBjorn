@@ -26,9 +26,9 @@ public class WorldLimb : MonoBehaviour, IInteractable
     
     [Header("Debris Settings")]
     [Tooltip("How long broken/unusable limbs stay in the world before fading out.")]
-    [SerializeField] private float brokenLimbLifetime = 10f; 
+    [SerializeField] private float brokenLimbLifetime = 30f; 
     [Tooltip("If the player is farther than this distance, destroy this limb (Optimization).")]
-    [SerializeField] private float maxDistanceToPlayer = 15f; // --- NEW ---
+    [SerializeField] private float maxDistanceToPlayer = 40f;
 
     private enum State { Idle, Attached, Thrown, Pickup }
     private State currentState = State.Idle;
@@ -44,8 +44,11 @@ public class WorldLimb : MonoBehaviour, IInteractable
     private bool isShowingDamaged = false;
     private List<SpriteRenderer> brokenVisualRenderers = new List<SpriteRenderer>();
 
-    private Transform playerTransform; // --- NEW ---
-    private float distanceCheckTimer = 0f; // --- NEW ---
+    private Transform playerTransform; 
+    private float distanceCheckTimer = 0f;
+    
+    // --- OPTIMIZATION: Store squared distance to avoid Sqrt operations ---
+    private float maxDistanceSq; 
 
     [Header("Interaction")]
     [Tooltip("The text that will appear on the interaction prompt.")]
@@ -85,9 +88,11 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
     void Start()
     {
-        // Cache player for distance checks
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p != null) playerTransform = p.transform;
+
+        // --- OPTIMIZATION: Calculate Square once ---
+        maxDistanceSq = maxDistanceToPlayer * maxDistanceToPlayer;
 
         if (currentState == State.Idle && startingLimbData != null)
         {
@@ -104,29 +109,26 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
     void Update()
     {
-        // --- NEW: Distance Culling Logic ---
-        // Run check once every second to save performance
+        // Check once every second to save performance
         distanceCheckTimer += Time.deltaTime;
         if (distanceCheckTimer > 1.0f)
         {
             distanceCheckTimer = 0f;
             CheckDistanceCleanup();
         }
-        // -----------------------------------
     }
 
     private void CheckDistanceCleanup()
     {
-        // Don't destroy attached or thrown items mid-air
         if (currentState == State.Attached || currentState == State.Thrown) return;
         if (playerTransform == null) return;
 
-        // If it's a "Broken" limb (debris), we can be aggressive with cleanup
-        // If it's a "Maintained" limb (useful item), maybe allow a bit more distance or don't cull
-        // For now, we cull both if extremely far, but prioritize broken ones.
-
-        float dist = Vector2.Distance(transform.position, playerTransform.position);
-        if (dist > maxDistanceToPlayer)
+        // --- OPTIMIZATION: Use SqrMagnitude instead of Distance ---
+        // Vector2.Distance uses SquareRoot, which is expensive for hundreds of objects.
+        // SqrMagnitude is just simple multiplication.
+        float distSq = (transform.position - playerTransform.position).sqrMagnitude;
+        
+        if (distSq > maxDistanceSq)
         {
             Destroy(gameObject);
         }
@@ -143,7 +145,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
         if (sortingGroup) sortingGroup.enabled = false;
         if (ySorter) ySorter.enabled = false;
-        this.enabled = false; // Disable update when attached to save perf
+        this.enabled = false; 
     }
 
     public void SetVisualState(bool isDamaged)
@@ -169,7 +171,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
 
     public void InitializeThrow(LimbData data, bool maintained, Vector2 direction, bool isDamaged = false)
     {
-        this.enabled = true; // Re-enable for updates
+        this.enabled = true; 
         limbData = data;
         currentState = State.Thrown;
         isMaintained = maintained;
@@ -269,7 +271,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
         
         col.isTrigger = false;
 
-        // Splat on land
         if (BloodManager.Instance != null && (isShowingDamaged || !isMaintained))
         {
             Vector2 randomDown = Quaternion.Euler(0, 0, Random.Range(-45f, 45f)) * Vector2.down;
@@ -297,7 +298,6 @@ public class WorldLimb : MonoBehaviour, IInteractable
         float timer = 0f;
         while (timer < fadeTime)
         {
-            // If already destroyed by distance check, this coroutine stops automatically
             if (this == null) yield break;
 
             float alpha = Mathf.Lerp(1f, 0f, timer / fadeTime);
