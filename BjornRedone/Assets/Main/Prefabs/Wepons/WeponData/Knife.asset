@@ -16,14 +16,14 @@ MonoBehaviour:
   icon: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
   pickupPrefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
   heldSprite: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
-  heldScale: {x: 1, y: 1, z: 1}
+  heldScale: {x: 0.9, y: 0.9, z: 0.9}
   type: 0
   attackStyle: 0
-  meleeDamageBonus: 0
+  meleeDamageBonus: 1
   meleeImpactSounds:
   - {fileID: 8300000, guid: 9d7ab24ac4a239c46aaab65c648f133b, type: 3}
-  attackSpeedMultiplier: 3
-  knockbackMultiplier: 0.5
+  attackSpeedMultiplier: 3.5
+  knockbackMultiplier: 0.1
   swingArc: 90
   projectilePrefab: {fileID: 0}
   fireRate: 0.2

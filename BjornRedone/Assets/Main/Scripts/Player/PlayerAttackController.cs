@@ -23,7 +23,7 @@ public class PlayerAttackController : MonoBehaviour
     private float leftArmCooldownTimer = 0f;
     private float rightArmCooldownTimer = 0f;
     private float globalCooldownTimer = 0f; 
-    private float rangedCooldownTimer = 0f; 
+    // rangedCooldownTimer removed (now tracked in WeaponSystem)
     
     private Camera cam;
     private Collider2D[] hitBuffer = new Collider2D[10]; 
@@ -52,7 +52,6 @@ public class PlayerAttackController : MonoBehaviour
         if (leftArmCooldownTimer > 0) leftArmCooldownTimer -= Time.deltaTime;
         if (rightArmCooldownTimer > 0) rightArmCooldownTimer -= Time.deltaTime;
         if (globalCooldownTimer > 0) globalCooldownTimer -= Time.deltaTime;
-        if (rangedCooldownTimer > 0) rangedCooldownTimer -= Time.deltaTime;
 
         if (isAttackHeld)
         {
@@ -67,12 +66,15 @@ public class PlayerAttackController : MonoBehaviour
     {
         WeaponData currentWeapon = weaponSystem != null ? weaponSystem.GetActiveWeapon() : null;
 
+        // --- NEW: Check Weapon Slot Cooldown first ---
+        if (currentWeapon != null && weaponSystem != null)
+        {
+            if (weaponSystem.GetCurrentWeaponCooldown() > 0) return;
+        }
+
         if (currentWeapon != null && currentWeapon.type == WeaponType.Ranged)
         {
-            if (rangedCooldownTimer <= 0)
-            {
-                FireRangedWeapon(currentWeapon);
-            }
+            FireRangedWeapon(currentWeapon);
         }
         else
         {
@@ -83,7 +85,9 @@ public class PlayerAttackController : MonoBehaviour
     private void FireRangedWeapon(WeaponData weapon)
     {
         if (weapon.projectilePrefab == null) return;
-        rangedCooldownTimer = weapon.fireRate;
+        
+        // --- NEW: Set Weapon Slot Cooldown ---
+        weaponSystem.SetCurrentWeaponCooldown(weapon.fireRate);
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 fireOrigin = transform.position; 
@@ -122,39 +126,43 @@ public class PlayerAttackController : MonoBehaviour
         bool leftReady = leftData != null && leftArmCooldownTimer <= 0;
         bool rightReady = rightData != null && rightArmCooldownTimer <= 0;
 
+        // Note: For weapon attacks, we rely mainly on Weapon Cooldown (checked in HandleCombatInput).
+        // However, we still check physical arm readiness to ensure we don't interrupt a swing animation.
+        // But if switching weapons, the user might want to interrupt.
+        // For robustness: we check arm readiness, but when firing a weapon, we only reserve the arm for the SWING DURATION.
+
         if (!leftReady && !rightReady) return;
 
         float speedMult = 1.0f;
         if (meleeWeapon != null) speedMult = meleeWeapon.attackSpeedMultiplier;
 
-        // --- TWO-HANDED ATTACK LOGIC ---
-        // If holding a weapon and BOTH arms are attached, we do a unified swing.
-        // The WeaponSystem will visually drag the off-hand along.
         if (meleeWeapon != null && leftData != null && rightData != null)
         {
-            if (leftReady && rightReady) // Both cooldowns ready
+            if (leftReady && rightReady) 
             {
-                // Determine Main Hand (WeaponSystem prioritizes Right)
                 bool isRightMain = weaponSystem.IsHoldingWithRightHand();
                 Transform mainArm = isRightMain ? limbController.GetRightArmSlot() : limbController.GetLeftArmSlot();
                 LimbData mainData = isRightMain ? rightData : leftData;
-
-                // Calculate Combined Damage (Base + MainBonus + OffBonus + WeaponBonus)
                 float totalDamage = limbController.baseAttackDamage + leftData.attackDamageBonus + rightData.attackDamageBonus + meleeWeapon.meleeDamageBonus;
                 
-                // Execute ONE swing on the Main Arm
                 ExecuteMelee(mainArm, mainData, !isRightMain, meleeWeapon, speedMult, true, totalDamage);
 
-                // Set cooldowns for BOTH arms
-                float cooldown = mainData.attackCooldown / Mathf.Max(0.1f, speedMult);
-                leftArmCooldownTimer = cooldown;
-                rightArmCooldownTimer = cooldown;
+                // --- KEY CHANGE: Arm Cooldown vs Weapon Cooldown ---
+                // We set the WEAPON slot to the full cooldown (refire rate).
+                // We set the ARM to only the swing duration (so it frees up for a switch-combo).
+                float fullCooldown = mainData.attackCooldown / Mathf.Max(0.1f, speedMult);
+                float swingDuration = mainData.punchDuration / Mathf.Max(0.1f, speedMult);
+                
+                weaponSystem.SetCurrentWeaponCooldown(fullCooldown);
+                
+                leftArmCooldownTimer = swingDuration;
+                rightArmCooldownTimer = swingDuration;
                 globalCooldownTimer = minPunchDelay;
             }
         }
         else
         {
-            // --- SINGLE HAND / ALTERNATING LOGIC ---
+            // Standard / Unarmed
             bool fireLeft = false;
             if (leftReady && rightReady) fireLeft = isNextPunchLeft;
             else if (leftReady) fireLeft = true;
@@ -188,7 +196,6 @@ public class PlayerAttackController : MonoBehaviour
         bool hasWeaponBonus = false;
         if (weapon != null && weaponSystem != null)
         {
-            // Note: If using damageOverride (Two-handed), bonuses are already included.
             if (!damageOverride.HasValue)
             {
                 bool isHoldingWithRight = weaponSystem.IsHoldingWithRightHand();
@@ -201,7 +208,6 @@ public class PlayerAttackController : MonoBehaviour
             }
             else
             {
-                // Even with override, we apply knockback mult and sound
                 knockback *= weapon.knockbackMultiplier;
                 hasWeaponBonus = true;
             }
@@ -210,16 +216,26 @@ public class PlayerAttackController : MonoBehaviour
                 soundPool = weapon.meleeImpactSounds; 
         }
 
-        // 2. Set Cooldown (Only if not already handled by caller)
-        // If damageOverride is null, we assume single-hand logic which sets timers here
+        // 2. Set Cooldowns (If not already handled by Two-Handed logic)
         if (!damageOverride.HasValue)
         {
-            if (isLeftArm) leftArmCooldownTimer = calculatedCooldown;
-            else rightArmCooldownTimer = calculatedCooldown;
+            if (weapon != null)
+            {
+                // Weapon Equipped: Weapon takes full cooldown, Arm takes animation duration
+                weaponSystem.SetCurrentWeaponCooldown(calculatedCooldown);
+                if (isLeftArm) leftArmCooldownTimer = calculatedDuration;
+                else rightArmCooldownTimer = calculatedDuration;
+            }
+            else
+            {
+                // Unarmed: Arm takes full cooldown
+                if (isLeftArm) leftArmCooldownTimer = calculatedCooldown;
+                else rightArmCooldownTimer = calculatedCooldown;
+            }
             globalCooldownTimer = minPunchDelay;
         }
 
-        // 3. Play Audio
+        // 3. Audio
         if (playAudio && actionAudioSource != null && soundPool != null && soundPool.Length > 0)
         {
             AudioClip clip = soundPool[Random.Range(0, soundPool.Length)];
@@ -230,14 +246,11 @@ public class PlayerAttackController : MonoBehaviour
             }
         }
 
-        // 4. Perform Attack Visuals & Hit
+        // 4. Visuals & Hits
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         
         if (weapon != null && hasWeaponBonus && weapon.attackStyle == MeleeAttackStyle.Swing)
         {
-            // --- UPDATED: Calculate swing direction based on looking direction ---
-            // If mouse is LEFT of player (<), we need a POSITIVE arc for Up-to-Down.
-            // If mouse is RIGHT of player (>), we need a NEGATIVE arc for Up-to-Down.
             float swingDirection = (mouseWorldPos.x < transform.position.x) ? 1f : -1f;
             float finalArc = Mathf.Abs(weapon.swingArc) * swingDirection;
 

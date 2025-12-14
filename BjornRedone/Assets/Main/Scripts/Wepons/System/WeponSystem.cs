@@ -25,6 +25,9 @@ public class WeaponSystem : MonoBehaviour
     private PlayerLimbController limbController;
     private bool isHoldingWithRightHand = false; 
 
+    // --- Independent Cooldowns per Slot ---
+    private float[] slotCooldowns = new float[2]; 
+
     void Awake()
     {
         limbController = GetComponent<PlayerLimbController>();
@@ -39,12 +42,39 @@ public class WeaponSystem : MonoBehaviour
     {
         HandleInput();
         CheckArmStatus();
+        UpdateCooldowns(); // Update timers
     }
 
     void LateUpdate()
     {
         UpdateWeaponTransform();
     }
+
+    private void UpdateCooldowns()
+    {
+        for (int i = 0; i < slotCooldowns.Length; i++)
+        {
+            if (slotCooldowns[i] > 0)
+            {
+                slotCooldowns[i] -= Time.deltaTime;
+            }
+        }
+    }
+
+    // --- Cooldown API ---
+    public float GetCurrentWeaponCooldown()
+    {
+        if (activeSlotIndex >= 0 && activeSlotIndex < slotCooldowns.Length)
+            return slotCooldowns[activeSlotIndex];
+        return 0f;
+    }
+
+    public void SetCurrentWeaponCooldown(float time)
+    {
+        if (activeSlotIndex >= 0 && activeSlotIndex < slotCooldowns.Length)
+            slotCooldowns[activeSlotIndex] = time;
+    }
+    // -------------------------
 
     private void HandleInput()
     {
@@ -107,6 +137,9 @@ public class WeaponSystem : MonoBehaviour
         if (weaponSlots[activeSlotIndex] != null) DropWeapon(activeSlotIndex);
 
         weaponSlots[activeSlotIndex] = newData;
+        // Reset cooldown for the slot when picking up a new weapon to allow immediate fire.
+        slotCooldowns[activeSlotIndex] = 0f; 
+
         UpdateState();
         return true;
     }
@@ -119,6 +152,7 @@ public class WeaponSystem : MonoBehaviour
         if (weaponToDrop == null) return;
 
         weaponSlots[slotIndex] = null;
+        slotCooldowns[slotIndex] = 0f; // Clear cooldown
 
         if (weaponToDrop.pickupPrefab != null)
         {
@@ -191,7 +225,7 @@ public class WeaponSystem : MonoBehaviour
                 finalRotation *= Quaternion.Euler(0, 180, 0);
             }
             
-            // --- OPTIMIZATION: Set position and rotation in one go to prevent double transform update ---
+            // Set position and rotation in one go
             heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalRotation);
             
             WeaponData activeWeapon = weaponSlots[activeSlotIndex];
@@ -231,7 +265,6 @@ public class WeaponSystem : MonoBehaviour
         Vector3 targetPos = weaponTransform.TransformPoint(compensatedOffset);
         Quaternion targetRot = weaponTransform.rotation * Quaternion.Euler(0, 0, 180f);
 
-        // --- OPTIMIZATION ---
         hand.SetPositionAndRotation(targetPos, targetRot);
     }
 }
