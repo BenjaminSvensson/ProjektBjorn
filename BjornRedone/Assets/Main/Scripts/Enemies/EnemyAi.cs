@@ -97,6 +97,9 @@ public class EnemyAI : MonoBehaviour
     // Trapped State
     private bool isTrapped = false;
 
+    // Optimization
+    private float cullingDistanceSq;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -119,6 +122,9 @@ public class EnemyAI : MonoBehaviour
         
         idleSoundTimer = Random.Range(minIdleSoundInterval, maxIdleSoundInterval);
 
+        // Pre-calculate squared distance for cheaper checks
+        cullingDistanceSq = cullingDistance * cullingDistance;
+
         PickNewRoamTarget();
     }
 
@@ -126,10 +132,20 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null) return;
 
-        if (Vector2.Distance(transform.position, player.position) > cullingDistance)
+        // Optimization: Use sqrMagnitude to avoid expensive Sqrt operations
+        if (((Vector2)transform.position - (Vector2)player.position).sqrMagnitude > cullingDistanceSq)
         {
             rb.linearVelocity = Vector2.zero; 
+            
+            // Disable animation controller to save processing
+            if (anim != null && anim.enabled) anim.enabled = false;
+            
             return; 
+        }
+        else
+        {
+            // Re-enable animation controller if we are back in range
+            if (anim != null && !anim.enabled) anim.enabled = true;
         }
 
         if (isTrapped)
