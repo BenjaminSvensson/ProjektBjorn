@@ -198,7 +198,7 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    // --- NEW: Helper for Flee Transition ---
+    // --- Helper for Flee Transition ---
     void SwitchToFleeState()
     {
         if (currentState != State.Flee)
@@ -407,7 +407,7 @@ public class EnemyAI : MonoBehaviour
 
     void LogicChase()
     {
-        // --- UPDATED: Use Flee Helper ---
+        // --- Use Flee Helper ---
         if (ShouldFlee())
         {
             SwitchToFleeState();
@@ -441,7 +441,7 @@ public class EnemyAI : MonoBehaviour
 
     void LogicAttack()
     {
-        // --- UPDATED: Use Flee Helper ---
+        // --- Use Flee Helper ---
         if (ShouldFlee())
         {
             SwitchToFleeState();

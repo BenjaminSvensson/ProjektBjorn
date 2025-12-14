@@ -263,7 +263,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 45.899994, y: -3.2999878}
+  m_AnchoredPosition: {x: 45.899902, y: -3.2999878}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &459449730
@@ -924,7 +924,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 11.799988, y: 5.7282104}
+  m_AnchoredPosition: {x: 11.799805, y: 5.7282104}
   m_SizeDelta: {x: 45, y: 45}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &1511573499
@@ -1511,6 +1511,10 @@ MonoBehaviour:
   - name: Prototype
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
     cost: 6
+    minDistanceReq: 2
+  - name: Prototype
+    prefab: {fileID: 8447582695004223394, guid: c6d08eb7ad69dfb4fb038600c260ced9, type: 3}
+    cost: 4
     minDistanceReq: 0
   baseEnemyBudget: 2
   enemyBudgetPerDistance: 2

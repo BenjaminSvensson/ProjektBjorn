@@ -13,10 +13,15 @@ MonoBehaviour:
   m_Name: DogHead
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
   limbType: 0
-  visualPrefab: {fileID: 5463483987274889270, guid: 940d2845993ab184989430170c6f3cd3, type: 3}
+  visualPrefab: {fileID: 5463483987274889270, guid: 496015f359c1edb4a9172acda483c4c4, type: 3}
   moveSpeedBonus: 0
+  punchSounds: []
+  punchPitch: 1
+  punchVolume: 1
   attackDamageBonus: 0
-  attackSpeed: 0
+  punchDuration: 0.2
+  attackCooldown: 0.5
   attackReach: 0
   impactSize: 0
+  knockbackForce: 5
   healthBonus: 0

@@ -13,10 +13,15 @@ MonoBehaviour:
   m_Name: DogLeg
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
   limbType: 2
-  visualPrefab: {fileID: 2324061009247522880, guid: e51222a339ee53b499a0edd9e6706308, type: 3}
-  moveSpeedBonus: 0
+  visualPrefab: {fileID: 8468516408254863572, guid: 74c13666a107eda42878549aa29ddbb4, type: 3}
+  moveSpeedBonus: 1
+  punchSounds: []
+  punchPitch: 1
+  punchVolume: 1
   attackDamageBonus: 0
-  attackSpeed: 0
+  punchDuration: 0.2
+  attackCooldown: 0.5
   attackReach: 0
   impactSize: 0
+  knockbackForce: 5
   healthBonus: 0
