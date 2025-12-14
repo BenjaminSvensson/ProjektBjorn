@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 5176922302425026522}
   - component: {fileID: 1874251332155671972}
   m_Layer: 0
-  m_Name: KnifeVisual
+  m_Name: HammerVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

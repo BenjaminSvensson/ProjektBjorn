@@ -165,7 +165,7 @@ public class WeaponSystem : MonoBehaviour
         Transform mainAnchor = null;
         Vector3 gripOffset = Vector3.zero;
 
-        // 1. Determine Main Hand (Holding the weapon)
+        // 1. Determine Main Hand (WeaponSystem prioritizes Right)
         if (limbController.GetArmData(false) != null) // Right
         {
             mainAnchor = limbController.GetRightArmSlot();
@@ -183,36 +183,58 @@ public class WeaponSystem : MonoBehaviour
         if (mainAnchor != null)
         {
             heldWeaponRenderer.transform.position = mainAnchor.TransformPoint(gripOffset);
-            heldWeaponRenderer.transform.rotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
+            
+            // Base Rotation: Match arm + 180 Z (to point barrel forward instead of backward)
+            Quaternion finalRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
+
+            // --- FLIP FIX: If player is facing left (flipped sprite), flip weapon Y to keep it upright ---
+            // We check the scale of the visuals holder to determine facing direction.
+            if (limbController.GetVisualsHolder() != null && limbController.GetVisualsHolder().localScale.x < 0)
+            {
+                // Changing rotation to Y-axis 180 flip based on request
+                finalRotation *= Quaternion.Euler(0, 180, 0);
+            }
+            
+            heldWeaponRenderer.transform.rotation = finalRotation;
             
             WeaponData activeWeapon = weaponSlots[activeSlotIndex];
             if (activeWeapon != null)
+            {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
 
-            // 3. Position Off-Hand on Weapon (Inverse Kinematics-ish)
-            // If we are holding with Right, check if Left exists and snap it to weapon
-            if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
-            {
-                Transform offHand = limbController.GetLeftArmSlot();
-                SnapOffHand(offHand, heldWeaponRenderer.transform);
+                // 3. Position Off-Hand on Weapon
+                if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
+                {
+                    Transform offHand = limbController.GetLeftArmSlot();
+                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale);
+                }
+                else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
+                {
+                    Transform offHand = limbController.GetRightArmSlot();
+                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale);
+                }
             }
-            // If we are holding with Left, check if Right exists and snap it
-            else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
+            else
             {
-                Transform offHand = limbController.GetRightArmSlot();
-                SnapOffHand(offHand, heldWeaponRenderer.transform);
+                heldWeaponRenderer.transform.localScale = Vector3.one;
             }
         }
     }
 
-    private void SnapOffHand(Transform hand, Transform weaponTransform)
+    private void SnapOffHand(Transform hand, Transform weaponTransform, Vector3 weaponScale)
     {
         if (hand == null) return;
         
-        // Position: Weapon Position + Local Offset transformed to world
-        hand.position = weaponTransform.TransformPoint(secondaryGripOffset);
+        // Compensate for weapon scale
+        Vector3 compensatedOffset = new Vector3(
+            secondaryGripOffset.x / weaponScale.x,
+            secondaryGripOffset.y / weaponScale.y,
+            secondaryGripOffset.z / weaponScale.z
+        );
+
+        hand.position = weaponTransform.TransformPoint(compensatedOffset);
         
-        // Rotation: Match weapon rotation (flipped 180 because arms usually point down/in)
+        // Rotation: Match weapon rotation (flipped 180Z because arms usually point down/in)
         hand.rotation = weaponTransform.rotation * Quaternion.Euler(0, 0, 180f);
     }
 }

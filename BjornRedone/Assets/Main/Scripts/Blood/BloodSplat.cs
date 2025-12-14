@@ -45,7 +45,7 @@ public class BloodSplat : MonoBehaviour
 
         // Layering: Randomize sorting order slightly so droplets stack naturally
         // Assuming Floor is -100 to -10. We use -50 to -40 range.
-        sr.sortingOrder = -3000 + Random.Range(0, 10);
+        sr.sortingOrder = -32767 + Random.Range(0, 10);
 
         StartCoroutine(FadeAndDestroy());
     }

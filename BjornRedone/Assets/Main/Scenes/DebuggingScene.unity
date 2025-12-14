@@ -1493,7 +1493,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 10
+  totalRooms: 20
   numberOfBossRooms: 0
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 30
