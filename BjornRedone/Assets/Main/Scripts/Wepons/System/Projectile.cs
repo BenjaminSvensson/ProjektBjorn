@@ -7,13 +7,15 @@ public class Projectile : MonoBehaviour
     private float damage;
     private float speed;
     private Vector2 direction;
-    private float lifetime = 2f;
+    private float lifetime = 5f;
+    private bool isEnemyProjectile = false; // --- NEW: Track ownership ---
 
-    public void Initialize(Vector2 dir, float spd, float dmg)
+    public void Initialize(Vector2 dir, float spd, float dmg, bool isEnemy = false)
     {
         direction = dir.normalized;
         speed = spd;
         damage = dmg;
+        isEnemyProjectile = isEnemy; // --- NEW ---
         
         // Rotate to face direction
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
@@ -27,22 +29,57 @@ public class Projectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Ignore Player and other Projectiles
-        if (other.CompareTag("Player") || other.GetComponent<Projectile>()) return;
+        // Ignore other Projectiles to prevent mid-air collisions
+        if (other.GetComponent<Projectile>()) return;
 
-        // Hit Enemy
-        EnemyLimbController enemy = other.GetComponent<EnemyLimbController>();
-        if (enemy != null)
+        // --- ENEMY BULLET LOGIC ---
+        if (isEnemyProjectile)
         {
-            enemy.TakeDamage(damage, direction);
-            Destroy(gameObject);
-            return;
+            // Hit Player
+            if (other.CompareTag("Player"))
+            {
+                PlayerLimbController player = other.GetComponent<PlayerLimbController>();
+                if (player != null)
+                {
+                    player.TakeDamage(damage, direction);
+                }
+                Destroy(gameObject);
+                return;
+            }
+
+            // Ignore Enemies (Friendly fire off)
+            if (other.GetComponent<EnemyLimbController>()) return;
+        }
+        // --- PLAYER BULLET LOGIC ---
+        else
+        {
+            // Hit Enemy
+            EnemyLimbController enemy = other.GetComponent<EnemyLimbController>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(damage, direction);
+                Destroy(gameObject);
+                return;
+            }
+
+            // Hit LootContainer
+            LootContainer loot = other.GetComponent<LootContainer>();
+            if (loot != null)
+            {
+                loot.TakeDamage(damage, direction);
+                Destroy(gameObject);
+                return;
+            }
+
+            // Ignore Player (Self damage off)
+            if (other.CompareTag("Player")) return;
         }
 
-        // Hit Walls/Obstacles (Assuming they are not triggers)
+        // --- WALLS / OBSTACLES ---
+        // Destroy on any solid object that wasn't handled above (Ground, Walls)
         if (!other.isTrigger)
         {
-            // Optional: Spawn spark effect
+            // Optional: Spawn spark effect here
             Destroy(gameObject);
         }
     }

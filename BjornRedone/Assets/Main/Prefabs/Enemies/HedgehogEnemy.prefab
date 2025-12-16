@@ -970,7 +970,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1600
   projectilePrefab: {fileID: 5854363392945389712, guid: 4a57e5eb98a1a8949b89967c031d3f49, type: 3}
-  projectileSpeed: 15
+  projectileSpeed: 20
   damage: 5
   spawnPoints:
   - {fileID: 603173731976440421}
