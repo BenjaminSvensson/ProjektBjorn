@@ -13,7 +13,7 @@ public class RoomCamera : MonoBehaviour
     [Tooltip("The Player's Transform.")]
     [SerializeField] private Transform target;
 
-    [Header("Settings")]
+    [Header("Grid Settings")]
     [Tooltip("MUST match the 'Room Size' in your LevelGenerator (e.g., X=20, Y=10).")]
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
     
@@ -23,9 +23,21 @@ public class RoomCamera : MonoBehaviour
     [Tooltip("The Z position for the camera (usually -10).")]
     [SerializeField] private float fixedZ = -10f;
 
+    [Header("Follow Settings")]
+    [Tooltip("How much the camera leans towards the player within the room. 0 = Locked to Center, 1 = Locked to Player.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float followStrength = 0.15f; // "Tiny bit" default
+
+    [Tooltip("If true, the camera stops moving at the room edges.")]
+    [SerializeField] private bool clampToRoom = true;
+
     [Header("Zoom Control")]
-    [Tooltip("If checked, the script will change Orthographic Size so the camera perfectly fits inside the room walls.")]
+    [Tooltip("If checked, the script will change Orthographic Size so the camera fits inside the room.")]
     [SerializeField] private bool autoFitToRoom = true;
+    
+    [Tooltip("Multiplier for the auto-fit. 1.0 = Exact Fit. < 1.0 = Zoomed In (allows panning). > 1.0 = Zoomed Out.")]
+    [Range(0.1f, 2f)]
+    [SerializeField] private float zoomScale = 0.9f; // Default slightly zoomed in to allow movement
 
     // --- Private State ---
     private Vector3 currentVelocity; // Used by SmoothDamp
@@ -39,7 +51,7 @@ public class RoomCamera : MonoBehaviour
         // Ensure background is solid color
         cam.clearFlags = CameraClearFlags.SolidColor;
         
-        // Set background color to #5DB64A
+        // Set background color to #5DB64A (Greenish)
         if (ColorUtility.TryParseHtmlString("#5DB64A", out Color bgColor))
         {
             cam.backgroundColor = bgColor;
@@ -66,8 +78,7 @@ public class RoomCamera : MonoBehaviour
         // Snap immediately to the start room
         if (target != null)
         {
-            targetPos = GetGridCenter(target.position);
-            transform.position = targetPos;
+            transform.position = CalculateTargetPosition(target.position);
         }
 
         if (autoFitToRoom)
@@ -86,8 +97,8 @@ public class RoomCamera : MonoBehaviour
 
         if (target == null) return;
 
-        // 2. Calculate the center of the room the player is currently in
-        Vector3 desiredPosition = GetGridCenter(target.position);
+        // 2. Calculate desired position with follow logic
+        Vector3 desiredPosition = CalculateTargetPosition(target.position);
 
         // 3. Smoothly move the camera towards that position
         transform.position = Vector3.SmoothDamp(
@@ -98,9 +109,47 @@ public class RoomCamera : MonoBehaviour
         );
     }
 
+    private Vector3 CalculateTargetPosition(Vector3 playerPos)
+    {
+        // A. Find the center of the current room
+        Vector3 roomCenter = GetGridCenter(playerPos);
+
+        // B. Calculate offset based on player position within the room
+        Vector3 rawOffset = playerPos - roomCenter;
+        
+        // C. Apply influence (The "Tiny Bit" follow)
+        Vector3 followOffset = rawOffset * followStrength;
+
+        // D. Construct Target
+        Vector3 finalTarget = roomCenter + followOffset;
+        finalTarget.z = fixedZ;
+
+        // E. Clamp to room boundaries
+        if (clampToRoom)
+        {
+            float camHeight = cam.orthographicSize;
+            float camWidth = camHeight * cam.aspect;
+
+            // Calculate the maximum distance the camera can move from the center
+            // before seeing outside the room
+            float maxDx = (roomSize.x / 2f) - camWidth;
+            float maxDy = (roomSize.y / 2f) - camHeight;
+
+            // If maxDx is negative, the camera is wider than the room (can't clamp, just center X)
+            // If positive, we can move that much.
+            float clampedX = (maxDx > 0) ? Mathf.Clamp(finalTarget.x - roomCenter.x, -maxDx, maxDx) : 0f;
+            float clampedY = (maxDy > 0) ? Mathf.Clamp(finalTarget.y - roomCenter.y, -maxDy, maxDy) : 0f;
+
+            finalTarget.x = roomCenter.x + clampedX;
+            finalTarget.y = roomCenter.y + clampedY;
+        }
+
+        return finalTarget;
+    }
+
     /// <summary>
-    /// Adjusts the Camera's Orthographic Size so the view is strictly 
-    /// contained within the roomSize dimensions.
+    /// Adjusts the Camera's Orthographic Size so the view is contained within the roomSize.
+    /// Uses zoomScale to determine tightness.
     /// </summary>
     private void FitCameraToRoom()
     {
@@ -110,22 +159,25 @@ public class RoomCamera : MonoBehaviour
             return;
         }
 
-        // 1. Calculate the Size needed to fit the Height perfectly
-        float sizeForHeight = roomSize.y / 2f;
+        // Apply the zoom scale to the room dimensions we are trying to fit
+        // If zoomScale is 0.9, we pretend the room is smaller, so the camera zooms in.
+        float effectiveHeight = roomSize.y * zoomScale;
+        float effectiveWidth = roomSize.x * zoomScale;
 
-        // 2. Calculate what the Width would be at that size
+        // 1. Calculate Size needed to fit Height
+        float sizeForHeight = effectiveHeight / 2f;
+
+        // 2. Calculate resulting Width
         float resultingWidth = sizeForHeight * cam.aspect * 2f;
 
-        // 3. If that width is too big for our room, we must shrink the camera based on Width instead
-        if (resultingWidth > roomSize.x)
+        // 3. If Width is too big, shrink based on Width
+        if (resultingWidth > effectiveWidth)
         {
-            // Calculate size to fit Width perfectly
-            float sizeForWidth = (roomSize.x / cam.aspect) / 2f;
+            float sizeForWidth = (effectiveWidth / cam.aspect) / 2f;
             cam.orthographicSize = sizeForWidth;
         }
         else
         {
-            // Otherwise, fitting to Height is safe
             cam.orthographicSize = sizeForHeight;
         }
     }
@@ -144,20 +196,20 @@ public class RoomCamera : MonoBehaviour
         float centerX = gridX * roomSize.x;
         float centerY = gridY * roomSize.y;
 
-        return new Vector3(centerX, centerY, fixedZ);
+        return new Vector3(centerX, centerY, 0); // Z handled later
     }
 
-    // Visual debugging to see the boundaries
+    // Visual debugging
     void OnDrawGizmos()
     {
         if (cam == null) cam = GetComponent<Camera>();
         
+        // Draw Room Grid Center
         Gizmos.color = Color.green;
-        // Draw the Room Bounds at the camera's current grid position
         Vector3 currentGridCenter = GetGridCenter(transform.position);
-        currentGridCenter.z = 0;
         Gizmos.DrawWireCube(currentGridCenter, new Vector3(roomSize.x, roomSize.y, 1));
 
+        // Draw Camera View
         if (cam != null)
         {
             Gizmos.color = Color.yellow;

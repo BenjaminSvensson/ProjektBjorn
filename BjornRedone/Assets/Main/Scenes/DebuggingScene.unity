@@ -709,7 +709,10 @@ MonoBehaviour:
   roomSize: {x: 20, y: 10}
   smoothTime: 0.25
   fixedZ: -10
+  followStrength: 0.15
+  clampToRoom: 1
   autoFitToRoom: 1
+  zoomScale: 1
 --- !u!114 &1172561460
 MonoBehaviour:
   m_ObjectHideFlags: 0
