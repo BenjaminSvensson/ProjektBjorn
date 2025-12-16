@@ -585,8 +585,8 @@ MonoBehaviour:
   destroyedVisual: {fileID: 2829496640755710442}
   minItemsToDrop: 1
   maxItemsToDrop: 3
-  dropSpreadForce: 8
-  dropChanceOnHit: 0.8
+  dropSpreadForce: 4
+  dropChanceOnHit: 0.7
   lootTable:
   - name: Knife
     prefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
@@ -599,6 +599,18 @@ MonoBehaviour:
     weight: 1.2
   - name: GorillaArm
     prefab: {fileID: 1703309220703536604, guid: 259011a8f85881a498b363091c74d781, type: 3}
+    weight: 0.5
+  - name: BjornArm
+    prefab: {fileID: 1703309220703536604, guid: 6ebb246c6c28d9a459e52b4699ed999b, type: 3}
+    weight: 1
+  - name: DogArm
+    prefab: {fileID: 1703309220703536604, guid: 52a99a6dbdb02bb4f90b3c9b5e59d6b4, type: 3}
+    weight: 1
+  - name: Hedgehogarm
+    prefab: {fileID: 2324061009247522880, guid: 0a40ce83195f7d143b2630c80d42e84a, type: 3}
+    weight: 1
+  - name: HedgehogHead
+    prefab: {fileID: 5463483987274889270, guid: d9750f95e485a9a4fafb40baec4ee7b9, type: 3}
     weight: 1
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
@@ -607,4 +619,5 @@ MonoBehaviour:
   itemDropSound: {fileID: 8300000, guid: 444bb4c59ea0f63478d94d9306f541e8, type: 3}
   shakeDuration: 0.15
   shakeMagnitude: 0.1
+  hitFlashDuration: 0.1
   hitParticles: {fileID: 0}

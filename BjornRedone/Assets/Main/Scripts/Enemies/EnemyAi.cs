@@ -299,14 +299,23 @@ public class EnemyAI : MonoBehaviour
         MoveTowards(targetLimb.transform.position, speed);
 
         float dist = Vector2.Distance(transform.position, targetLimb.transform.position);
-        if (dist < 0.8f) 
+        
+        // --- UPDATED: Increased pickup radius to 2.0f ---
+        // Allows enemies to pick up limbs even if they can't stand directly on top of them (e.g. near walls/dumpsters)
+        if (dist < 2.0f) 
         {
-            bool attached = body.TryAttachLimb(targetLimb.GetLimbData(), targetLimb.IsShowingDamaged());
-            if (attached)
+            // Safety Check: Ensure data exists
+            if (targetLimb.GetLimbData() != null)
             {
-                Destroy(targetLimb.gameObject);
-                Debug.Log("Enemy successfully scavenged a limb!");
+                bool attached = body.TryAttachLimb(targetLimb.GetLimbData(), targetLimb.IsShowingDamaged());
+                if (attached)
+                {
+                    Destroy(targetLimb.gameObject);
+                    Debug.Log("Enemy successfully scavenged a limb!");
+                }
             }
+            
+            // Pick a new target regardless of success to prevent getting stuck in a loop trying to pick up a broken/full limb
             PickNewRoamTarget();
         }
     }
@@ -332,7 +341,8 @@ public class EnemyAI : MonoBehaviour
             if (hit.CompareTag("LimbPickup")) 
             {
                 WorldLimb limb = hit.GetComponent<WorldLimb>();
-                if (limb != null && limb.CanPickup())
+                // FIX: Added '&& limb.GetLimbData() != null' to prevent crash if data is missing
+                if (limb != null && limb.CanPickup() && limb.GetLimbData() != null)
                 {
                     LimbType type = limb.GetLimbData().limbType;
                     

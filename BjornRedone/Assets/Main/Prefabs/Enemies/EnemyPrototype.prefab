@@ -429,8 +429,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 15
-  currentHealth: 15
+  maxHealth: 25
+  currentHealth: 25
   coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
   minCoins: 2
   maxCoins: 5
@@ -496,6 +496,9 @@ MonoBehaviour:
   roamRadius: 3
   baseMoveSpeed: 2.8
   baseDamage: 5
+  maintainDistance: 0
+  preferredDistance: 4
+  distanceBuffer: 0.5
   fleeHealthThreshold: 0.25
   fleeSpeedMult: 1.8
   cullingDistance: 20

@@ -34,12 +34,12 @@ public class LootContainer : MonoBehaviour
     [SerializeField] private List<LootEntry> lootTable;
 
     [Header("Feedback")]
-    [SerializeField] private AudioClip[] hitSounds; // Changed to Array
+    [SerializeField] private AudioClip[] hitSounds; 
     [SerializeField] private AudioClip breakSound;
     [SerializeField] private AudioClip itemDropSound; 
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeMagnitude = 0.1f;
-    [SerializeField] private float hitFlashDuration = 0.1f; // --- NEW: Duration to show broken state on hit ---
+    [SerializeField] private float hitFlashDuration = 0.1f; 
     [SerializeField] private ParticleSystem hitParticles;
 
     private float currentHealth;
@@ -48,7 +48,7 @@ public class LootContainer : MonoBehaviour
     private Transform visualTransform;
     private Vector3 originalPos;
     private bool isShaking = false;
-    private Coroutine flashCoroutine; // To manage the flash state
+    private Coroutine flashCoroutine; 
     
     // Loot tracking
     private int totalItemsToDrop;
@@ -149,17 +149,21 @@ public class LootContainer : MonoBehaviour
         
         if (prefabToSpawn != null)
         {
-            // Increment tracking BEFORE spawning to prevent infinite loops if something goes wrong
+            // Increment tracking
             itemsDroppedCount++;
 
-            GameObject droppedItem = Instantiate(prefabToSpawn, transform.position, Quaternion.identity);
+            // --- SPAWN DIRECTION LOGIC ---
+            // Force downward direction (-Y) with random cone spread (+/- 45 degrees)
+            float randomAngle = Random.Range(-45f, 45f);
+            Vector2 finalDir = Quaternion.Euler(0, 0, randomAngle) * Vector2.down;
+
+            // Spawn slightly in front (down) to avoid clipping behind container
+            Vector3 spawnPos = transform.position + new Vector3(0, -0.5f, 0);
+
+            GameObject droppedItem = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
             
             // --- NEW: Play Drop Sound ---
             if (audioSource && itemDropSound) audioSource.PlayOneShot(itemDropSound);
-
-            // Prioritize hit direction slightly + random spread
-            Vector2 randomSpread = Random.insideUnitCircle.normalized;
-            Vector2 finalDir = (hitDir * 0.5f + randomSpread).normalized;
 
             if (droppedItem.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
             {
@@ -223,7 +227,6 @@ public class LootContainer : MonoBehaviour
         isShaking = false;
     }
 
-    // --- NEW: Coroutine to briefly show the destroyed visual ---
     private IEnumerator FlashBrokenVisual()
     {
         if (activeVisual && destroyedVisual)

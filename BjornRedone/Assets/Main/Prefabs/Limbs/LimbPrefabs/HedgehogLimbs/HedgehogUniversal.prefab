@@ -98,7 +98,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d7a72af32fc60149be4461e2c8ce43c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldLimb
-  startingLimbData: {fileID: 11400000, guid: 823d4ad74e94f3245934ef33017e32ca, type: 2}
+  startingLimbData: {fileID: 11400000, guid: b08bb1dd2006f014da7d0c9052a79866, type: 2}
   startAsMaintainedPickup: 1
   startAsDamaged: 0
   defaultVisual: {fileID: 7021148139655591862}

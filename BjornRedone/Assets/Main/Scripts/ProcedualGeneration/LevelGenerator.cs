@@ -36,7 +36,7 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private int numberOfBossRooms = 1;
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
     [Tooltip("Maximum attempts to generate a valid layout before giving up.")]
-    [SerializeField] private int maxGenerationAttempts = 100; // Increased because virtual generation is fast
+    [SerializeField] private int maxGenerationAttempts = 100; 
 
     [Header("Room Prefabs")]
     [SerializeField] private Room startRoomPrefab;
@@ -70,10 +70,9 @@ public class LevelGenerator : MonoBehaviour
     private class GenerationState
     {
         public Vector2Int gridPos;
-        public Direction fromDir; // The direction we came FROM to get here
+        public Direction fromDir; 
     }
 
-    // Stores the final successful layout to be instantiated
     private List<RoomNode> finalLayout = new List<RoomNode>();
     private List<Room> instantiatedRooms = new List<Room>();
 
@@ -154,15 +153,12 @@ public class LevelGenerator : MonoBehaviour
         {
             safetyLoop++;
 
-            // Pick random frontier position
             int randIndex = Random.Range(0, frontier.Count);
             GenerationState state = frontier[randIndex];
             frontier.RemoveAt(randIndex);
 
             if (virtualGrid.ContainsKey(state.gridPos)) continue;
 
-            // CRITICAL FIX: Check ALL neighbors, not just the one we came from.
-            // This ensures we don't place a room that blocks an existing door or opens into a wall.
             Room validPrefab = FindBestMatchingRoom(virtualGrid, state.gridPos, normalRoomPrefabs);
 
             if (validPrefab != null)
@@ -176,32 +172,14 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        // C. Check if we failed (Dead end or not enough rooms)
-        if (roomsBuilt < targetNormalRooms) return false; // Revert! (Try again)
+        if (roomsBuilt < targetNormalRooms) return false; 
 
-        // D. Place Boss Rooms (At dead ends)
-        List<Vector2Int> potentialBossSpots = GetDeadEnds(virtualGrid);
-        
+        // D. Place Boss Rooms (At dead ends or end of frontier)
         int bossesPlaced = 0;
-        foreach (Vector2Int pos in potentialBossSpots)
-        {
-            if (bossesPlaced >= numberOfBossRooms) break;
-
-            // We need a boss room that fits here. 
-            // Note: Usually we REPLACE the dead end room with a Boss room, 
-            // or append to it. Here let's try to append to available frontier spots first.
-            // Simplified: Just reuse the frontier for boss rooms? 
-            // Better: Replace the furthest rooms with Boss Rooms?
-            
-            // Current simple logic: Try to append using remaining frontier if possible, 
-            // but normally Boss rooms are special. Let's stick to the generated nodes list
-            // and maybe swap the last created room with a boss room if it fits?
-        }
-        
-        // Simpler Boss Logic: Just append to remaining frontier
         int bossSafety = 0;
         while (bossesPlaced < numberOfBossRooms && frontier.Count > 0 && bossSafety < 100)
         {
+            bossSafety++;
             int randIndex = Random.Range(0, frontier.Count);
             GenerationState state = frontier[randIndex];
             frontier.RemoveAt(randIndex);
@@ -216,12 +194,10 @@ public class LevelGenerator : MonoBehaviour
                 generatedNodes.Add(bossNode);
                 bossesPlaced++;
             }
-            bossSafety++;
         }
 
-        if (bossesPlaced < numberOfBossRooms) return false; // Failed to place boss
+        if (bossesPlaced < numberOfBossRooms) return false; 
 
-        // Success! Save this layout
         finalLayout = generatedNodes;
         return true;
     }
@@ -238,7 +214,6 @@ public class LevelGenerator : MonoBehaviour
     {
         if (!grid.ContainsKey(pos))
         {
-            // Avoid duplicates in frontier to keep it clean
             if (!frontier.Any(x => x.gridPos == pos))
             {
                 frontier.Add(new GenerationState { gridPos = pos, fromDir = fromDir });
@@ -248,7 +223,6 @@ public class LevelGenerator : MonoBehaviour
 
     private Room FindBestMatchingRoom(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<Room> candidates)
     {
-        // 1. Analyze neighbors to see what doors we MUST have and MUST NOT have
         bool? needTop = GetRequirement(grid, pos + Vector2Int.up, Direction.Bottom);
         bool? needBottom = GetRequirement(grid, pos + Vector2Int.down, Direction.Top);
         bool? needLeft = GetRequirement(grid, pos + Vector2Int.left, Direction.Right);
@@ -270,10 +244,6 @@ public class LevelGenerator : MonoBehaviour
         return null;
     }
 
-    // Returns:
-    // TRUE: Neighbor exists and has a door facing us (We MUST have a matching door)
-    // FALSE: Neighbor exists and has NO door facing us (We MUST NOT have a door)
-    // NULL: No neighbor exists yet (We can choose either way)
     private bool? GetRequirement(Dictionary<Vector2Int, RoomNode> grid, Vector2Int neighborPos, Direction neighborDoorDir)
     {
         if (grid.TryGetValue(neighborPos, out RoomNode neighbor))
@@ -286,31 +256,13 @@ public class LevelGenerator : MonoBehaviour
                 case Direction.Right: return neighbor.roomPrefab.hasRightDoor;
             }
         }
-        return null; // Empty space
+        return null; 
     }
 
     private bool Matches(bool roomHasDoor, bool? requirement)
     {
-        if (requirement == null) return true; // No constraint
-        return roomHasDoor == requirement.Value; // Must match exactly
-    }
-
-    private List<Vector2Int> GetDeadEnds(Dictionary<Vector2Int, RoomNode> grid)
-    {
-        List<Vector2Int> deadEnds = new List<Vector2Int>();
-        foreach (var kvp in grid)
-        {
-            int connections = 0;
-            Vector2Int p = kvp.Key;
-            // Simply check how many neighbors exist
-            if (grid.ContainsKey(p + Vector2Int.up)) connections++;
-            if (grid.ContainsKey(p + Vector2Int.down)) connections++;
-            if (grid.ContainsKey(p + Vector2Int.left)) connections++;
-            if (grid.ContainsKey(p + Vector2Int.right)) connections++;
-
-            if (connections == 1) deadEnds.Add(p);
-        }
-        return deadEnds;
+        if (requirement == null) return true; 
+        return roomHasDoor == requirement.Value; 
     }
 
     // --- PHASE 2: Instantiation (Real World) ---
@@ -335,7 +287,6 @@ public class LevelGenerator : MonoBehaviour
             Vector2Int pos = kvp.Key;
             Room room = kvp.Value;
 
-            // Open doors if neighbor exists
             if (worldGrid.ContainsKey(pos + Vector2Int.up)) room.OpenDoor(Direction.Top);
             if (worldGrid.ContainsKey(pos + Vector2Int.down)) room.OpenDoor(Direction.Bottom);
             if (worldGrid.ContainsKey(pos + Vector2Int.left)) room.OpenDoor(Direction.Left);
@@ -345,12 +296,14 @@ public class LevelGenerator : MonoBehaviour
             int dist = Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
             if (dist > 0) // Skip start room
             {
+                // --- ORDER CHANGE: Props FIRST, Enemies SECOND ---
+                // This ensures enemies can detect existing props (like beartraps) and avoid spawning on them.
+                if (environmentProps != null)
+                    room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
+
                 int budget = baseEnemyBudget + (dist * enemyBudgetPerDistance);
                 if (enemySpawnList != null && enemySpawnList.Count > 0)
                     room.SpawnEnemies(enemySpawnList, budget, roomSize);
-                
-                if (environmentProps != null)
-                    room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
             }
         }
     }
