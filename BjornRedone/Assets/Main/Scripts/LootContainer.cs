@@ -36,9 +36,10 @@ public class LootContainer : MonoBehaviour
     [Header("Feedback")]
     [SerializeField] private AudioClip[] hitSounds; // Changed to Array
     [SerializeField] private AudioClip breakSound;
-    [SerializeField] private AudioClip itemDropSound; // --- NEW: Sound for individual item spawns ---
+    [SerializeField] private AudioClip itemDropSound; 
     [SerializeField] private float shakeDuration = 0.15f;
     [SerializeField] private float shakeMagnitude = 0.1f;
+    [SerializeField] private float hitFlashDuration = 0.1f; // --- NEW: Duration to show broken state on hit ---
     [SerializeField] private ParticleSystem hitParticles;
 
     private float currentHealth;
@@ -47,6 +48,7 @@ public class LootContainer : MonoBehaviour
     private Transform visualTransform;
     private Vector3 originalPos;
     private bool isShaking = false;
+    private Coroutine flashCoroutine; // To manage the flash state
     
     // Loot tracking
     private int totalItemsToDrop;
@@ -102,6 +104,10 @@ public class LootContainer : MonoBehaviour
         }
         else
         {
+            // Flash the broken visual briefly to indicate damage
+            if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+            flashCoroutine = StartCoroutine(FlashBrokenVisual());
+
             // Incremental Drop: Try to drop one item if we have any left
             if (itemsDroppedCount < totalItemsToDrop && Random.value <= dropChanceOnHit)
             {
@@ -114,6 +120,9 @@ public class LootContainer : MonoBehaviour
     {
         isLooted = true;
 
+        // Stop any flash coroutine so we don't accidentally revert the visual
+        if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+
         if (audioSource && breakSound) AudioSource.PlayClipAtPoint(breakSound, transform.position);
 
         // Drop ALL remaining items
@@ -122,7 +131,7 @@ public class LootContainer : MonoBehaviour
             SpawnSingleItem(hitDir);
         }
 
-        // Switch Visuals
+        // Switch Visuals Permanently
         if (activeVisual) activeVisual.SetActive(false);
         if (destroyedVisual) destroyedVisual.SetActive(true);
         
@@ -212,5 +221,24 @@ public class LootContainer : MonoBehaviour
 
         visualTransform.localPosition = originalPos;
         isShaking = false;
+    }
+
+    // --- NEW: Coroutine to briefly show the destroyed visual ---
+    private IEnumerator FlashBrokenVisual()
+    {
+        if (activeVisual && destroyedVisual)
+        {
+            activeVisual.SetActive(false);
+            destroyedVisual.SetActive(true);
+
+            yield return new WaitForSeconds(hitFlashDuration);
+
+            // Only revert if we haven't been destroyed in the meantime
+            if (!isLooted)
+            {
+                activeVisual.SetActive(true);
+                destroyedVisual.SetActive(false);
+            }
+        }
     }
 }

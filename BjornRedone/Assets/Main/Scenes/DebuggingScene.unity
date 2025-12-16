@@ -1436,7 +1436,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 40
+  totalRooms: 30
   numberOfBossRooms: 0
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 20
@@ -1454,7 +1454,7 @@ MonoBehaviour:
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
     cost: 6
     minDistanceReq: 2
-  - name: Prototype
+  - name: Dog
     prefab: {fileID: 8447582695004223394, guid: c6d08eb7ad69dfb4fb038600c260ced9, type: 3}
     cost: 4
     minDistanceReq: 0
