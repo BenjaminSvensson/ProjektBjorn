@@ -354,7 +354,7 @@ public class EnemyLimbController : MonoBehaviour
         {
             case LimbSlot.Head: currentHead = limbComponent; order = 10; break;
             case LimbSlot.LeftArm: currentLeftArm = limbComponent; order = 5; break;
-            case LimbSlot.RightArm: currentRightArm = limbComponent; order = -5; break;
+            case LimbSlot.RightArm: currentRightArm = limbComponent; order = 5; break; // Changed from -5 to 5 (Front)
             case LimbSlot.LeftLeg: currentLeftLeg = limbComponent; order = -10; break;
             case LimbSlot.RightLeg: currentRightLeg = limbComponent; order = -10; break;
         }

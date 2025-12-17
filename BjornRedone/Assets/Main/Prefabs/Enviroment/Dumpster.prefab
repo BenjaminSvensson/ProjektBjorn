@@ -591,27 +591,18 @@ MonoBehaviour:
   - name: Knife
     prefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
     weight: 1.5
-  - name: Hammer
-    prefab: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
-    weight: 1
   - name: Axe
     prefab: {fileID: 7779890851109100925, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
     weight: 1.2
-  - name: GorillaArm
-    prefab: {fileID: 1703309220703536604, guid: 259011a8f85881a498b363091c74d781, type: 3}
+  - name: Axe
+    prefab: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+    weight: 1
+  - name: Trash
+    prefab: {fileID: 31219011598708189, guid: b7824f1ac60d68041a4f4071a2d5b8c7, type: 3}
+    weight: 2
+  - name: TrashBjorn
+    prefab: {fileID: 8074822229694108039, guid: d9f592240d80cee4591cdc1191651294, type: 3}
     weight: 0.5
-  - name: BjornArm
-    prefab: {fileID: 1703309220703536604, guid: 6ebb246c6c28d9a459e52b4699ed999b, type: 3}
-    weight: 1
-  - name: DogArm
-    prefab: {fileID: 1703309220703536604, guid: 52a99a6dbdb02bb4f90b3c9b5e59d6b4, type: 3}
-    weight: 1
-  - name: Hedgehogarm
-    prefab: {fileID: 2324061009247522880, guid: 0a40ce83195f7d143b2630c80d42e84a, type: 3}
-    weight: 1
-  - name: HedgehogHead
-    prefab: {fileID: 5463483987274889270, guid: d9750f95e485a9a4fafb40baec4ee7b9, type: 3}
-    weight: 1
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
   - {fileID: 8300000, guid: ec9895c7b62ca884aa86e5e710bf243b, type: 3}
