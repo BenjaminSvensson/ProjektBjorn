@@ -1794,7 +1794,7 @@ PrefabInstance:
       objectReference: {fileID: 1970201062}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: hittableLayers.m_Bits
-      value: 1536
+      value: 5760
       objectReference: {fileID: 0}
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalPosition.x

@@ -5,12 +5,13 @@ public class EnemyShooter : MonoBehaviour
     [Header("Targeting")]
     [Tooltip("The enemy will only shoot if the player is within this distance.")]
     [SerializeField] private float shootRange = 10f;
-    [SerializeField] private LayerMask obstacleLayer; // Optional: To stop shooting through walls
+    [SerializeField] private LayerMask obstacleLayer;
 
     [Header("Projectile Settings")]
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private float projectileSpeed = 5f;
     [SerializeField] private float damage = 10f;
+    [SerializeField] private float projectileKnockback = 3f; // --- NEW ---
     
     [Header("Spawn Configuration")]
     [Tooltip("The points from which projectiles will be fired.")]
@@ -46,11 +47,7 @@ public class EnemyShooter : MonoBehaviour
 
         // 1. Check Distance
         float distSq = (player.position - transform.position).sqrMagnitude;
-        if (distSq > shootRange * shootRange) return; // Too far
-
-        // 2. Optional: Line of Sight check (prevent shooting through walls)
-        // RaycastHit2D hit = Physics2D.Raycast(transform.position, (player.position - transform.position).normalized, shootRange, obstacleLayer);
-        // if (hit.collider != null && !hit.collider.CompareTag("Player")) return; // Wall in the way
+        if (distSq > shootRange * shootRange) return; 
 
         // 3. Fire Timer
         timer -= Time.deltaTime;
@@ -85,15 +82,11 @@ public class EnemyShooter : MonoBehaviour
 
             if (useRotationForDirection)
             {
-                // Use the rotation of the spawn point object
                 direction = point.up; 
             }
             else
             {
-                // Calculate direction outward from the shooter's center
                 direction = (point.position - transform.position).normalized;
-                
-                // Fallback if point is exactly at center
                 if (direction == Vector2.zero) direction = transform.right; 
             }
 
@@ -107,15 +100,14 @@ public class EnemyShooter : MonoBehaviour
         Projectile proj = obj.GetComponent<Projectile>();
         if (proj != null)
         {
-            proj.Initialize(direction, projectileSpeed, damage);
+            // Pass knockback and true (isEnemy)
+            proj.Initialize(direction, projectileSpeed, damage, projectileKnockback, true);
         }
     }
     
-    // Debug visuals to see where projectiles will fly in the Scene View
     void OnDrawGizmosSelected()
     {
-        // Draw Shoot Range
-        Gizmos.color = new Color(1f, 0f, 0f, 0.3f); // Red transparent
+        Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
         Gizmos.DrawWireSphere(transform.position, shootRange);
 
         if (spawnPoints == null) return;

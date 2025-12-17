@@ -104,7 +104,7 @@ GameObject:
   - component: {fileID: 589724422685304156}
   - component: {fileID: -4625988006428489553}
   - component: {fileID: 4949440181840046977}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: TrashbagBjorn
   m_TagString: Untagged
   m_Icon: {fileID: 0}

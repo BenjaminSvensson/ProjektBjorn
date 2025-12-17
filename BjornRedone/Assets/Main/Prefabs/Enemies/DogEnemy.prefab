@@ -730,7 +730,7 @@ MonoBehaviour:
   torsoDefaultVisual: {fileID: 2953485791632216202}
   torsoDamagedVisual: {fileID: 4314834548482925863}
   damageVisualThreshold: 0.3
-  limbDropChance: 0.4
+  limbDropChance: 0
   maintainLimbChance: 0.25
   damageAlertRadius: 10
   enemyLayer:
