@@ -8,25 +8,24 @@ public class WeaponSystem : MonoBehaviour
     [SerializeField] private WeaponData[] weaponSlots = new WeaponData[2]; 
     [SerializeField] private int activeSlotIndex = 0;
 
+    [Header("Throwing")]
+    [SerializeField] private float throwForce = 15f; // Stronger force for Q throw
+
     [Header("References")]
     [SerializeField] private WeaponHUD weaponHUD; 
     [SerializeField] private SpriteRenderer heldWeaponRenderer;
 
     [Header("Main Hand Grip")]
-    [Tooltip("The local point on the Right Arm sprite where the weapon attaches.")]
     [SerializeField] private Vector3 rightHandGripOffset = new Vector3(0.3f, 0f, 0f);
-    [Tooltip("The local point on the Left Arm sprite where the weapon attaches.")]
     [SerializeField] private Vector3 leftHandGripOffset = new Vector3(0.3f, 0f, 0f);
 
     [Header("Off-Hand Grip")]
-    [Tooltip("Where the second hand should hold the weapon (Local to the Weapon Sprite).")]
     [SerializeField] private Vector3 secondaryGripOffset = new Vector3(-0.3f, 0f, 0f);
 
     private PlayerLimbController limbController;
     private bool isHoldingWithRightHand = false; 
     private Camera cam;
 
-    // --- Independent Cooldowns per Slot ---
     private float[] slotCooldowns = new float[2]; 
 
     void Awake()
@@ -45,7 +44,7 @@ public class WeaponSystem : MonoBehaviour
     {
         HandleInput();
         CheckArmStatus();
-        UpdateCooldowns(); // Update timers
+        UpdateCooldowns(); 
     }
 
     void LateUpdate()
@@ -64,7 +63,6 @@ public class WeaponSystem : MonoBehaviour
         }
     }
 
-    // --- Cooldown API ---
     public float GetCurrentWeaponCooldown()
     {
         if (activeSlotIndex >= 0 && activeSlotIndex < slotCooldowns.Length)
@@ -77,7 +75,6 @@ public class WeaponSystem : MonoBehaviour
         if (activeSlotIndex >= 0 && activeSlotIndex < slotCooldowns.Length)
             slotCooldowns[activeSlotIndex] = time;
     }
-    // -------------------------
 
     private void HandleInput()
     {
@@ -94,7 +91,7 @@ public class WeaponSystem : MonoBehaviour
             if (scroll < 0) SetActiveSlot(1);
         }
 
-        // --- NEW: Throw Weapon Input ---
+        // Throw Weapon Input
         if (Keyboard.current.qKey.wasPressedThisFrame)
         {
             ThrowActiveWeapon();
@@ -105,12 +102,13 @@ public class WeaponSystem : MonoBehaviour
     {
         if (!IsHoldingWeapon()) return;
 
-        // Calculate direction towards mouse
+        // Calculate direction towards mouse (The player's "Aim/Facing" direction)
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
 
-        DropWeapon(activeSlotIndex, throwDir);
+        // Pass the explicit throw force
+        DropWeapon(activeSlotIndex, throwDir, throwForce);
     }
 
     private void SetActiveSlot(int index)
@@ -161,7 +159,6 @@ public class WeaponSystem : MonoBehaviour
         if (weaponSlots[activeSlotIndex] != null) DropWeapon(activeSlotIndex);
 
         weaponSlots[activeSlotIndex] = newData;
-        // Reset cooldown for the slot when picking up a new weapon to allow immediate fire.
         slotCooldowns[activeSlotIndex] = 0f; 
 
         UpdateState();
@@ -171,9 +168,7 @@ public class WeaponSystem : MonoBehaviour
     /// <summary>
     /// Drops the weapon in the specified slot.
     /// </summary>
-    /// <param name="slotIndex">Index of the slot to drop.</param>
-    /// <param name="dropDir">Optional direction to throw the weapon. If null, random direction is used.</param>
-    public void DropWeapon(int slotIndex, Vector2? dropDir = null)
+    public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
         
@@ -181,7 +176,7 @@ public class WeaponSystem : MonoBehaviour
         if (weaponToDrop == null) return;
 
         weaponSlots[slotIndex] = null;
-        slotCooldowns[slotIndex] = 0f; // Clear cooldown
+        slotCooldowns[slotIndex] = 0f; 
 
         if (weaponToDrop.pickupPrefab != null)
         {
@@ -189,9 +184,11 @@ public class WeaponSystem : MonoBehaviour
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
             if (pickupScript != null)
             {
-                // Use provided direction OR random direction if none provided (e.g. replaced/dropped by damage)
+                // Use provided direction OR random direction if none provided
                 Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
-                pickupScript.InitializeDrop(finalDir);
+                
+                // Pass the force to the pickup script
+                pickupScript.InitializeDrop(finalDir, force);
             }
         }
         else
@@ -255,7 +252,6 @@ public class WeaponSystem : MonoBehaviour
                 finalRotation *= Quaternion.Euler(0, 180, 0);
             }
             
-            // Set position and rotation in one go
             heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalRotation);
             
             WeaponData activeWeapon = weaponSlots[activeSlotIndex];

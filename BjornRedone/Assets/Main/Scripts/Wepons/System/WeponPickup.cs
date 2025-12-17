@@ -1,54 +1,49 @@
 using UnityEngine;
-using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
 public class WeaponPickup : MonoBehaviour
 {
-    [Header("Data")]
-    [SerializeField] private WeaponData weaponData;
+    [Header("Weapon Data")]
+    public WeaponData weaponData;
 
     [Header("Physics")]
-    [SerializeField] private float throwForce = 5f;
-    [SerializeField] private float pickupCooldown = 1.0f; // Prevent picking up immediately after dropping
+    [SerializeField] private float groundFriction = 5f;
+    [SerializeField] private float rotationSpeed = 200f;
 
     private Rigidbody2D rb;
-    private Collider2D col;
-    private bool canBePickedUp = true;
+    private bool isFlying = false;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        col = GetComponent<Collider2D>();
+        rb.gravityScale = 0f;
+        rb.linearDamping = groundFriction; 
     }
 
-    public void InitializeDrop(Vector2 direction)
+    void FixedUpdate()
     {
-        canBePickedUp = false;
-        
-        // Enable physics
+        // Stop "flying" state when slow enough, allowing pickup
+        // This prevents instantly picking up the weapon you just threw
+        if (isFlying && rb.linearVelocity.sqrMagnitude < 1f)
+        {
+            isFlying = false;
+        }
+    }
+
+    public void InitializeDrop(Vector2 direction, float force = 5f)
+    {
         if (rb != null)
         {
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.gravityScale = 0f;
-            rb.linearDamping = 5f;
-            rb.angularDamping = 5f;
-            rb.AddForce(direction * throwForce, ForceMode2D.Impulse);
-            rb.AddTorque(Random.Range(-10f, 10f), ForceMode2D.Impulse);
+            rb.AddForce(direction * force, ForceMode2D.Impulse);
+            rb.angularVelocity = Random.Range(-rotationSpeed, rotationSpeed);
+            isFlying = true; // Mark as flying so we can't pick it up instantly
         }
-
-        if (col != null) col.isTrigger = false;
-
-        StartCoroutine(PickupCooldownRoutine());
     }
 
-    private IEnumerator PickupCooldownRoutine()
+    public bool CanPickup()
     {
-        yield return new WaitForSeconds(pickupCooldown);
-        canBePickedUp = true;
-        
-        // Optional: Become a trigger to make pickup smoother (no kicking it around)
-        // if (col != null) col.isTrigger = true; 
+        return !isFlying;
     }
 
     public WeaponData GetWeaponData()
@@ -56,8 +51,6 @@ public class WeaponPickup : MonoBehaviour
         return weaponData;
     }
 
-    public bool CanPickup()
-    {
-        return canBePickedUp;
-    }
+    // REMOVED OnTriggerEnter2D to prevent double-pickup logic (duplication bug).
+    // The PlayerCollision script handles the pickup interaction centrally.
 }
