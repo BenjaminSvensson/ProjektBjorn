@@ -16,7 +16,8 @@ MonoBehaviour:
   icon: {fileID: -2408530018317867212, guid: a3b731924950894488d44fe7c52a00ae, type: 3}
   pickupPrefab: {fileID: 6631119458644919795, guid: 974bbb91ba198c24f8c4c22a1a9edb9e, type: 3}
   heldSprite: {fileID: -2408530018317867212, guid: a3b731924950894488d44fe7c52a00ae, type: 3}
-  heldScale: {x: 0.16, y: 0.16, z: 0.16}
+  heldScale: {x: 0.2, y: 0.2, z: 0.2}
+  heldRotationOffset: 90
   type: 1
   attackStyle: 0
   meleeDamageBonus: 5

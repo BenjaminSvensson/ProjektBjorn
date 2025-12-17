@@ -25,7 +25,9 @@ public class WeaponData : ScriptableObject
     [Header("Visuals")]
     public Sprite heldSprite;
     [Tooltip("Scale of the sprite when held (Default is 1, 1, 1).")]
-    public Vector3 heldScale = Vector3.one; // --- NEW ---
+    public Vector3 heldScale = Vector3.one; 
+    [Tooltip("Rotation offset in degrees (Z-axis). Useful if your sprite is drawn pointing Up or Down.")]
+    public float heldRotationOffset = 0f; // --- NEW ---
 
     [Header("Combat Type")]
     public WeaponType type;
@@ -35,7 +37,7 @@ public class WeaponData : ScriptableObject
     [Tooltip("Extra damage added to the punch.")]
     public float meleeDamageBonus = 5f;
     [Tooltip("Sounds to play when hitting an enemy with this weapon.")]
-    public AudioClip[] meleeImpactSounds; // --- CHANGED to Array ---
+    public AudioClip[] meleeImpactSounds;
 
     [Header("Melee Stat Modifiers")]
     [Tooltip("Multiplier for attack speed. 1.0 = Normal. 0.5 = Slow/Heavy. 1.5 = Fast.")]
@@ -54,5 +56,5 @@ public class WeaponData : ScriptableObject
     [Tooltip("Random spread angle in degrees.")]
     public float spread = 5f;
     public int projectilesPerShot = 1;
-    public AudioClip[] shootSounds; // --- CHANGED to Array ---
+    public AudioClip[] shootSounds; 
 }

@@ -9,7 +9,7 @@ public class WeaponSystem : MonoBehaviour
     [SerializeField] private int activeSlotIndex = 0;
 
     [Header("Throwing")]
-    [SerializeField] private float throwForce = 15f; // Stronger force for Q throw
+    [SerializeField] private float throwForce = 15f; 
 
     [Header("References")]
     [SerializeField] private WeaponHUD weaponHUD; 
@@ -102,12 +102,11 @@ public class WeaponSystem : MonoBehaviour
     {
         if (!IsHoldingWeapon()) return;
 
-        // Calculate direction towards mouse (The player's "Aim/Facing" direction)
+        // Calculate direction towards mouse
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
 
-        // Pass the explicit throw force
         DropWeapon(activeSlotIndex, throwDir, throwForce);
     }
 
@@ -165,9 +164,6 @@ public class WeaponSystem : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Drops the weapon in the specified slot.
-    /// </summary>
     public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
@@ -184,10 +180,7 @@ public class WeaponSystem : MonoBehaviour
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
             if (pickupScript != null)
             {
-                // Use provided direction OR random direction if none provided
                 Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
-                
-                // Pass the force to the pickup script
                 pickupScript.InitializeDrop(finalDir, force);
             }
         }
@@ -225,6 +218,7 @@ public class WeaponSystem : MonoBehaviour
 
         Transform mainAnchor = null;
         Vector3 gripOffset = Vector3.zero;
+        WeaponData activeWeapon = weaponSlots[activeSlotIndex];
 
         // 1. Determine Main Hand (WeaponSystem prioritizes Right)
         if (limbController.GetArmData(false) != null) // Right
@@ -244,31 +238,41 @@ public class WeaponSystem : MonoBehaviour
         if (mainAnchor != null)
         {
             Vector3 targetPos = mainAnchor.TransformPoint(gripOffset);
-            Quaternion finalRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
+            
+            // A. Base Rotation (Align weapon "forward" with arm)
+            Quaternion baseRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
 
-            // FLIP FIX: If player is facing left, flip 180 on Y axis
+            // B. FLIP FIX: If player is facing left, flip 180 on Y axis
             if (limbController.GetVisualsHolder() != null && limbController.GetVisualsHolder().localScale.x < 0)
             {
-                finalRotation *= Quaternion.Euler(0, 180, 0);
+                baseRotation *= Quaternion.Euler(0, 180, 0);
+            }
+
+            Quaternion finalWeaponRotation = baseRotation;
+
+            // C. Apply Custom Offset (After the flip logic)
+            if (activeWeapon != null && activeWeapon.heldRotationOffset != 0f)
+            {
+                finalWeaponRotation *= Quaternion.Euler(0, 0, activeWeapon.heldRotationOffset);
             }
             
-            heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalRotation);
+            heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalWeaponRotation);
             
-            WeaponData activeWeapon = weaponSlots[activeSlotIndex];
             if (activeWeapon != null)
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
 
                 // 3. Position Off-Hand on Weapon
+                // We pass 'baseRotation' to ensure alignment with the arm/aim, not the sprite
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
                 {
                     Transform offHand = limbController.GetLeftArmSlot();
-                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale);
+                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale, baseRotation);
                 }
                 else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
                 {
                     Transform offHand = limbController.GetRightArmSlot();
-                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale);
+                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale, baseRotation);
                 }
             }
             else
@@ -278,18 +282,26 @@ public class WeaponSystem : MonoBehaviour
         }
     }
 
-    private void SnapOffHand(Transform hand, Transform weaponTransform, Vector3 weaponScale)
+    private void SnapOffHand(Transform hand, Transform weaponTransform, Vector3 weaponScale, Quaternion baseRotation)
     {
         if (hand == null) return;
         
-        Vector3 compensatedOffset = new Vector3(
-            secondaryGripOffset.x / weaponScale.x,
-            secondaryGripOffset.y / weaponScale.y,
-            secondaryGripOffset.z / weaponScale.z
-        );
+        // --- FIX: Use Base Rotation for Position Calculation ---
+        
+        // 1. Scale the offset based on the weapon size (so if gun is big, hand is further away)
+        // We use component-wise scaling.
+        Vector3 scaledOffset = Vector3.Scale(secondaryGripOffset, weaponScale);
 
-        Vector3 targetPos = weaponTransform.TransformPoint(compensatedOffset);
-        Quaternion targetRot = weaponTransform.rotation * Quaternion.Euler(0, 0, 180f);
+        // 2. Rotate the offset by the Clean Base Rotation (Aim Direction)
+        // This ignores the 'heldRotationOffset' used to fix sprite drawing angles.
+        // It ensures the off-hand stays on the "Line of Fire" even if the sprite is twisted.
+        Vector3 worldOffset = baseRotation * scaledOffset;
+
+        // 3. Apply
+        Vector3 targetPos = weaponTransform.position + worldOffset;
+        
+        // Rotation: Align with aim
+        Quaternion targetRot = baseRotation * Quaternion.Euler(0, 0, 180f);
 
         hand.SetPositionAndRotation(targetPos, targetRot);
     }
