@@ -102,6 +102,8 @@ GameObject:
   - component: {fileID: 3199834305964362391}
   - component: {fileID: 567106371060328744}
   - component: {fileID: 589724422685304156}
+  - component: {fileID: -4625988006428489553}
+  - component: {fileID: 4949440181840046977}
   m_Layer: 0
   m_Name: TrashbagBjorn
   m_TagString: Untagged
@@ -138,8 +140,8 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_LinearDamping: 10
+  m_AngularDamping: 5
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -189,3 +191,28 @@ CapsuleCollider2D:
   m_Offset: {x: 0.0039149523, y: -0.14809924}
   m_Size: {x: 1.0140983, y: 1.0140983}
   m_Direction: 0
+--- !u!210 &-4625988006428489553
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8074822229694108039}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &4949440181840046977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8074822229694108039}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter

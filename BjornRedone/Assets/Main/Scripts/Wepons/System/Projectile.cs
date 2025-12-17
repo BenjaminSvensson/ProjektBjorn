@@ -4,18 +4,26 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class Projectile : MonoBehaviour
 {
+    [Header("Stats")]
+    [SerializeField] private float lifetime = 5f;
+    
+    [Header("Ownership")]
+    [Tooltip("Check this box if this is an Enemy Bullet (Hurts Player).\nUncheck it for Player Bullets (Hurts Enemies).")]
+    [SerializeField] private bool isEnemyProjectile = false;
+
     private float damage;
     private float speed;
+    private float knockbackForce; // --- NEW ---
     private Vector2 direction;
-    private float lifetime = 5f;
-    private bool isEnemyProjectile = false; // --- NEW: Track ownership ---
 
-    public void Initialize(Vector2 dir, float spd, float dmg, bool isEnemy = false)
+    // Updated Initialize to accept knockback
+    public void Initialize(Vector2 dir, float spd, float dmg, float kb, bool isEnemy)
     {
         direction = dir.normalized;
         speed = spd;
         damage = dmg;
-        isEnemyProjectile = isEnemy; // --- NEW ---
+        knockbackForce = kb; // --- NEW ---
+        isEnemyProjectile = isEnemy;
         
         // Rotate to face direction
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
@@ -29,28 +37,23 @@ public class Projectile : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Ignore other Projectiles to prevent mid-air collisions
+        // Ignore other Projectiles
         if (other.GetComponent<Projectile>()) return;
 
-        // --- ENEMY BULLET LOGIC ---
+        bool hitSomething = false;
+
+        // --- ENEMY BULLET ---
         if (isEnemyProjectile)
         {
-            // Hit Player
             if (other.CompareTag("Player"))
             {
                 PlayerLimbController player = other.GetComponent<PlayerLimbController>();
-                if (player != null)
-                {
-                    player.TakeDamage(damage, direction);
-                }
-                Destroy(gameObject);
-                return;
+                if (player != null) player.TakeDamage(damage, direction);
+                hitSomething = true;
             }
-
-            // Ignore Enemies (Friendly fire off)
-            if (other.GetComponent<EnemyLimbController>()) return;
+            else if (other.GetComponent<EnemyLimbController>()) return; // Ignore friendly fire
         }
-        // --- PLAYER BULLET LOGIC ---
+        // --- PLAYER BULLET ---
         else
         {
             // Hit Enemy
@@ -58,8 +61,9 @@ public class Projectile : MonoBehaviour
             if (enemy != null)
             {
                 enemy.TakeDamage(damage, direction);
-                Destroy(gameObject);
-                return;
+                // Note: Enemy script handles its own knockback inside TakeDamage usually, 
+                // but we can apply extra physics force below if needed.
+                hitSomething = true;
             }
 
             // Hit LootContainer
@@ -67,19 +71,31 @@ public class Projectile : MonoBehaviour
             if (loot != null)
             {
                 loot.TakeDamage(damage, direction);
-                Destroy(gameObject);
-                return;
+                hitSomething = true;
             }
 
-            // Ignore Player (Self damage off)
-            if (other.CompareTag("Player")) return;
+            if (other.CompareTag("Player")) return; // Ignore self
+        }
+
+        // --- GENERIC PHYSICS KNOCKBACK (Props, Limbs, Weapons) ---
+        // If we hit something that has a Rigidbody2D (and it's not the shooter)
+        Rigidbody2D rb = other.GetComponent<Rigidbody2D>();
+        if (rb != null && rb.bodyType == RigidbodyType2D.Dynamic)
+        {
+            // Don't knockback the shooter
+            if (isEnemyProjectile && other.GetComponent<EnemyLimbController>()) { }
+            else if (!isEnemyProjectile && other.CompareTag("Player")) { }
+            else
+            {
+                // Apply instant force
+                rb.AddForce(direction * knockbackForce, ForceMode2D.Impulse);
+                hitSomething = true;
+            }
         }
 
         // --- WALLS / OBSTACLES ---
-        // Destroy on any solid object that wasn't handled above (Ground, Walls)
-        if (!other.isTrigger)
+        if (!other.isTrigger || hitSomething)
         {
-            // Optional: Spawn spark effect here
             Destroy(gameObject);
         }
     }

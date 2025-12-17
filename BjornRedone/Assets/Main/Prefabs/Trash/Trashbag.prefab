@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 603781341724163245}
   - component: {fileID: 2067093532587763280}
   - component: {fileID: 3456743807236512811}
+  - component: {fileID: 2360312840817158919}
+  - component: {fileID: 2322847644732582209}
   m_Layer: 0
   m_Name: Trashbag
   m_TagString: Untagged
@@ -47,8 +49,8 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_LinearDamping: 10
+  m_AngularDamping: 5
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -98,6 +100,31 @@ CapsuleCollider2D:
   m_Offset: {x: 0.0039149523, y: -0.14809924}
   m_Size: {x: 1.0140983, y: 1.0140983}
   m_Direction: 0
+--- !u!210 &2360312840817158919
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 31219011598708189}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &2322847644732582209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 31219011598708189}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
 --- !u!1 &8630259386789047201
 GameObject:
   m_ObjectHideFlags: 0
