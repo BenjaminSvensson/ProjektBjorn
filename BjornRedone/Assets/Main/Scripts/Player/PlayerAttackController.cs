@@ -171,6 +171,9 @@ public class PlayerAttackController : MonoBehaviour
     {
         if (globalCooldownTimer > 0) return;
 
+        // --- FIX 1: Respect weapon cooldown here too ---
+        if (meleeWeapon != null && weaponSystem != null && weaponSystem.GetCurrentWeaponCooldown() > 0) return;
+
         LimbData leftData = limbController.GetArmData(true);
         LimbData rightData = limbController.GetArmData(false);
         
@@ -198,8 +201,9 @@ public class PlayerAttackController : MonoBehaviour
                 
                 weaponSystem.SetCurrentWeaponCooldown(fullCooldown);
                 
-                leftArmCooldownTimer = swingDuration;
-                rightArmCooldownTimer = swingDuration;
+                // --- FIX 2: Set arm cooldowns to FULL cooldown, not just animation duration ---
+                leftArmCooldownTimer = fullCooldown;
+                rightArmCooldownTimer = fullCooldown;
                 globalCooldownTimer = minPunchDelay;
             }
         }
@@ -262,8 +266,10 @@ public class PlayerAttackController : MonoBehaviour
             if (weapon != null)
             {
                 weaponSystem.SetCurrentWeaponCooldown(calculatedCooldown);
-                if (isLeftArm) leftArmCooldownTimer = calculatedDuration;
-                else rightArmCooldownTimer = calculatedDuration;
+                
+                // --- FIX 3: Ensure arms get the full cooldown when using weapon singly ---
+                if (isLeftArm) leftArmCooldownTimer = calculatedCooldown; 
+                else rightArmCooldownTimer = calculatedCooldown;
             }
             else
             {

@@ -15,8 +15,13 @@ MonoBehaviour:
   weaponName: Knife
   icon: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
   pickupPrefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}
+  equippedPrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
   heldSprite: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
   heldScale: {x: 0.9, y: 0.9, z: 0.9}
+  heldRotationOffset: 0
+  heldPositionOffset: {x: 0, y: 0, z: 0}
+  muzzleOffset: {x: 0.5, y: 0}
   type: 0
   attackStyle: 0
   meleeDamageBonus: 1
@@ -32,3 +37,7 @@ MonoBehaviour:
   spread: 5
   projectilesPerShot: 1
   shootSounds: []
+  magazineSize: 6
+  reloadTime: 1.5
+  reloadSound: {fileID: 0}
+  emptyClickSound: {fileID: 0}
