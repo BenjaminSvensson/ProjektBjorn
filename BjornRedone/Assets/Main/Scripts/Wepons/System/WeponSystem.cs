@@ -8,19 +8,30 @@ public class WeaponSystem : MonoBehaviour
     [SerializeField] private WeaponData[] weaponSlots = new WeaponData[2]; 
     [SerializeField] private int activeSlotIndex = 0;
 
+    // --- NEW: Ammo Management ---
+    [Header("Ammo")]
+    [SerializeField] private int totalReserveAmmo = 24; // Universal ammo pool
+    [SerializeField] private int maxReserveAmmo = 99;
+    
+    // Track ammo for each slot independently so switching doesn't magically reload
+    private int[] slotAmmoCounts = new int[2]; 
+    
+    private bool isReloading = false;
+    private float reloadTimer = 0f;
+
     [Header("Throwing")]
     [SerializeField] private float throwForce = 15f; 
 
     [Header("References")]
     [SerializeField] private WeaponHUD weaponHUD; 
     [SerializeField] private SpriteRenderer heldWeaponRenderer;
+    [SerializeField] private AudioSource audioSource; // For reload sounds
 
     [Header("Main Hand Grip")]
     [SerializeField] private Vector3 rightHandGripOffset = new Vector3(0.3f, 0f, 0f);
     [SerializeField] private Vector3 leftHandGripOffset = new Vector3(0.3f, 0f, 0f);
 
     [Header("Off-Hand Grip")]
-    [Tooltip("Distance of the off-hand relative to the weapon pivot, aligned with the aim direction.")]
     [SerializeField] private Vector3 secondaryGripOffset = new Vector3(-0.3f, 0f, 0f);
 
     private PlayerLimbController limbController;
@@ -28,16 +39,20 @@ public class WeaponSystem : MonoBehaviour
     private Camera cam;
 
     private float[] slotCooldowns = new float[2]; 
-    
-    // --- NEW: Instantiated Weapon Logic ---
     private GameObject currentEquippedInstance; 
     private Transform currentMuzzleSocket;
 
     void Awake()
     {
         limbController = GetComponent<PlayerLimbController>();
+        if (audioSource == null) audioSource = GetComponent<AudioSource>();
+        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
+
         cam = Camera.main;
         if (cam == null) cam = FindFirstObjectByType<Camera>();
+        
+        // Initialize slots with 0 ammo if empty
+        for(int i=0; i<2; i++) slotAmmoCounts[i] = 0;
     }
 
     void Start()
@@ -50,6 +65,7 @@ public class WeaponSystem : MonoBehaviour
         HandleInput();
         CheckArmStatus();
         UpdateCooldowns(); 
+        HandleReloadLogic();
     }
 
     void LateUpdate()
@@ -57,25 +73,74 @@ public class WeaponSystem : MonoBehaviour
         UpdateWeaponTransform();
     }
 
-    // --- NEW: GetFirePoint Logic ---
-    public Vector2 GetFirePoint()
+    // --- NEW: Reload Logic ---
+    private void HandleReloadLogic()
     {
-        // 1. Try to use the socket from the instantiated prefab
-        if (currentMuzzleSocket != null)
+        if (isReloading)
         {
-            return currentMuzzleSocket.position;
-        }
-
-        // 2. Fallback to Sprite/Offset calculation
-        if (heldWeaponRenderer != null)
-        {
-            WeaponData weapon = GetActiveWeapon();
-            if (weapon != null)
+            reloadTimer -= Time.deltaTime;
+            if (reloadTimer <= 0)
             {
-                return heldWeaponRenderer.transform.TransformPoint(weapon.muzzleOffset);
+                FinishReload();
             }
         }
+    }
 
+    public void StartReload()
+    {
+        WeaponData activeWeapon = GetActiveWeapon();
+        if (activeWeapon == null || activeWeapon.type != WeaponType.Ranged) return;
+        if (isReloading) return;
+        if (slotAmmoCounts[activeSlotIndex] >= activeWeapon.magazineSize) return; // Full
+        if (totalReserveAmmo <= 0) return; // No ammo to reload with
+
+        isReloading = true;
+        reloadTimer = activeWeapon.reloadTime;
+
+        if (audioSource != null && activeWeapon.reloadSound != null)
+        {
+            audioSource.PlayOneShot(activeWeapon.reloadSound);
+        }
+        
+        // Optional: Update HUD to show reloading status
+        // if (weaponHUD) weaponHUD.ShowReloading(true);
+    }
+
+    private void FinishReload()
+    {
+        isReloading = false;
+        WeaponData activeWeapon = GetActiveWeapon();
+        if (activeWeapon == null) return;
+
+        int spaceInMag = activeWeapon.magazineSize - slotAmmoCounts[activeSlotIndex];
+        int amountToLoad = Mathf.Min(spaceInMag, totalReserveAmmo);
+
+        slotAmmoCounts[activeSlotIndex] += amountToLoad;
+        totalReserveAmmo -= amountToLoad;
+
+        Debug.Log($"Reload Complete. Clip: {slotAmmoCounts[activeSlotIndex]}, Reserve: {totalReserveAmmo}");
+    }
+
+    public void AddReserveAmmo(int amount)
+    {
+        totalReserveAmmo = Mathf.Min(totalReserveAmmo + amount, maxReserveAmmo);
+        // Optional: Update HUD
+    }
+
+    public void ConsumeAmmo(int amount = 1)
+    {
+        if (activeSlotIndex >= 0 && activeSlotIndex < slotAmmoCounts.Length)
+        {
+            slotAmmoCounts[activeSlotIndex] = Mathf.Max(0, slotAmmoCounts[activeSlotIndex] - amount);
+        }
+    }
+    // -------------------------
+
+    public Vector2 GetFirePoint()
+    {
+        if (currentMuzzleSocket != null) return currentMuzzleSocket.position;
+        if (heldWeaponRenderer != null && GetActiveWeapon() != null)
+            return heldWeaponRenderer.transform.TransformPoint(GetActiveWeapon().muzzleOffset);
         return transform.position;
     }
 
@@ -83,25 +148,18 @@ public class WeaponSystem : MonoBehaviour
     {
         for (int i = 0; i < slotCooldowns.Length; i++)
         {
-            if (slotCooldowns[i] > 0)
-            {
-                slotCooldowns[i] -= Time.deltaTime;
-            }
+            if (slotCooldowns[i] > 0) slotCooldowns[i] -= Time.deltaTime;
         }
     }
 
-    public float GetCurrentWeaponCooldown()
-    {
-        if (activeSlotIndex >= 0 && activeSlotIndex < slotCooldowns.Length)
-            return slotCooldowns[activeSlotIndex];
-        return 0f;
-    }
+    public float GetCurrentWeaponCooldown() { return activeSlotIndex >= 0 ? slotCooldowns[activeSlotIndex] : 0f; }
+    public void SetCurrentWeaponCooldown(float time) { if (activeSlotIndex >= 0) slotCooldowns[activeSlotIndex] = time; }
 
-    public void SetCurrentWeaponCooldown(float time)
-    {
-        if (activeSlotIndex >= 0 && activeSlotIndex < slotCooldowns.Length)
-            slotCooldowns[activeSlotIndex] = time;
-    }
+    // --- NEW: Ammo Getters ---
+    public int GetCurrentClipAmmo() { return activeSlotIndex >= 0 ? slotAmmoCounts[activeSlotIndex] : 0; }
+    public int GetTotalReserveAmmo() { return totalReserveAmmo; }
+    public bool IsReloading() { return isReloading; }
+    // -------------------------
 
     private void HandleInput()
     {
@@ -117,18 +175,20 @@ public class WeaponSystem : MonoBehaviour
             if (scroll < 0) SetActiveSlot(1);
         }
 
-        if (Keyboard.current.qKey.wasPressedThisFrame)
-        {
-            ThrowActiveWeapon();
-        }
+        if (Keyboard.current.qKey.wasPressedThisFrame) ThrowActiveWeapon();
+        
+        // Manual Reload Key
+        if (Keyboard.current.rKey.wasPressedThisFrame) StartReload();
     }
 
     private void ThrowActiveWeapon()
     {
         if (!IsHoldingWeapon()) return;
+        
+        // Cancel reload if throwing
+        isReloading = false; 
 
-        Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
-        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
 
         DropWeapon(activeSlotIndex, throwDir, throwForce);
@@ -138,6 +198,10 @@ public class WeaponSystem : MonoBehaviour
     {
         if (index < 0 || index >= weaponSlots.Length) return;
         if (activeSlotIndex == index) return;
+        
+        // Cancel reload if switching
+        isReloading = false;
+        
         activeSlotIndex = index;
         UpdateState();
     }
@@ -154,25 +218,10 @@ public class WeaponSystem : MonoBehaviour
         }
     }
 
-    public bool HasAnyWeapon()
-    {
-        return weaponSlots[0] != null || weaponSlots[1] != null;
-    }
-    
-    public bool IsHoldingWeapon()
-    {
-        return weaponSlots[activeSlotIndex] != null;
-    }
-
-    public WeaponData GetActiveWeapon()
-    {
-        return weaponSlots[activeSlotIndex];
-    }
-
-    public bool IsHoldingWithRightHand()
-    {
-        return isHoldingWithRightHand;
-    }
+    public bool HasAnyWeapon() { return weaponSlots[0] != null || weaponSlots[1] != null; }
+    public bool IsHoldingWeapon() { return weaponSlots[activeSlotIndex] != null; }
+    public WeaponData GetActiveWeapon() { return weaponSlots[activeSlotIndex]; }
+    public bool IsHoldingWithRightHand() { return isHoldingWithRightHand; }
 
     public bool TryPickupWeapon(WeaponData newData)
     {
@@ -183,6 +232,12 @@ public class WeaponSystem : MonoBehaviour
 
         weaponSlots[activeSlotIndex] = newData;
         slotCooldowns[activeSlotIndex] = 0f; 
+        
+        // --- NEW: Initialize Ammo on Pickup ---
+        // Give a full clip for the new weapon
+        slotAmmoCounts[activeSlotIndex] = newData.magazineSize; 
+        isReloading = false;
+        // --------------------------------------
 
         UpdateState();
         return true;
@@ -191,12 +246,12 @@ public class WeaponSystem : MonoBehaviour
     public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
-        
         WeaponData weaponToDrop = weaponSlots[slotIndex];
         if (weaponToDrop == null) return;
 
         weaponSlots[slotIndex] = null;
         slotCooldowns[slotIndex] = 0f; 
+        slotAmmoCounts[slotIndex] = 0; // Clear ammo in that slot
 
         if (weaponToDrop.pickupPrefab != null)
         {
@@ -208,10 +263,6 @@ public class WeaponSystem : MonoBehaviour
                 pickupScript.InitializeDrop(finalDir, force);
             }
         }
-        else
-        {
-            Debug.LogWarning($"Dropped weapon '{weaponToDrop.weaponName}' but no Pickup Prefab was assigned!");
-        }
 
         UpdateState();
     }
@@ -220,7 +271,6 @@ public class WeaponSystem : MonoBehaviour
     {
         if (weaponHUD != null) weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
         
-        // --- NEW: Cleanup old instantiated weapon ---
         if (currentEquippedInstance != null)
         {
             Destroy(currentEquippedInstance);
@@ -234,35 +284,18 @@ public class WeaponSystem : MonoBehaviour
         {
             if (activeWeapon != null)
             {
-                // A. PREFAB MODE
                 if (activeWeapon.equippedPrefab != null)
                 {
-                    // Disable sprite renderer, we are using a real object
                     heldWeaponRenderer.enabled = false; 
-
-                    // Instantiate as child of the renderer transform (which acts as the pivot)
                     currentEquippedInstance = Instantiate(activeWeapon.equippedPrefab, heldWeaponRenderer.transform);
                     currentEquippedInstance.transform.localPosition = Vector3.zero;
                     currentEquippedInstance.transform.localRotation = Quaternion.identity;
-                    
-                    // REVERTED: Force scale to One. 
-                    // Using the prefab's original scale caused issues with imported models (often 0.01 scale).
-                    // Use 'heldScale' in WeaponData to resize the weapon if needed.
                     currentEquippedInstance.transform.localScale = Vector3.one;
 
-                    // Find Muzzle
                     Transform socket = currentEquippedInstance.transform.Find(activeWeapon.muzzleSocketName);
-                    if (socket != null)
-                    {
-                        currentMuzzleSocket = socket;
-                    }
-                    else
-                    {
-                        // Search recursively if not immediate child
-                        currentMuzzleSocket = currentEquippedInstance.transform.GetComponentInChildren<Transform>().Find(activeWeapon.muzzleSocketName);
-                    }
+                    if (socket != null) currentMuzzleSocket = socket;
+                    else currentMuzzleSocket = currentEquippedInstance.transform.GetComponentInChildren<Transform>().Find(activeWeapon.muzzleSocketName);
                 }
-                // B. SPRITE MODE (Fallback)
                 else
                 {
                     heldWeaponRenderer.sprite = activeWeapon.heldSprite;
@@ -305,33 +338,21 @@ public class WeaponSystem : MonoBehaviour
             Quaternion baseRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
 
             if (limbController.GetVisualsHolder() != null && limbController.GetVisualsHolder().localScale.x < 0)
-            {
                 baseRotation *= Quaternion.Euler(0, 180, 0);
-            }
 
             Quaternion finalWeaponRotation = baseRotation;
-
             if (activeWeapon != null && activeWeapon.heldRotationOffset != 0f)
-            {
                 finalWeaponRotation *= Quaternion.Euler(0, 0, activeWeapon.heldRotationOffset);
-            }
             
             heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalWeaponRotation);
             
             if (activeWeapon != null)
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
-
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
-                {
-                    Transform offHand = limbController.GetLeftArmSlot();
-                    SnapOffHand(offHand, heldWeaponRenderer.transform, baseRotation);
-                }
+                    SnapOffHand(limbController.GetLeftArmSlot(), heldWeaponRenderer.transform, baseRotation);
                 else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
-                {
-                    Transform offHand = limbController.GetRightArmSlot();
-                    SnapOffHand(offHand, heldWeaponRenderer.transform, baseRotation);
-                }
+                    SnapOffHand(limbController.GetRightArmSlot(), heldWeaponRenderer.transform, baseRotation);
             }
             else
             {
@@ -343,11 +364,9 @@ public class WeaponSystem : MonoBehaviour
     private void SnapOffHand(Transform hand, Transform weaponTransform, Quaternion baseRotation)
     {
         if (hand == null) return;
-        
         Vector3 worldOffset = baseRotation * secondaryGripOffset;
         Vector3 targetPos = weaponTransform.position + worldOffset;
         Quaternion targetRot = baseRotation * Quaternion.Euler(0, 0, 180f);
-
         hand.SetPositionAndRotation(targetPos, targetRot);
     }
 }

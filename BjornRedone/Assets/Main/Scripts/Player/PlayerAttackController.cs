@@ -24,7 +24,7 @@ public class PlayerAttackController : MonoBehaviour
     private float rightArmCooldownTimer = 0f;
     private float globalCooldownTimer = 0f; 
     
-    // --- NEW: Timer to prevent click sound from playing every single frame ---
+    // Timer to prevent click sound spam
     private float clickSoundCooldownTimer = 0f;
     
     private Camera cam;
@@ -54,7 +54,7 @@ public class PlayerAttackController : MonoBehaviour
         if (leftArmCooldownTimer > 0) leftArmCooldownTimer -= Time.deltaTime;
         if (rightArmCooldownTimer > 0) rightArmCooldownTimer -= Time.deltaTime;
         if (globalCooldownTimer > 0) globalCooldownTimer -= Time.deltaTime;
-        if (clickSoundCooldownTimer > 0) clickSoundCooldownTimer -= Time.deltaTime; // Update click timer
+        if (clickSoundCooldownTimer > 0) clickSoundCooldownTimer -= Time.deltaTime;
 
         if (isAttackHeld)
         {
@@ -69,32 +69,9 @@ public class PlayerAttackController : MonoBehaviour
     {
         WeaponData currentWeapon = weaponSystem != null ? weaponSystem.GetActiveWeapon() : null;
 
-        // --- NEW: Check for Cooldown Click Sound ---
-        if (currentWeapon != null && weaponSystem != null)
-        {
-            if (weaponSystem.GetCurrentWeaponCooldown() > 0)
-            {
-                // If it is a ranged weapon and we are pressing fire while on cooldown
-                if (currentWeapon.type == WeaponType.Ranged && currentWeapon.cooldownClickSound != null)
-                {
-                    if (clickSoundCooldownTimer <= 0)
-                    {
-                        if (actionAudioSource != null)
-                        {
-                            // Play at slightly variable pitch and lower volume
-                            actionAudioSource.pitch = Random.Range(0.95f, 1.05f);
-                            actionAudioSource.PlayOneShot(currentWeapon.cooldownClickSound, 0.6f);
-                        }
-                        clickSoundCooldownTimer = 0.2f; // Limit clicks to 5 times per second max
-                    }
-                }
-                return; // Exit, do not fire
-            }
-        }
-
         if (currentWeapon != null && currentWeapon.type == WeaponType.Ranged)
         {
-            FireRangedWeapon(currentWeapon);
+            HandleRangedInput(currentWeapon);
         }
         else
         {
@@ -102,9 +79,59 @@ public class PlayerAttackController : MonoBehaviour
         }
     }
 
+    private void HandleRangedInput(WeaponData weapon)
+    {
+        // 1. Check Fire Rate Cooldown first (always applies)
+        if (weaponSystem.GetCurrentWeaponCooldown() > 0) return;
+
+        // 2. Check Reloading State
+        if (weaponSystem.IsReloading())
+        {
+            TryPlayEmptySound(weapon);
+            return;
+        }
+
+        // 3. Check Ammo
+        int currentAmmo = weaponSystem.GetCurrentClipAmmo();
+        if (currentAmmo <= 0)
+        {
+            // Empty Clip
+            if (weaponSystem.GetTotalReserveAmmo() > 0)
+            {
+                // Has reserve? Start Reloading automatically
+                weaponSystem.StartReload();
+            }
+            else
+            {
+                // No reserve? Click sound.
+                TryPlayEmptySound(weapon);
+            }
+            return;
+        }
+
+        // 4. Fire!
+        FireRangedWeapon(weapon);
+    }
+
+    private void TryPlayEmptySound(WeaponData weapon)
+    {
+        if (clickSoundCooldownTimer <= 0 && weapon.emptyClickSound != null)
+        {
+            if (actionAudioSource != null)
+            {
+                actionAudioSource.pitch = Random.Range(0.95f, 1.05f);
+                actionAudioSource.PlayOneShot(weapon.emptyClickSound, 0.6f);
+            }
+            clickSoundCooldownTimer = 0.2f; 
+        }
+    }
+
     private void FireRangedWeapon(WeaponData weapon)
     {
         if (weapon.projectilePrefab == null) return;
+        
+        // Consume Ammo
+        weaponSystem.ConsumeAmmo(1);
         
         weaponSystem.SetCurrentWeaponCooldown(weapon.fireRate);
 
