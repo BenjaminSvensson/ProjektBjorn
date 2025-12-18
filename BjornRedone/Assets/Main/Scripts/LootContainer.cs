@@ -10,6 +10,7 @@ public class LootContainer : MonoBehaviour
     public class LootEntry
     {
         public string name = "Item";
+        [Tooltip("Assign the PREFAB here (e.g., 'GoblinArm_Pickup'). For Limbs, ensure the Prefab has WorldLimb attached and LimbData assigned.")]
         public GameObject prefab;
         [Tooltip("Likelihood of this item being chosen relative to others.")]
         public float weight = 10f;
@@ -135,8 +136,8 @@ public class LootContainer : MonoBehaviour
         if (activeVisual) activeVisual.SetActive(false);
         if (destroyedVisual) destroyedVisual.SetActive(true);
         
-        // Disable physics/collision
-        if (GetComponent<Collider2D>()) GetComponent<Collider2D>().enabled = false;
+        // --- CHANGED: Collider remains ENABLED so it acts as a wall/obstacle ---
+        // if (GetComponent<Collider2D>()) GetComponent<Collider2D>().enabled = false;
         
         if (hitParticles) hitParticles.Stop();
     }
@@ -158,30 +159,42 @@ public class LootContainer : MonoBehaviour
             Vector2 finalDir = Quaternion.Euler(0, 0, randomAngle) * Vector2.down;
 
             // Spawn slightly in front (down) to avoid clipping behind container
-            Vector3 spawnPos = transform.position + new Vector3(0, -0.5f, 0);
+            Vector3 spawnPos = transform.position + new Vector3(0, -0.5f, -0.1f);
 
             GameObject droppedItem = Instantiate(prefabToSpawn, spawnPos, Quaternion.identity);
             
-            // --- NEW: Play Drop Sound ---
+            // Play Drop Sound
             if (audioSource && itemDropSound) audioSource.PlayOneShot(itemDropSound);
 
-            if (droppedItem.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
-            {
-                rb.AddForce(finalDir * dropSpreadForce, ForceMode2D.Impulse);
-            }
-            
-            // Initialize specific item scripts
+            // Logic to handle physics based on item type
+            bool physicsHandled = false;
+
+            // 1. Is it a Limb?
             if (droppedItem.TryGetComponent<WorldLimb>(out WorldLimb limb))
             {
-                limb.InitializeThrow(limb.GetLimbData(), true, finalDir);
+                if (limb.GetLimbData() != null)
+                {
+                    limb.InitializeThrow(limb.GetLimbData(), true, finalDir);
+                    physicsHandled = true;
+                }
             }
+            // 2. Is it a Weapon?
             else if (droppedItem.TryGetComponent<WeaponPickup>(out WeaponPickup wep))
             {
                 wep.InitializeDrop(finalDir);
+                physicsHandled = true;
             }
+            // 3. Is it a Coin?
             else if (droppedItem.TryGetComponent<CoinPickup>(out CoinPickup coin))
             {
                 coin.Initialize();
+                physicsHandled = true;
+            }
+
+            // 4. Fallback Generic
+            if (!physicsHandled && droppedItem.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
+            {
+                rb.AddForce(finalDir * dropSpreadForce, ForceMode2D.Impulse);
             }
         }
     }
