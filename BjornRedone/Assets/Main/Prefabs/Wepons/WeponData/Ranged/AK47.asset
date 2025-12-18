@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
+  m_Name: AK47
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: Shotgun
+  icon: {fileID: 1490390596225347881, guid: 9dac1d6679bc3f043a2547bd90a67864, type: 3}
+  pickupPrefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}
+  equippedPrefab: {fileID: 51549661887671870, guid: 7f428945c59df334793830044143f7da, type: 3}
+  muzzleSocketName: ShootPoint
+  heldSprite: {fileID: 1490390596225347881, guid: 9dac1d6679bc3f043a2547bd90a67864, type: 3}
+  heldScale: {x: 0.6, y: 0.6, z: 0.6}
+  heldRotationOffset: 90
+  muzzleOffset: {x: 0.5, y: 0}
+  type: 1
+  attackStyle: 0
+  meleeDamageBonus: 5
+  meleeImpactSounds: []
+  attackSpeedMultiplier: 1
+  knockbackMultiplier: 1
+  swingArc: 90
+  projectilePrefab: {fileID: 5854363392945389712, guid: 4a57e5eb98a1a8949b89967c031d3f49, type: 3}
+  fireRate: 0.09
+  projectileSpeed: 35
+  projectileDamage: 2
+  spread: 8
+  projectilesPerShot: 1
+  shootSounds:
+  - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
+  cooldownClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}
