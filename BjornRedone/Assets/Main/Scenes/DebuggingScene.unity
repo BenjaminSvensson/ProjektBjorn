@@ -2402,11 +2402,6 @@ MonoBehaviour:
     allowRandomFlip: 1
     minScale: 0.9
     maxScale: 1.1
-  - prefab: {fileID: 7915102392887708610, guid: 0fd4499ea3384134d9f05aa05ce3953d, type: 3}
-    spawnChance: 0.1
-    allowRandomFlip: 1
-    minScale: 0.9
-    maxScale: 1.1
   - prefab: {fileID: 7845664515393865056, guid: 8cdaf7521d0e1164788d21f726fda281, type: 3}
     spawnChance: 0.06
     allowRandomFlip: 1
