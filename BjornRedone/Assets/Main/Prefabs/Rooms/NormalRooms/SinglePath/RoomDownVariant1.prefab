@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 9084755191292338089}
   - component: {fileID: 7274432156129141679}
   - component: {fileID: 41922501111843315}
-  m_Layer: 10
+  m_Layer: 13
   m_Name: Lv1BasicWall_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -346,7 +346,7 @@ GameObject:
   - component: {fileID: 4314282445264153859}
   - component: {fileID: 4839856090440927916}
   - component: {fileID: 8856842846681722255}
-  m_Layer: 10
+  m_Layer: 13
   m_Name: Lv1BasicWall_0 (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -576,7 +576,7 @@ GameObject:
   - component: {fileID: 8457049447810756725}
   - component: {fileID: 3818003929872336672}
   - component: {fileID: 577072108637014595}
-  m_Layer: 10
+  m_Layer: 13
   m_Name: Lv1BasicWall_0 (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

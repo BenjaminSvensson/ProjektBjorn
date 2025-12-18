@@ -102,7 +102,7 @@ GameObject:
   - component: {fileID: 9084755191292338089}
   - component: {fileID: 7274432156129141679}
   - component: {fileID: 41922501111843315}
-  m_Layer: 10
+  m_Layer: 13
   m_Name: Lv1BasicWall_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -286,6 +286,7 @@ MonoBehaviour:
   wallLeft: {fileID: 0}
   wallRight: {fileID: 0}
   wallPadding: 2.5
+  minSpawnSpacing: 1.5
   allowEnemySpawning: 1
   gridPos: {x: 0, y: 0}
 --- !u!1 &3246034191940130705

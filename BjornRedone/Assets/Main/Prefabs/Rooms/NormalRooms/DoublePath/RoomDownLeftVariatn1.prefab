@@ -103,7 +103,7 @@ GameObject:
   - component: {fileID: 2576731046875658294}
   - component: {fileID: 760411323340986794}
   - component: {fileID: 7640315296496054518}
-  m_Layer: 10
+  m_Layer: 13
   m_Name: Lv1BasicWall_0 (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -241,7 +241,7 @@ GameObject:
   - component: {fileID: 2849357175676188016}
   - component: {fileID: 8491520477576472109}
   - component: {fileID: 1478941044201864926}
-  m_Layer: 10
+  m_Layer: 13
   m_Name: Lv1BasicWall_0 (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}

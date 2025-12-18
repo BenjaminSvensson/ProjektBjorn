@@ -920,7 +920,7 @@ MonoBehaviour:
   turningSpeed: 5
   obstacleLayer:
     serializedVersion: 2
-    m_Bits: 1024
+    m_Bits: 9216
   trapLayer:
     serializedVersion: 2
     m_Bits: 2048
