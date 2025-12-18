@@ -455,7 +455,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
   m_Material: {fileID: 0}
-  m_Color: {r: 0.17254902, g: 0.17254902, b: 0.17254902, a: 0.78431374}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.39215687}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1237,7 +1237,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
   m_Material: {fileID: 0}
-  m_Color: {r: 0.17254902, g: 0.17254902, b: 0.17254902, a: 0.78431374}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.39215687}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1735,9 +1735,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponHUD
   slot1Icon: {fileID: 1740935254}
   slot2Icon: {fileID: 2126865516}
-  slot1Highlight: {fileID: 0}
-  slot2Highlight: {fileID: 0}
-  emptySlotColor: {r: 1, g: 1, b: 1, a: 1}
+  slot1Highlight: {fileID: 225037029}
+  slot2Highlight: {fileID: 1840127770}
   filledSlotColor: {r: 1, g: 1, b: 1, a: 1}
   clipText: {fileID: 764582011}
   reserveText: {fileID: 1359248594}
@@ -2478,8 +2477,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.06\n\nT - Restart Scene\nR - Regenerate Map\nTab
-    - ToggleDebugConsole"
+  m_text: "ProjektBj\xF6rn Devbuild 0.06\n\nGameTestControlls:\nT - Restart Scene\nY-
+    Regenerate Map\nTab - ToggleDebugConsole\n\nGeneralControlls:\nR - Reload\nNolegs
+    = Crawl (Drag)LMB\n\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

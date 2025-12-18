@@ -36,7 +36,7 @@ MonoBehaviour:
   projectilesPerShot: 5
   shootSounds:
   - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
-  magazineSize: 1
+  magazineSize: 2
   reloadTime: 1.2
   reloadSound: {fileID: 0}
   emptyClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}

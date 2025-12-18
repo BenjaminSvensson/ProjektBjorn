@@ -73,6 +73,9 @@ public class EnemyLimbController : MonoBehaviour
     [HideInInspector] public float attackDamageBonus = 0f;
     [HideInInspector] public bool hasLegs = false;
     [HideInInspector] public bool hasArms = false;
+    
+    // --- NEW: Fix for shotgun multi-kill loot bug ---
+    private bool isDead = false; 
 
     private AudioSource audioSource;
     private List<SpriteRenderer> renderers = new List<SpriteRenderer>();
@@ -99,6 +102,8 @@ public class EnemyLimbController : MonoBehaviour
 
     public void TakeDamage(float amount, Vector2 hitDirection = default)
     {
+        if (isDead) return; // --- FIX: Ignore damage if already dead ---
+
         currentHealth -= amount;
         
         AlertNearbyEnemies();
@@ -244,6 +249,8 @@ public class EnemyLimbController : MonoBehaviour
 
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
+        if (isDead) return false; // Don't attach limbs to a dying enemy
+
         if (limbToAttach == null) return false;
 
         bool attached = false;
@@ -315,7 +322,6 @@ public class EnemyLimbController : MonoBehaviour
 
         if (limbToRemove != null)
         {
-            // Use visualPrefab from LimbData
             GameObject pickup = Instantiate(limbToRemove.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
             WorldLimb pickupScript = pickup.GetComponent<WorldLimb>();
             Vector2 flingDir = Random.insideUnitCircle.normalized;
@@ -339,7 +345,6 @@ public class EnemyLimbController : MonoBehaviour
         Transform parentSlot = GetSlotTransform(slot);
         if (parentSlot == null) return;
 
-        // Use visualPrefab from LimbData
         GameObject limbObj = Instantiate(limbData.visualPrefab, parentSlot.position, parentSlot.rotation, parentSlot);
         WorldLimb limbComponent = limbObj.GetComponent<WorldLimb>();
         if (limbComponent == null) { Destroy(limbObj); return; }
@@ -354,7 +359,7 @@ public class EnemyLimbController : MonoBehaviour
         {
             case LimbSlot.Head: currentHead = limbComponent; order = 10; break;
             case LimbSlot.LeftArm: currentLeftArm = limbComponent; order = 5; break;
-            case LimbSlot.RightArm: currentRightArm = limbComponent; order = 5; break; // Changed from -5 to 5 (Front)
+            case LimbSlot.RightArm: currentRightArm = limbComponent; order = 5; break; 
             case LimbSlot.LeftLeg: currentLeftLeg = limbComponent; order = -10; break;
             case LimbSlot.RightLeg: currentRightLeg = limbComponent; order = -10; break;
         }
@@ -403,6 +408,9 @@ public class EnemyLimbController : MonoBehaviour
 
     private void Die()
     {
+        if (isDead) return; // --- FIX: Prevent double death events ---
+        isDead = true;
+
         if (BloodManager.Instance != null)
             BloodManager.Instance.SpawnBlood(transform.position, Random.insideUnitCircle.normalized, 2.5f);
 

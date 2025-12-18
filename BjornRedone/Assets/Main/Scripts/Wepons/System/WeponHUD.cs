@@ -9,7 +9,6 @@ public class WeaponHUD : MonoBehaviour
     [SerializeField] private Image slot2Icon;
     [SerializeField] private GameObject slot1Highlight;
     [SerializeField] private GameObject slot2Highlight;
-    [SerializeField] private Color emptySlotColor = new Color(1, 1, 1, 0); // Transparent
     [SerializeField] private Color filledSlotColor = Color.white;
 
     [Header("Ammo Display")]
@@ -34,25 +33,18 @@ public class WeaponHUD : MonoBehaviour
     {
         if (img == null) return;
 
-        // FIX 1: Prevent icons from looking squashed/stretched
         img.preserveAspect = true;
 
         if (data != null && data.icon != null)
         {
             img.sprite = data.icon;
             img.color = filledSlotColor;
-            // FIX 2: Ensure the image component is actually enabled so it shows up
-            img.enabled = true; 
+            img.enabled = true; // Show icon
         }
         else
         {
             img.sprite = null;
-            img.color = emptySlotColor;
-            // FIX 2: Disable the image component if empty/transparent to prevent ghosting
-            if (emptySlotColor.a <= 0.01f) 
-            {
-                img.enabled = false;
-            }
+            img.enabled = false; // Hide icon completely
         }
     }
 

@@ -85,7 +85,8 @@ public class LevelGenerator : MonoBehaviour
     {
         if (Keyboard.current == null) return;
 
-        if (Keyboard.current.rKey.wasPressedThisFrame)
+        // --- CHANGED: Moved Debug Regen to 'Y' so 'R' can be used for Reloading ---
+        if (Keyboard.current.yKey.wasPressedThisFrame)
         {
             Debug.Log("--- [DEBUG] Regenerating Level... ---");
             GenerateLevel();
@@ -296,8 +297,7 @@ public class LevelGenerator : MonoBehaviour
             int dist = Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
             if (dist > 0) // Skip start room
             {
-                // --- ORDER CHANGE: Props FIRST, Enemies SECOND ---
-                // This ensures enemies can detect existing props (like beartraps) and avoid spawning on them.
+                // Spawning Props First to ensure enemies don't spawn in traps
                 if (environmentProps != null)
                     room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
 
