@@ -67,4 +67,6 @@ public class WeaponData : ScriptableObject
     public float spread = 5f;
     public int projectilesPerShot = 1;
     public AudioClip[] shootSounds; 
+    [Tooltip("Sound to play if attempting to fire while on cooldown.")]
+    public AudioClip cooldownClickSound; // --- NEW ---
 }

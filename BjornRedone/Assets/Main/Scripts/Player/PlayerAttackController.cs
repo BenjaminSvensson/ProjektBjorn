@@ -24,6 +24,9 @@ public class PlayerAttackController : MonoBehaviour
     private float rightArmCooldownTimer = 0f;
     private float globalCooldownTimer = 0f; 
     
+    // --- NEW: Timer to prevent click sound from playing every single frame ---
+    private float clickSoundCooldownTimer = 0f;
+    
     private Camera cam;
     private Collider2D[] hitBuffer = new Collider2D[10]; 
 
@@ -51,6 +54,7 @@ public class PlayerAttackController : MonoBehaviour
         if (leftArmCooldownTimer > 0) leftArmCooldownTimer -= Time.deltaTime;
         if (rightArmCooldownTimer > 0) rightArmCooldownTimer -= Time.deltaTime;
         if (globalCooldownTimer > 0) globalCooldownTimer -= Time.deltaTime;
+        if (clickSoundCooldownTimer > 0) clickSoundCooldownTimer -= Time.deltaTime; // Update click timer
 
         if (isAttackHeld)
         {
@@ -65,9 +69,27 @@ public class PlayerAttackController : MonoBehaviour
     {
         WeaponData currentWeapon = weaponSystem != null ? weaponSystem.GetActiveWeapon() : null;
 
+        // --- NEW: Check for Cooldown Click Sound ---
         if (currentWeapon != null && weaponSystem != null)
         {
-            if (weaponSystem.GetCurrentWeaponCooldown() > 0) return;
+            if (weaponSystem.GetCurrentWeaponCooldown() > 0)
+            {
+                // If it is a ranged weapon and we are pressing fire while on cooldown
+                if (currentWeapon.type == WeaponType.Ranged && currentWeapon.cooldownClickSound != null)
+                {
+                    if (clickSoundCooldownTimer <= 0)
+                    {
+                        if (actionAudioSource != null)
+                        {
+                            // Play at slightly variable pitch and lower volume
+                            actionAudioSource.pitch = Random.Range(0.95f, 1.05f);
+                            actionAudioSource.PlayOneShot(currentWeapon.cooldownClickSound, 0.6f);
+                        }
+                        clickSoundCooldownTimer = 0.2f; // Limit clicks to 5 times per second max
+                    }
+                }
+                return; // Exit, do not fire
+            }
         }
 
         if (currentWeapon != null && currentWeapon.type == WeaponType.Ranged)
@@ -87,11 +109,7 @@ public class PlayerAttackController : MonoBehaviour
         weaponSystem.SetCurrentWeaponCooldown(weapon.fireRate);
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-        
-        // --- CHANGED: Use the muzzle point from WeaponSystem ---
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
-        // -------------------------------------------------------
-
         Vector2 aimDir = (mouseWorldPos - fireOrigin).normalized;
 
         float finalKnockback = baseProjectileKnockback;
