@@ -2575,11 +2575,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb4bafa0731da8b43b5c479195f5523f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerWallet
---- !u!82 &1970201064 stripped
-AudioSource:
-  m_CorrespondingSourceObject: {fileID: 548611861996895180, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
-  m_PrefabInstance: {fileID: 1433725554247257660}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2055658003
 GameObject:
   m_ObjectHideFlags: 0
@@ -2749,18 +2744,6 @@ PrefabInstance:
       propertyPath: weaponHUD
       value: 
       objectReference: {fileID: 1547191498}
-    - target: {fileID: 6718153777287289449, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
-      propertyPath: throwForce
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 6718153777287289449, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
-      propertyPath: audioSource
-      value: 
-      objectReference: {fileID: 1970201064}
-    - target: {fileID: 6718153777287289449, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
-      propertyPath: maxReserveAmmo
-      value: 999
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

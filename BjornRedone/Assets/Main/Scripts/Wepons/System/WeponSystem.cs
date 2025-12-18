@@ -98,8 +98,6 @@ public class WeaponSystem : MonoBehaviour
             audioSource.PlayOneShot(activeWeapon.reloadSound);
         }
         
-        // Update HUD to reflect maybe a "Reloading..." state if you wanted, 
-        // for now we just keep showing numbers
         UpdateAmmoUI();
     }
 
@@ -273,7 +271,7 @@ public class WeaponSystem : MonoBehaviour
         if (weaponHUD != null)
         {
             weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
-            UpdateAmmoUI(); // --- NEW: Update Ammo Text when switching state
+            UpdateAmmoUI(); 
         }
         
         if (currentEquippedInstance != null)
@@ -338,7 +336,14 @@ public class WeaponSystem : MonoBehaviour
 
         if (mainAnchor != null)
         {
-            Vector3 targetPos = mainAnchor.TransformPoint(gripOffset);
+            // --- NEW: Apply heldPositionOffset ---
+            Vector3 finalGripOffset = gripOffset;
+            if (activeWeapon != null)
+            {
+                finalGripOffset += activeWeapon.heldPositionOffset;
+            }
+
+            Vector3 targetPos = mainAnchor.TransformPoint(finalGripOffset);
             
             Quaternion baseRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
 

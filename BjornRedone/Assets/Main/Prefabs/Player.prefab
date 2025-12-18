@@ -164,7 +164,7 @@ MonoBehaviour:
   baseMoveSpeed: 5
   sprintSpeedMultiplier: 1.8
   crawlSpeed: 6
-  crawlReach: 6
+  crawlReach: 4
   actionAudioSource: {fileID: 6162117553466222711}
   crawlPlantSound: {fileID: 8300000, guid: eb987dcb6372fe0469e230b2ddaa73a7, type: 3}
 --- !u!114 &6376795585293446948
@@ -490,11 +490,11 @@ MonoBehaviour:
   - {fileID: 0}
   activeSlotIndex: 0
   totalReserveAmmo: 24
-  maxReserveAmmo: 99
-  throwForce: 15
+  maxReserveAmmo: 999
+  throwForce: 20
   weaponHUD: {fileID: 0}
   heldWeaponRenderer: {fileID: 5304089805831156141}
-  audioSource: {fileID: 0}
+  audioSource: {fileID: 548611861996895180}
   rightHandGripOffset: {x: 0.1, y: -0.9, z: 0}
   leftHandGripOffset: {x: 0.1, y: -0.9, z: 0}
   secondaryGripOffset: {x: 0, y: -0.8, z: 0}

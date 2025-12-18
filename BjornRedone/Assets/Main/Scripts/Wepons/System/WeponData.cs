@@ -29,7 +29,12 @@ public class WeaponData : ScriptableObject
     [Header("Visuals - Sprite Mode")]
     public Sprite heldSprite;
     public Vector3 heldScale = Vector3.one; 
+    [Tooltip("Rotation offset in degrees (Z-axis).")]
     public float heldRotationOffset = 0f;
+    [Tooltip("Position offset relative to the hand pivot (Local Space). X = Along Arm, Y = Perpendicular.")]
+    public Vector3 heldPositionOffset = Vector3.zero; // --- NEW ---
+    
+    [Tooltip("Fallback offset if using Sprite mode. X = forward, Y = up/down.")]
     public Vector2 muzzleOffset = new Vector2(0.5f, 0f); 
 
     [Header("Combat Type")]
@@ -47,7 +52,7 @@ public class WeaponData : ScriptableObject
 
     [Header("Ranged Settings")]
     public GameObject projectilePrefab;
-    public float fireRate = 0.2f; // Time between individual shots
+    public float fireRate = 0.2f; 
     public float projectileSpeed = 15f;
     public float projectileDamage = 5f;
     public float spread = 5f;
@@ -55,12 +60,8 @@ public class WeaponData : ScriptableObject
     public AudioClip[] shootSounds; 
     
     [Header("Ammo & Reloading")]
-    [Tooltip("How many bullets this weapon holds in a clip.")]
-    public int magazineSize = 6; // --- NEW ---
-    [Tooltip("Time in seconds to reload.")]
-    public float reloadTime = 1.5f; // --- NEW ---
-    [Tooltip("Sound played when reload starts.")]
-    public AudioClip reloadSound; // --- NEW ---
-    [Tooltip("Sound played if attempting to fire while Empty or Reloading.")]
+    public int magazineSize = 6; 
+    public float reloadTime = 1.5f; 
+    public AudioClip reloadSound; 
     public AudioClip emptyClickSound; 
 }

@@ -18,8 +18,9 @@ MonoBehaviour:
   equippedPrefab: {fileID: 1496648371162870389, guid: b5db482d63feb7d4992ded2ba32e617a, type: 3}
   muzzleSocketName: ShootPoint
   heldSprite: {fileID: -2408530018317867212, guid: a3b731924950894488d44fe7c52a00ae, type: 3}
-  heldScale: {x: 0.2, y: 0.2, z: 0.2}
+  heldScale: {x: 0.25, y: 0.25, z: 0.25}
   heldRotationOffset: 90
+  heldPositionOffset: {x: 0, y: 0.3, z: 0}
   muzzleOffset: {x: 0, y: 0}
   type: 1
   attackStyle: 0
