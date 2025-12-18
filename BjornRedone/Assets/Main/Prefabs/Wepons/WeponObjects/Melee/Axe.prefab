@@ -158,7 +158,7 @@ BoxCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -214,8 +214,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponPickup
   weaponData: {fileID: 11400000, guid: 0ed39bdd358db7c4697995321182130f, type: 2}
-  throwForce: 4
-  pickupCooldown: 1
+  groundFriction: 5
+  rotationSpeed: 200
 --- !u!210 &6223738077240879870
 SortingGroup:
   m_ObjectHideFlags: 0

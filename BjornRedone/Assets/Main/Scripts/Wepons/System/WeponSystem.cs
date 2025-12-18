@@ -28,6 +28,10 @@ public class WeaponSystem : MonoBehaviour
     private Camera cam;
 
     private float[] slotCooldowns = new float[2]; 
+    
+    // --- NEW: Instantiated Weapon Logic ---
+    private GameObject currentEquippedInstance; 
+    private Transform currentMuzzleSocket;
 
     void Awake()
     {
@@ -51,6 +55,28 @@ public class WeaponSystem : MonoBehaviour
     void LateUpdate()
     {
         UpdateWeaponTransform();
+    }
+
+    // --- NEW: GetFirePoint Logic ---
+    public Vector2 GetFirePoint()
+    {
+        // 1. Try to use the socket from the instantiated prefab
+        if (currentMuzzleSocket != null)
+        {
+            return currentMuzzleSocket.position;
+        }
+
+        // 2. Fallback to Sprite/Offset calculation
+        if (heldWeaponRenderer != null)
+        {
+            WeaponData weapon = GetActiveWeapon();
+            if (weapon != null)
+            {
+                return heldWeaponRenderer.transform.TransformPoint(weapon.muzzleOffset);
+            }
+        }
+
+        return transform.position;
     }
 
     private void UpdateCooldowns()
@@ -81,7 +107,6 @@ public class WeaponSystem : MonoBehaviour
     {
         if (Keyboard.current == null) return;
         
-        // Slot Switching
         if (Keyboard.current.digit1Key.wasPressedThisFrame) SetActiveSlot(0);
         if (Keyboard.current.digit2Key.wasPressedThisFrame) SetActiveSlot(1);
         
@@ -92,7 +117,6 @@ public class WeaponSystem : MonoBehaviour
             if (scroll < 0) SetActiveSlot(1);
         }
 
-        // Throw Weapon Input
         if (Keyboard.current.qKey.wasPressedThisFrame)
         {
             ThrowActiveWeapon();
@@ -103,7 +127,6 @@ public class WeaponSystem : MonoBehaviour
     {
         if (!IsHoldingWeapon()) return;
 
-        // Calculate direction towards mouse
         Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
@@ -197,13 +220,54 @@ public class WeaponSystem : MonoBehaviour
     {
         if (weaponHUD != null) weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
         
+        // --- NEW: Cleanup old instantiated weapon ---
+        if (currentEquippedInstance != null)
+        {
+            Destroy(currentEquippedInstance);
+            currentEquippedInstance = null;
+            currentMuzzleSocket = null;
+        }
+
         WeaponData activeWeapon = weaponSlots[activeSlotIndex];
+
         if (heldWeaponRenderer != null)
         {
-            if (activeWeapon != null && activeWeapon.heldSprite != null)
+            if (activeWeapon != null)
             {
-                heldWeaponRenderer.sprite = activeWeapon.heldSprite;
-                heldWeaponRenderer.enabled = true;
+                // A. PREFAB MODE
+                if (activeWeapon.equippedPrefab != null)
+                {
+                    // Disable sprite renderer, we are using a real object
+                    heldWeaponRenderer.enabled = false; 
+
+                    // Instantiate as child of the renderer transform (which acts as the pivot)
+                    currentEquippedInstance = Instantiate(activeWeapon.equippedPrefab, heldWeaponRenderer.transform);
+                    currentEquippedInstance.transform.localPosition = Vector3.zero;
+                    currentEquippedInstance.transform.localRotation = Quaternion.identity;
+                    
+                    // REVERTED: Force scale to One. 
+                    // Using the prefab's original scale caused issues with imported models (often 0.01 scale).
+                    // Use 'heldScale' in WeaponData to resize the weapon if needed.
+                    currentEquippedInstance.transform.localScale = Vector3.one;
+
+                    // Find Muzzle
+                    Transform socket = currentEquippedInstance.transform.Find(activeWeapon.muzzleSocketName);
+                    if (socket != null)
+                    {
+                        currentMuzzleSocket = socket;
+                    }
+                    else
+                    {
+                        // Search recursively if not immediate child
+                        currentMuzzleSocket = currentEquippedInstance.transform.GetComponentInChildren<Transform>().Find(activeWeapon.muzzleSocketName);
+                    }
+                }
+                // B. SPRITE MODE (Fallback)
+                else
+                {
+                    heldWeaponRenderer.sprite = activeWeapon.heldSprite;
+                    heldWeaponRenderer.enabled = true;
+                }
             }
             else
             {
@@ -215,13 +279,12 @@ public class WeaponSystem : MonoBehaviour
 
     private void UpdateWeaponTransform()
     {
-        if (heldWeaponRenderer == null || !heldWeaponRenderer.enabled || limbController == null) return;
+        if (heldWeaponRenderer == null || limbController == null) return;
 
         Transform mainAnchor = null;
         Vector3 gripOffset = Vector3.zero;
         WeaponData activeWeapon = weaponSlots[activeSlotIndex];
 
-        // 1. Determine Main Hand
         if (limbController.GetArmData(false) != null) // Right
         {
             mainAnchor = limbController.GetRightArmSlot();
@@ -235,15 +298,12 @@ public class WeaponSystem : MonoBehaviour
             isHoldingWithRightHand = false;
         }
 
-        // 2. Position Weapon on Main Hand
         if (mainAnchor != null)
         {
             Vector3 targetPos = mainAnchor.TransformPoint(gripOffset);
             
-            // A. Base Rotation (Align weapon "forward" with arm/aim)
             Quaternion baseRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
 
-            // B. FLIP FIX: If player is facing left, flip 180 on Y axis
             if (limbController.GetVisualsHolder() != null && limbController.GetVisualsHolder().localScale.x < 0)
             {
                 baseRotation *= Quaternion.Euler(0, 180, 0);
@@ -251,7 +311,6 @@ public class WeaponSystem : MonoBehaviour
 
             Quaternion finalWeaponRotation = baseRotation;
 
-            // C. Apply Custom Visual Offset for Sprite
             if (activeWeapon != null && activeWeapon.heldRotationOffset != 0f)
             {
                 finalWeaponRotation *= Quaternion.Euler(0, 0, activeWeapon.heldRotationOffset);
@@ -263,8 +322,6 @@ public class WeaponSystem : MonoBehaviour
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
 
-                // 3. Position Off-Hand on Weapon
-                // Pass baseRotation to keep alignment clean
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
                 {
                     Transform offHand = limbController.GetLeftArmSlot();
@@ -287,18 +344,8 @@ public class WeaponSystem : MonoBehaviour
     {
         if (hand == null) return;
         
-        // --- FIX: Logic Simplified ---
-        // We take the raw Inspector offset (e.g. -0.3 X)
-        // We rotate it by the clean Aim Direction (baseRotation).
-        // This ensures the hand moves "Forward/Backward along the barrel" in world space,
-        // ignoring any weird scaling or sprite rotation hacks.
-        
         Vector3 worldOffset = baseRotation * secondaryGripOffset;
-
-        // Position relative to the Main Hand (weaponTransform.position)
         Vector3 targetPos = weaponTransform.position + worldOffset;
-        
-        // Rotation: Align with aim
         Quaternion targetRot = baseRotation * Quaternion.Euler(0, 0, 180f);
 
         hand.SetPositionAndRotation(targetPos, targetRot);

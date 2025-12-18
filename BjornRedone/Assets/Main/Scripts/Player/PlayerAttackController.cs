@@ -11,7 +11,7 @@ public class PlayerAttackController : MonoBehaviour
     [Header("Attack Settings")]
     [SerializeField] private LayerMask hittableLayers;
     [SerializeField] private float minPunchDelay = 0.15f;
-    [SerializeField] private float baseProjectileKnockback = 5f; // --- NEW ---
+    [SerializeField] private float baseProjectileKnockback = 5f; 
     
     [Header("Audio")]
     [SerializeField] private AudioSource actionAudioSource;
@@ -20,7 +20,6 @@ public class PlayerAttackController : MonoBehaviour
     private bool isAttackHeld = false;
     private bool isNextPunchLeft = true;
     
-    // Cooldowns
     private float leftArmCooldownTimer = 0f;
     private float rightArmCooldownTimer = 0f;
     private float globalCooldownTimer = 0f; 
@@ -88,10 +87,13 @@ public class PlayerAttackController : MonoBehaviour
         weaponSystem.SetCurrentWeaponCooldown(weapon.fireRate);
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-        Vector2 fireOrigin = transform.position; 
+        
+        // --- CHANGED: Use the muzzle point from WeaponSystem ---
+        Vector2 fireOrigin = weaponSystem.GetFirePoint();
+        // -------------------------------------------------------
+
         Vector2 aimDir = (mouseWorldPos - fireOrigin).normalized;
 
-        // Calculate knockback for bullet
         float finalKnockback = baseProjectileKnockback;
         if (weapon != null) finalKnockback *= weapon.knockbackMultiplier;
 
@@ -105,7 +107,6 @@ public class PlayerAttackController : MonoBehaviour
             
             if (projScript != null)
             {
-                // Pass calculated knockback
                 projScript.Initialize(finalDir, weapon.projectileSpeed, weapon.projectileDamage, finalKnockback, false);
             }
         }
@@ -273,24 +274,19 @@ public class PlayerAttackController : MonoBehaviour
         {
             Collider2D hit = hitBuffer[i];
             
-            // 1. Enemies
             if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
             {
                 enemy.TakeDamage(damage, dir);
-                // Apply Knockback to Enemy
                 if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D enemyRb))
                 {
-                    enemyRb.linearVelocity = Vector2.zero; // Reset for crisp impact
+                    enemyRb.linearVelocity = Vector2.zero; 
                     enemyRb.AddForce(dir * knockback, ForceMode2D.Impulse);
                 }
             }
-            // 2. Loot Containers
             else if (hit.TryGetComponent<LootContainer>(out LootContainer container))
             {
                 container.TakeDamage(damage, dir);
             }
-            // 3. Generic Physics Objects (e.g., Limbs, Weapons on the ground)
-            // Ensure we don't push ourselves
             else if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
             {
                 if (rb.bodyType == RigidbodyType2D.Dynamic && !hit.CompareTag("Player"))
