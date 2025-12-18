@@ -1,55 +1,79 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro; // Required for TextMeshPro
 
 public class WeaponHUD : MonoBehaviour
 {
-    [Header("Slot 1 Visuals")]
-    [Tooltip("The GameObject (e.g., a glow or highlighted frame) to show when Slot 1 is ACTIVE.")]
-    [SerializeField] private GameObject slot1ActiveObject;
-    [Tooltip("The GameObject (e.g., a dark frame) to show when Slot 1 is INACTIVE.")]
-    [SerializeField] private GameObject slot1InactiveObject;
-    [Tooltip("The UI element that displays the actual Weapon Icon (Pistol, Sword, etc.).")]
-    [SerializeField] private Image slot1Icon; // --- CHANGED back to Image (Sprite)
+    [Header("Weapon Slots")]
+    [SerializeField] private Image slot1Icon;
+    [SerializeField] private Image slot2Icon;
+    [SerializeField] private GameObject slot1Highlight;
+    [SerializeField] private GameObject slot2Highlight;
+    [SerializeField] private Color emptySlotColor = new Color(1, 1, 1, 0); // Transparent
+    [SerializeField] private Color filledSlotColor = Color.white;
 
-    [Header("Slot 2 Visuals")]
-    [Tooltip("The GameObject to show when Slot 2 is ACTIVE.")]
-    [SerializeField] private GameObject slot2ActiveObject;
-    [Tooltip("The GameObject to show when Slot 2 is INACTIVE.")]
-    [SerializeField] private GameObject slot2InactiveObject;
-    [Tooltip("The UI element that displays the actual Weapon Icon.")]
-    [SerializeField] private Image slot2Icon; // --- CHANGED back to Image (Sprite)
+    [Header("Ammo Display")]
+    [Tooltip("Text showing 'Current/Max' (e.g. 6/6)")]
+    [SerializeField] private TextMeshProUGUI clipText;
+    [Tooltip("Text showing total reserve ammo")]
+    [SerializeField] private TextMeshProUGUI reserveText;
+    [SerializeField] private GameObject ammoPanel; // Optional: To hide entire ammo section for melee
 
-    public void UpdateSlots(int activeIndex, WeaponData weapon1, WeaponData weapon2)
+    public void UpdateSlots(int activeIndex, WeaponData w1, WeaponData w2)
     {
-        // 1. Toggle Slot 1 Visuals
-        bool isSlot1Active = (activeIndex == 0);
-        if (slot1ActiveObject) slot1ActiveObject.SetActive(isSlot1Active);
-        if (slot1InactiveObject) slot1InactiveObject.SetActive(!isSlot1Active);
+        // Update Icons
+        UpdateIcon(slot1Icon, w1);
+        UpdateIcon(slot2Icon, w2);
 
-        // 2. Toggle Slot 2 Visuals
-        bool isSlot2Active = (activeIndex == 1);
-        if (slot2ActiveObject) slot2ActiveObject.SetActive(isSlot2Active);
-        if (slot2InactiveObject) slot2InactiveObject.SetActive(!isSlot2Active);
-
-        // 3. Update the Icons (The pictures of the weapons)
-        UpdateIcon(slot1Icon, weapon1);
-        UpdateIcon(slot2Icon, weapon2);
+        // Update Highlight
+        if (slot1Highlight) slot1Highlight.SetActive(activeIndex == 0);
+        if (slot2Highlight) slot2Highlight.SetActive(activeIndex == 1);
     }
 
-    private void UpdateIcon(Image iconImage, WeaponData data)
+    private void UpdateIcon(Image img, WeaponData data)
     {
-        if (iconImage == null) return;
+        if (img == null) return;
+
+        // FIX 1: Prevent icons from looking squashed/stretched
+        img.preserveAspect = true;
 
         if (data != null && data.icon != null)
         {
-            iconImage.sprite = data.icon;
-            iconImage.enabled = true;
-            iconImage.preserveAspect = true; // Keeps the weapon looking correct (not stretched)
+            img.sprite = data.icon;
+            img.color = filledSlotColor;
+            // FIX 2: Ensure the image component is actually enabled so it shows up
+            img.enabled = true; 
         }
         else
         {
-            iconImage.sprite = null;
-            iconImage.enabled = false;
+            img.sprite = null;
+            img.color = emptySlotColor;
+            // FIX 2: Disable the image component if empty/transparent to prevent ghosting
+            if (emptySlotColor.a <= 0.01f) 
+            {
+                img.enabled = false;
+            }
+        }
+    }
+
+    public void UpdateAmmo(int currentClip, int maxClip, int reserve, bool isRanged)
+    {
+        if (ammoPanel) ammoPanel.SetActive(isRanged);
+
+        if (isRanged)
+        {
+            if (clipText) clipText.text = $"{currentClip}/{maxClip}";
+            if (reserveText) reserveText.text = $"{reserve}";
+            
+            // Optional: Enable texts if panel isn't used
+            if (clipText) clipText.gameObject.SetActive(true);
+            if (reserveText) reserveText.gameObject.SetActive(true);
+        }
+        else
+        {
+            // Hide texts for melee
+            if (clipText) clipText.gameObject.SetActive(false);
+            if (reserveText) reserveText.gameObject.SetActive(false);
         }
     }
 }

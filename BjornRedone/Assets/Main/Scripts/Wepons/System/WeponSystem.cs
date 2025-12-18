@@ -8,12 +8,10 @@ public class WeaponSystem : MonoBehaviour
     [SerializeField] private WeaponData[] weaponSlots = new WeaponData[2]; 
     [SerializeField] private int activeSlotIndex = 0;
 
-    // --- NEW: Ammo Management ---
     [Header("Ammo")]
-    [SerializeField] private int totalReserveAmmo = 24; // Universal ammo pool
+    [SerializeField] private int totalReserveAmmo = 24; 
     [SerializeField] private int maxReserveAmmo = 99;
     
-    // Track ammo for each slot independently so switching doesn't magically reload
     private int[] slotAmmoCounts = new int[2]; 
     
     private bool isReloading = false;
@@ -25,7 +23,7 @@ public class WeaponSystem : MonoBehaviour
     [Header("References")]
     [SerializeField] private WeaponHUD weaponHUD; 
     [SerializeField] private SpriteRenderer heldWeaponRenderer;
-    [SerializeField] private AudioSource audioSource; // For reload sounds
+    [SerializeField] private AudioSource audioSource; 
 
     [Header("Main Hand Grip")]
     [SerializeField] private Vector3 rightHandGripOffset = new Vector3(0.3f, 0f, 0f);
@@ -51,7 +49,6 @@ public class WeaponSystem : MonoBehaviour
         cam = Camera.main;
         if (cam == null) cam = FindFirstObjectByType<Camera>();
         
-        // Initialize slots with 0 ammo if empty
         for(int i=0; i<2; i++) slotAmmoCounts[i] = 0;
     }
 
@@ -73,7 +70,6 @@ public class WeaponSystem : MonoBehaviour
         UpdateWeaponTransform();
     }
 
-    // --- NEW: Reload Logic ---
     private void HandleReloadLogic()
     {
         if (isReloading)
@@ -91,8 +87,8 @@ public class WeaponSystem : MonoBehaviour
         WeaponData activeWeapon = GetActiveWeapon();
         if (activeWeapon == null || activeWeapon.type != WeaponType.Ranged) return;
         if (isReloading) return;
-        if (slotAmmoCounts[activeSlotIndex] >= activeWeapon.magazineSize) return; // Full
-        if (totalReserveAmmo <= 0) return; // No ammo to reload with
+        if (slotAmmoCounts[activeSlotIndex] >= activeWeapon.magazineSize) return; 
+        if (totalReserveAmmo <= 0) return; 
 
         isReloading = true;
         reloadTimer = activeWeapon.reloadTime;
@@ -102,8 +98,9 @@ public class WeaponSystem : MonoBehaviour
             audioSource.PlayOneShot(activeWeapon.reloadSound);
         }
         
-        // Optional: Update HUD to show reloading status
-        // if (weaponHUD) weaponHUD.ShowReloading(true);
+        // Update HUD to reflect maybe a "Reloading..." state if you wanted, 
+        // for now we just keep showing numbers
+        UpdateAmmoUI();
     }
 
     private void FinishReload()
@@ -118,13 +115,13 @@ public class WeaponSystem : MonoBehaviour
         slotAmmoCounts[activeSlotIndex] += amountToLoad;
         totalReserveAmmo -= amountToLoad;
 
-        Debug.Log($"Reload Complete. Clip: {slotAmmoCounts[activeSlotIndex]}, Reserve: {totalReserveAmmo}");
+        UpdateAmmoUI();
     }
 
     public void AddReserveAmmo(int amount)
     {
         totalReserveAmmo = Mathf.Min(totalReserveAmmo + amount, maxReserveAmmo);
-        // Optional: Update HUD
+        UpdateAmmoUI();
     }
 
     public void ConsumeAmmo(int amount = 1)
@@ -132,9 +129,29 @@ public class WeaponSystem : MonoBehaviour
         if (activeSlotIndex >= 0 && activeSlotIndex < slotAmmoCounts.Length)
         {
             slotAmmoCounts[activeSlotIndex] = Mathf.Max(0, slotAmmoCounts[activeSlotIndex] - amount);
+            UpdateAmmoUI();
         }
     }
-    // -------------------------
+
+    private void UpdateAmmoUI()
+    {
+        if (weaponHUD == null) return;
+
+        WeaponData activeWeapon = GetActiveWeapon();
+        if (activeWeapon != null && activeWeapon.type == WeaponType.Ranged)
+        {
+            weaponHUD.UpdateAmmo(
+                slotAmmoCounts[activeSlotIndex], 
+                activeWeapon.magazineSize, 
+                totalReserveAmmo, 
+                true
+            );
+        }
+        else
+        {
+            weaponHUD.UpdateAmmo(0, 0, totalReserveAmmo, false);
+        }
+    }
 
     public Vector2 GetFirePoint()
     {
@@ -154,12 +171,9 @@ public class WeaponSystem : MonoBehaviour
 
     public float GetCurrentWeaponCooldown() { return activeSlotIndex >= 0 ? slotCooldowns[activeSlotIndex] : 0f; }
     public void SetCurrentWeaponCooldown(float time) { if (activeSlotIndex >= 0) slotCooldowns[activeSlotIndex] = time; }
-
-    // --- NEW: Ammo Getters ---
     public int GetCurrentClipAmmo() { return activeSlotIndex >= 0 ? slotAmmoCounts[activeSlotIndex] : 0; }
     public int GetTotalReserveAmmo() { return totalReserveAmmo; }
     public bool IsReloading() { return isReloading; }
-    // -------------------------
 
     private void HandleInput()
     {
@@ -176,21 +190,15 @@ public class WeaponSystem : MonoBehaviour
         }
 
         if (Keyboard.current.qKey.wasPressedThisFrame) ThrowActiveWeapon();
-        
-        // Manual Reload Key
         if (Keyboard.current.rKey.wasPressedThisFrame) StartReload();
     }
 
     private void ThrowActiveWeapon()
     {
         if (!IsHoldingWeapon()) return;
-        
-        // Cancel reload if throwing
         isReloading = false; 
-
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
-
         DropWeapon(activeSlotIndex, throwDir, throwForce);
     }
 
@@ -198,10 +206,7 @@ public class WeaponSystem : MonoBehaviour
     {
         if (index < 0 || index >= weaponSlots.Length) return;
         if (activeSlotIndex == index) return;
-        
-        // Cancel reload if switching
         isReloading = false;
-        
         activeSlotIndex = index;
         UpdateState();
     }
@@ -232,12 +237,8 @@ public class WeaponSystem : MonoBehaviour
 
         weaponSlots[activeSlotIndex] = newData;
         slotCooldowns[activeSlotIndex] = 0f; 
-        
-        // --- NEW: Initialize Ammo on Pickup ---
-        // Give a full clip for the new weapon
         slotAmmoCounts[activeSlotIndex] = newData.magazineSize; 
         isReloading = false;
-        // --------------------------------------
 
         UpdateState();
         return true;
@@ -251,7 +252,7 @@ public class WeaponSystem : MonoBehaviour
 
         weaponSlots[slotIndex] = null;
         slotCooldowns[slotIndex] = 0f; 
-        slotAmmoCounts[slotIndex] = 0; // Clear ammo in that slot
+        slotAmmoCounts[slotIndex] = 0; 
 
         if (weaponToDrop.pickupPrefab != null)
         {
@@ -269,7 +270,11 @@ public class WeaponSystem : MonoBehaviour
 
     private void UpdateState()
     {
-        if (weaponHUD != null) weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
+        if (weaponHUD != null)
+        {
+            weaponHUD.UpdateSlots(activeSlotIndex, weaponSlots[0], weaponSlots[1]);
+            UpdateAmmoUI(); // --- NEW: Update Ammo Text when switching state
+        }
         
         if (currentEquippedInstance != null)
         {
