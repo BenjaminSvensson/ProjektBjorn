@@ -20,6 +20,7 @@ public class WeaponSystem : MonoBehaviour
     [SerializeField] private Vector3 leftHandGripOffset = new Vector3(0.3f, 0f, 0f);
 
     [Header("Off-Hand Grip")]
+    [Tooltip("Distance of the off-hand relative to the weapon pivot, aligned with the aim direction.")]
     [SerializeField] private Vector3 secondaryGripOffset = new Vector3(-0.3f, 0f, 0f);
 
     private PlayerLimbController limbController;
@@ -220,7 +221,7 @@ public class WeaponSystem : MonoBehaviour
         Vector3 gripOffset = Vector3.zero;
         WeaponData activeWeapon = weaponSlots[activeSlotIndex];
 
-        // 1. Determine Main Hand (WeaponSystem prioritizes Right)
+        // 1. Determine Main Hand
         if (limbController.GetArmData(false) != null) // Right
         {
             mainAnchor = limbController.GetRightArmSlot();
@@ -239,7 +240,7 @@ public class WeaponSystem : MonoBehaviour
         {
             Vector3 targetPos = mainAnchor.TransformPoint(gripOffset);
             
-            // A. Base Rotation (Align weapon "forward" with arm)
+            // A. Base Rotation (Align weapon "forward" with arm/aim)
             Quaternion baseRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
 
             // B. FLIP FIX: If player is facing left, flip 180 on Y axis
@@ -250,7 +251,7 @@ public class WeaponSystem : MonoBehaviour
 
             Quaternion finalWeaponRotation = baseRotation;
 
-            // C. Apply Custom Offset (After the flip logic)
+            // C. Apply Custom Visual Offset for Sprite
             if (activeWeapon != null && activeWeapon.heldRotationOffset != 0f)
             {
                 finalWeaponRotation *= Quaternion.Euler(0, 0, activeWeapon.heldRotationOffset);
@@ -263,16 +264,16 @@ public class WeaponSystem : MonoBehaviour
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
 
                 // 3. Position Off-Hand on Weapon
-                // We pass 'baseRotation' to ensure alignment with the arm/aim, not the sprite
+                // Pass baseRotation to keep alignment clean
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
                 {
                     Transform offHand = limbController.GetLeftArmSlot();
-                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale, baseRotation);
+                    SnapOffHand(offHand, heldWeaponRenderer.transform, baseRotation);
                 }
                 else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
                 {
                     Transform offHand = limbController.GetRightArmSlot();
-                    SnapOffHand(offHand, heldWeaponRenderer.transform, activeWeapon.heldScale, baseRotation);
+                    SnapOffHand(offHand, heldWeaponRenderer.transform, baseRotation);
                 }
             }
             else
@@ -282,22 +283,19 @@ public class WeaponSystem : MonoBehaviour
         }
     }
 
-    private void SnapOffHand(Transform hand, Transform weaponTransform, Vector3 weaponScale, Quaternion baseRotation)
+    private void SnapOffHand(Transform hand, Transform weaponTransform, Quaternion baseRotation)
     {
         if (hand == null) return;
         
-        // --- FIX: Use Base Rotation for Position Calculation ---
+        // --- FIX: Logic Simplified ---
+        // We take the raw Inspector offset (e.g. -0.3 X)
+        // We rotate it by the clean Aim Direction (baseRotation).
+        // This ensures the hand moves "Forward/Backward along the barrel" in world space,
+        // ignoring any weird scaling or sprite rotation hacks.
         
-        // 1. Scale the offset based on the weapon size (so if gun is big, hand is further away)
-        // We use component-wise scaling.
-        Vector3 scaledOffset = Vector3.Scale(secondaryGripOffset, weaponScale);
+        Vector3 worldOffset = baseRotation * secondaryGripOffset;
 
-        // 2. Rotate the offset by the Clean Base Rotation (Aim Direction)
-        // This ignores the 'heldRotationOffset' used to fix sprite drawing angles.
-        // It ensures the off-hand stays on the "Line of Fire" even if the sprite is twisted.
-        Vector3 worldOffset = baseRotation * scaledOffset;
-
-        // 3. Apply
+        // Position relative to the Main Hand (weaponTransform.position)
         Vector3 targetPos = weaponTransform.position + worldOffset;
         
         // Rotation: Align with aim
