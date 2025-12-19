@@ -16,7 +16,7 @@ public class WeaponHUD : MonoBehaviour
     [SerializeField] private TextMeshProUGUI clipText;
     [Tooltip("Text showing total reserve ammo")]
     [SerializeField] private TextMeshProUGUI reserveText;
-    [SerializeField] private GameObject ammoPanel; // Optional: To hide entire ammo section for melee
+    [SerializeField] private GameObject ammoPanel; // Optional: To hide entire ammo section
 
     public void UpdateSlots(int activeIndex, WeaponData w1, WeaponData w2)
     {
@@ -50,22 +50,28 @@ public class WeaponHUD : MonoBehaviour
 
     public void UpdateAmmo(int currentClip, int maxClip, int reserve, bool isRanged)
     {
-        if (ammoPanel) ammoPanel.SetActive(isRanged);
+        // Ensure the panel is visible so we can see the reserve text
+        if (ammoPanel) ammoPanel.SetActive(true);
 
-        if (isRanged)
+        // 1. Always show Reserve Ammo (Total bullets)
+        if (reserveText)
         {
-            if (clipText) clipText.text = $"{currentClip}/{maxClip}";
-            if (reserveText) reserveText.text = $"{reserve}";
-            
-            // Optional: Enable texts if panel isn't used
-            if (clipText) clipText.gameObject.SetActive(true);
-            if (reserveText) reserveText.gameObject.SetActive(true);
+            reserveText.text = $"{reserve}";
+            reserveText.gameObject.SetActive(true);
         }
-        else
+
+        // 2. Only show Clip Ammo (Current mag) if holding a gun
+        if (clipText)
         {
-            // Hide texts for melee
-            if (clipText) clipText.gameObject.SetActive(false);
-            if (reserveText) reserveText.gameObject.SetActive(false);
+            if (isRanged)
+            {
+                clipText.text = $"{currentClip}/{maxClip}";
+                clipText.gameObject.SetActive(true);
+            }
+            else
+            {
+                clipText.gameObject.SetActive(false);
+            }
         }
     }
 }

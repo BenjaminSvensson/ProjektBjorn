@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
+[RequireComponent(typeof(Rigidbody2D))] // Now requires Rigidbody for physics
 public class BulletPickup : MonoBehaviour
 {
     [Header("Settings")]
@@ -8,44 +9,39 @@ public class BulletPickup : MonoBehaviour
     [SerializeField] private int ammoAmount = 10;
     [SerializeField] private AudioClip pickupSound;
     
-    [Header("Visuals")]
-    [SerializeField] private bool rotate = true;
-    [SerializeField] private float rotationSpeed = 90f;
-    [SerializeField] private float bobSpeed = 2f;
-    [SerializeField] private float bobAmount = 0.1f;
+    [Header("Physics")]
+    [SerializeField] private float groundFriction = 3f;
 
-    private Vector3 startPos;
+    private Rigidbody2D rb;
 
-    void Start()
+    void Awake()
     {
-        startPos = transform.position;
+        rb = GetComponent<Rigidbody2D>();
+        // Ensure top-down physics behavior
+        rb.gravityScale = 0f; 
+        rb.linearDamping = groundFriction;
+        rb.freezeRotation = false; // Allow it to spin if hit
     }
 
-    void Update()
+    // --- UPDATED: Uses Collision instead of Trigger ---
+    void OnCollisionEnter2D(Collision2D collision)
     {
-        if (rotate)
+        // Check if we hit the player
+        if (collision.gameObject.CompareTag("Player"))
         {
-            transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
-        }
-        
-        float newY = startPos.y + Mathf.Sin(Time.time * bobSpeed) * bobAmount;
-        transform.position = new Vector3(transform.position.x, newY, transform.position.z);
-    }
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            WeaponSystem ws = other.GetComponent<WeaponSystem>();
+            WeaponSystem ws = collision.gameObject.GetComponent<WeaponSystem>();
             if (ws != null)
             {
+                // Add ammo
                 ws.AddReserveAmmo(ammoAmount);
                 
+                // Play Sound
                 if (pickupSound != null)
                 {
                     AudioSource.PlayClipAtPoint(pickupSound, transform.position);
                 }
                 
+                // Destroy object
                 Destroy(gameObject);
             }
         }

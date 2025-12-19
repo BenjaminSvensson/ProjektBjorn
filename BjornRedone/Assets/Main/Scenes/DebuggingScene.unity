@@ -2380,7 +2380,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.06\n\nGameTestControlls:\nT - Restart Scene\nY-
+  m_text: "ProjektBj\xF6rn Devbuild 0.061\n\nGameTestControlls:\nT - Restart Scene\nY-
     Regenerate Map\nTab - ToggleDebugConsole\n\nGeneralControlls:\nR - Reload\nNolegs
     = Crawl (Drag)LMB\n\nFirst time instructions:\n(All interactions currently done
     on collision)\n\"Attack dumpsters for loot\"\n"
