@@ -107,6 +107,7 @@ MonoBehaviour:
   shadowGameObject: {fileID: 7221240211202065772}
   throwForce: 1
   pickupDelay: 0.5
+  groundFriction: 5
   brokenLimbLifetime: 10
   maxDistanceToPlayer: 40
   interactionText: Pick Up Limb
@@ -243,8 +244,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 2
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -4854678462795146355, guid: 1f97a27f475d5444b8dbf1c4871df38d, type: 3}
-  m_Color: {r: 1, g: 0.3726415, b: 0.3726415, a: 1}
+  m_Sprite: {fileID: -1711333510427708155, guid: 92ec4368c3353f04da45acff0c95f3ec, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -334,8 +335,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -4854678462795146355, guid: 1f97a27f475d5444b8dbf1c4871df38d, type: 3}
-  m_Color: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
+  m_Sprite: {fileID: 7635819898016182144, guid: 0d6aef1d56c100646ba212c7726aa193, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
