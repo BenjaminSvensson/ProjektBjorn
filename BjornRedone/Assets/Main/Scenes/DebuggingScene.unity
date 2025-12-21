@@ -2205,7 +2205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 30
+  totalRooms: 10
   numberOfBossRooms: 1
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 20
@@ -2230,7 +2230,7 @@ MonoBehaviour:
     minDistanceReq: 0
   - name: Hedgehog
     prefab: {fileID: 8447582695004223394, guid: 22733423fca786e4bac7110703f6ea8d, type: 3}
-    cost: 4
+    cost: 6
     minDistanceReq: 2
   baseEnemyBudget: 2
   enemyBudgetPerDistance: 2
@@ -2261,6 +2261,8 @@ MonoBehaviour:
     minScale: 0.9
     maxScale: 1.1
   propSpawnAttemptsPerUnit: 0.1
+  spawnPropsInBossRooms: 0
+  preventPropSpawningInRooms: []
 --- !u!4 &1818502933
 Transform:
   m_ObjectHideFlags: 0

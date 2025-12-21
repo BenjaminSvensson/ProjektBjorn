@@ -51,6 +51,12 @@ public class LevelGenerator : MonoBehaviour
     [Header("Environment Population")]
     [SerializeField] private List<EnvironmentProp> environmentProps;
     [SerializeField] private float propSpawnAttemptsPerUnit = 0.1f;
+    
+    [Header("Exceptions")]
+    [Tooltip("If false, Boss Rooms will always be empty of props (debris/rocks).")]
+    [SerializeField] private bool spawnPropsInBossRooms = false;
+    [Tooltip("Drag specific Room Prefabs here to prevent props from ever spawning inside them (e.g. Puzzle Rooms).")]
+    [SerializeField] private List<Room> preventPropSpawningInRooms;
 
     // --- Virtual Data Structures ---
     private class RoomNode
@@ -85,7 +91,7 @@ public class LevelGenerator : MonoBehaviour
     {
         if (Keyboard.current == null) return;
 
-        // --- CHANGED: Moved Debug Regen to 'Y' so 'R' can be used for Reloading ---
+        // Debug Regen on 'Y'
         if (Keyboard.current.yKey.wasPressedThisFrame)
         {
             Debug.Log("--- [DEBUG] Regenerating Level... ---");
@@ -287,6 +293,9 @@ public class LevelGenerator : MonoBehaviour
         {
             Vector2Int pos = kvp.Key;
             Room room = kvp.Value;
+            
+            // Find the original node data to check properties
+            RoomNode originalNode = finalLayout.Find(n => n.gridPos == pos);
 
             if (worldGrid.ContainsKey(pos + Vector2Int.up)) room.OpenDoor(Direction.Top);
             if (worldGrid.ContainsKey(pos + Vector2Int.down)) room.OpenDoor(Direction.Bottom);
@@ -295,12 +304,31 @@ public class LevelGenerator : MonoBehaviour
 
             // Populate
             int dist = Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
-            if (dist > 0) // Skip start room
-            {
-                // Spawning Props First to ensure enemies don't spawn in traps
-                if (environmentProps != null)
-                    room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
 
+            // --- PROP SPAWNING LOGIC ---
+            bool allowProps = true;
+
+            // 1. Never spawn in start room (dist 0)
+            if (dist == 0) allowProps = false;
+            
+            // 2. Check Boss Room settings
+            if (originalNode != null && originalNode.isBossRoom && !spawnPropsInBossRooms) allowProps = false;
+
+            // 3. Check specific exclusions
+            if (preventPropSpawningInRooms != null && originalNode != null)
+            {
+                if (preventPropSpawningInRooms.Contains(originalNode.roomPrefab)) 
+                    allowProps = false;
+            }
+
+            if (allowProps && environmentProps != null)
+            {
+                room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
+            }
+
+            // --- ENEMY SPAWNING LOGIC ---
+            if (dist > 0) // Skip start room for enemies
+            {
                 int budget = baseEnemyBudget + (dist * enemyBudgetPerDistance);
                 if (enemySpawnList != null && enemySpawnList.Count > 0)
                     room.SpawnEnemies(enemySpawnList, budget, roomSize);
