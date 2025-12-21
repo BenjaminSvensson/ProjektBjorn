@@ -150,7 +150,7 @@ GameObject:
   - component: {fileID: 1794186665976822846}
   - component: {fileID: 3293985558420901034}
   m_Layer: 0
-  m_Name: RoomUpLeftVariant
+  m_Name: 6RoomUpLeftVariant
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
