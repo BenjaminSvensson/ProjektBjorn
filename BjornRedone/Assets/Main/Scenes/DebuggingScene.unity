@@ -2174,7 +2174,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IngameDebugConsole
   toggleKey: 3
   maxLogCount: 50
-  persistBetweenScenes: 1
+  persistBetweenScenes: 0
 --- !u!1 &1818502931
 GameObject:
   m_ObjectHideFlags: 0
@@ -2431,10 +2431,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.061\n\nGameTestControlls:\nT - Restart Scene\nY-
+  m_text: "ProjektBj\xF6rn Devbuild 0.062\n\nGameTestControlls:\nT - Restart Scene\nY-
     Regenerate Map\nTab - ToggleDebugConsole\n\nGeneralControlls:\nR - Reload\nNolegs
-    = Crawl (Drag)LMB\n\nFirst time instructions:\n(All interactions currently done
-    on collision)\n\"Attack dumpsters for loot\"\n"
+    = Crawl (Drag)LMB\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2699,6 +2698,10 @@ PrefabInstance:
       propertyPath: weaponHUD
       value: 
       objectReference: {fileID: 1547191498}
+    - target: {fileID: 8312205855467314670, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: interactionRange
+      value: 2.5
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
