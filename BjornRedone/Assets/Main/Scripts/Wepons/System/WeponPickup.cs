@@ -2,7 +2,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
-public class WeaponPickup : MonoBehaviour
+public class WeaponPickup : MonoBehaviour, IInteractable
 {
     [Header("Weapon Data")]
     public WeaponData weaponData;
@@ -23,8 +23,7 @@ public class WeaponPickup : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Stop "flying" state when slow enough, allowing pickup
-        // This prevents instantly picking up the weapon you just threw
+        // Stop "flying" state when slow enough
         if (isFlying && rb.linearVelocity.sqrMagnitude < 1f)
         {
             isFlying = false;
@@ -37,20 +36,31 @@ public class WeaponPickup : MonoBehaviour
         {
             rb.AddForce(direction * force, ForceMode2D.Impulse);
             rb.angularVelocity = Random.Range(-rotationSpeed, rotationSpeed);
-            isFlying = true; // Mark as flying so we can't pick it up instantly
+            isFlying = true; 
         }
     }
 
-    public bool CanPickup()
+    // --- IInteractable Implementation ---
+
+    public string GetInteractionPrompt()
     {
-        return !isFlying;
+        return weaponData != null ? $"Pick up {weaponData.weaponName}" : "Pick up Weapon";
     }
 
-    public WeaponData GetWeaponData()
+    public void Interact(GameObject interactor)
     {
-        return weaponData;
+        if (isFlying) return; // Can't grab while it's flying through the air
+
+        WeaponSystem weaponSystem = interactor.GetComponent<WeaponSystem>();
+        if (weaponSystem != null)
+        {
+            if (weaponSystem.TryPickupWeapon(weaponData))
+            {
+                Destroy(gameObject);
+            }
+        }
     }
 
-    // REMOVED OnTriggerEnter2D to prevent double-pickup logic (duplication bug).
-    // The PlayerCollision script handles the pickup interaction centrally.
+    // Explicit implementation for the Interface property
+    Transform IInteractable.transform => transform;
 }

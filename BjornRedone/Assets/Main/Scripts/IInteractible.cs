@@ -1,19 +1,13 @@
 using UnityEngine;
 
-/// <summary>
-/// A contract for any object in the game that can be interacted with
-/// by the player (e.g., limbs, chests, doors, bushes).
-/// </summary>
 public interface IInteractable
 {
-    /// <summary>
-    /// The text to display on the prompt (e.g., "Pick up Limb", "Shake Bush").
-    /// </summary>
-    string InteractionPromptText { get; }
+    // Returns the text to display (e.g. "Pick Up Shotgun")
+    string GetInteractionPrompt();
 
-    /// <summary>
-    /// This is the main function called when the player interacts with this object.
-    /// </summary>
-    /// <param name="player">A reference to the player's limb controller.</param>
-    void Interact(PlayerLimbController player);
+    // The action to perform. 'interactor' is usually the Player GameObject.
+    void Interact(GameObject interactor);
+
+    // Used to calculate distance
+    Transform transform { get; }
 }

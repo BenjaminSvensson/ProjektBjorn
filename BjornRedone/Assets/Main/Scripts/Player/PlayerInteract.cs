@@ -1,50 +1,30 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Linq; // We need this to order objects by distance
+using TMPro; 
 
-/// <summary>
-/// This script, placed on the Player, scans for the nearest IInteractable object
-/// and handles the "Interact" input.
-/// 
-/// REQUIRES:
-/// 1. A child GameObject with a UI Text/TextMeshPro component for the prompt.
-/// 2. The player must have the "Interact" action set up in their InputSystem_Actions.
-/// 3. Interactable objects must be on a specific layer (e.g., "Interactable").
-/// </summary>
 public class PlayerInteract : MonoBehaviour
 {
     [Header("Interaction Settings")]
     [Tooltip("The maximum range the player can interact from.")]
     [SerializeField] private float interactionRange = 2f;
-    [Tooltip("The layer(s) that contain interactable objects.")]
+    [Tooltip("The layer(s) that contain interactable objects (Weapons, Levers, Shop Items).")]
     [SerializeField] private LayerMask interactableLayer;
 
-    [Header("Required References")]
-    [Tooltip("A reference to the player's main limb controller.")]
-    [SerializeField] private PlayerLimbController limbController;
-    [Tooltip("A reference to the UI prompt GameObject (e.g., a text box).")]
+    [Header("UI")]
+    [Tooltip("Reference to the GameObject that shows 'Press F to Pickup'.")]
     [SerializeField] private GameObject interactionPrompt;
+    [SerializeField] private TextMeshProUGUI promptText;
 
-    // --- Private State ---
     private InputSystem_Actions playerControls;
     private IInteractable currentInteractable;
-    private UnityEngine.UI.Text promptText; // Use this if using standard UI Text
-    // private TMPro.TextMeshProUGUI promptText; // Use this if using TextMeshPro
 
     void Awake()
     {
         playerControls = new InputSystem_Actions();
-        if (limbController == null)
-            limbController = GetComponent<PlayerLimbController>();
         
         if (interactionPrompt != null)
         {
-            // Get the text component from the prompt object
-            promptText = interactionPrompt.GetComponent<UnityEngine.UI.Text>();
-            // If using TextMeshPro, use this line instead:
-            // promptText = interactionPrompt.GetComponent<TMPro.TextMeshProUGUI>();
-            
-            // Start with the prompt hidden
+            if (promptText == null) promptText = interactionPrompt.GetComponentInChildren<TextMeshProUGUI>();
             interactionPrompt.SetActive(false);
         }
     }
@@ -66,12 +46,8 @@ public class PlayerInteract : MonoBehaviour
         FindNearestInteractable();
     }
 
-    /// <summary>
-    /// Scans for the nearest interactable object and updates the UI prompt.
-    /// </summary>
     private void FindNearestInteractable()
     {
-        // Find all colliders within range on the specified layer
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, interactionRange, interactableLayer);
         
         IInteractable nearest = null;
@@ -79,10 +55,13 @@ public class PlayerInteract : MonoBehaviour
 
         foreach (Collider2D col in colliders)
         {
-            // Check if this object implements the IInteractable interface
-            if (col.TryGetComponent<IInteractable>(out IInteractable interactable))
+            // Check for IInteractable on the object or its parent
+            IInteractable interactable = col.GetComponent<IInteractable>();
+            if (interactable == null) interactable = col.GetComponentInParent<IInteractable>();
+
+            if (interactable != null)
             {
-                float distance = Vector2.Distance(transform.position, col.transform.position);
+                float distance = Vector2.Distance(transform.position, interactable.transform.position);
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -91,7 +70,6 @@ public class PlayerInteract : MonoBehaviour
             }
         }
 
-        // Check if the nearest interactable has changed
         if (nearest != currentInteractable)
         {
             currentInteractable = nearest;
@@ -99,43 +77,38 @@ public class PlayerInteract : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Updates the UI prompt's text and visibility.
-    /// </summary>
     private void UpdatePrompt()
     {
-        if (interactionPrompt == null || promptText == null) return;
+        if (interactionPrompt == null) return;
 
         if (currentInteractable != null)
         {
-            // We have a target, show the prompt
-            promptText.text = currentInteractable.InteractionPromptText;
             interactionPrompt.SetActive(true);
+            if (promptText != null)
+            {
+                promptText.text = $"[F] {currentInteractable.GetInteractionPrompt()}";
+            }
         }
         else
         {
-            // No target, hide the prompt
             interactionPrompt.SetActive(false);
         }
     }
 
-    /// <summary>
-    /// Called when the "Interact" input action is pressed.
-    /// </summary>
     private void OnInteract(InputAction.CallbackContext context)
     {
-        // If we have a valid interactable object in range, call its Interact method
         if (currentInteractable != null)
         {
-            currentInteractable.Interact(limbController);
+            // Pass the Player GameObject as the interactor
+            currentInteractable.Interact(gameObject);
             
-            // After interacting, clear the target and hide the prompt
+            // Clear current interactable immediately to avoid double-press issues
+            // It will be found again next frame if it wasn't destroyed
             currentInteractable = null;
             UpdatePrompt();
         }
     }
 
-    // Optional: Draw a gizmo in the editor to see the interaction range
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
