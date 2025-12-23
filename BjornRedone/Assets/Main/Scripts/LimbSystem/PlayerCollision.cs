@@ -52,7 +52,8 @@ public class PlayerCollision : MonoBehaviour
         {
             if (weaponSystem != null)
             {
-                bool pickedUp = weaponSystem.TryPickupWeapon(weaponPickup.GetWeaponData());
+                // --- UPDATED: Pass the persistent ammo count from the pickup ---
+                bool pickedUp = weaponSystem.TryPickupWeapon(weaponPickup.GetWeaponData(), weaponPickup.currentAmmoCount);
                 if (pickedUp)
                 {
                     Destroy(otherObj);

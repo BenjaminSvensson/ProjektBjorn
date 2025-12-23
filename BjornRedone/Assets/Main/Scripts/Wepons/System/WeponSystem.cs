@@ -226,7 +226,8 @@ public class WeaponSystem : MonoBehaviour
     public WeaponData GetActiveWeapon() { return weaponSlots[activeSlotIndex]; }
     public bool IsHoldingWithRightHand() { return isHoldingWithRightHand; }
 
-    public bool TryPickupWeapon(WeaponData newData)
+    // --- UPDATED: Accepts specific ammo amount for the magazine ---
+    public bool TryPickupWeapon(WeaponData newData, int loadedAmmo)
     {
         if (newData == null) return false;
         if (limbController != null && !limbController.CanAttack()) return false;
@@ -235,7 +236,10 @@ public class WeaponSystem : MonoBehaviour
 
         weaponSlots[activeSlotIndex] = newData;
         slotCooldowns[activeSlotIndex] = 0f; 
-        slotAmmoCounts[activeSlotIndex] = newData.magazineSize; 
+        
+        // Use the pickup's ammo state
+        slotAmmoCounts[activeSlotIndex] = loadedAmmo; 
+        
         isReloading = false;
 
         UpdateState();
@@ -248,6 +252,9 @@ public class WeaponSystem : MonoBehaviour
         WeaponData weaponToDrop = weaponSlots[slotIndex];
         if (weaponToDrop == null) return;
 
+        // Capture current ammo before clearing it
+        int currentAmmo = slotAmmoCounts[slotIndex];
+
         weaponSlots[slotIndex] = null;
         slotCooldowns[slotIndex] = 0f; 
         slotAmmoCounts[slotIndex] = 0; 
@@ -259,7 +266,8 @@ public class WeaponSystem : MonoBehaviour
             if (pickupScript != null)
             {
                 Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
-                pickupScript.InitializeDrop(finalDir, force);
+                // Pass current ammo to the drop
+                pickupScript.InitializeDrop(finalDir, force, currentAmmo);
             }
         }
 
@@ -336,7 +344,6 @@ public class WeaponSystem : MonoBehaviour
 
         if (mainAnchor != null)
         {
-            // --- NEW: Apply heldPositionOffset ---
             Vector3 finalGripOffset = gripOffset;
             if (activeWeapon != null)
             {

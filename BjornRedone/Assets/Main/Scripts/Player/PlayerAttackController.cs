@@ -130,10 +130,25 @@ public class PlayerAttackController : MonoBehaviour
     {
         if (weapon.projectilePrefab == null) return;
         
-        // Consume Ammo
-        weaponSystem.ConsumeAmmo(1);
+        int availableAmmo = weaponSystem.GetCurrentClipAmmo();
+        int projectilesToFire = weapon.projectilesPerShot;
+
+        // --- UPDATED: Cap projectiles to ammo available ---
+        // If gun shoots 5 pellets but has 3 ammo, fire 3 pellets.
+        if (projectilesToFire > availableAmmo)
+        {
+            projectilesToFire = availableAmmo;
+        }
+
+        if (projectilesToFire <= 0) return;
+
+        // Consume exact amount of ammo (1 bullet = 1 ammo)
+        weaponSystem.ConsumeAmmo(projectilesToFire);
         
-        weaponSystem.SetCurrentWeaponCooldown(weapon.fireRate);
+        // --- UPDATED: Safety Minimum Cooldown ---
+        // Prevents instant mag dumping if fireRate is 0 in Inspector
+        float cooldown = Mathf.Max(weapon.fireRate, 0.1f);
+        weaponSystem.SetCurrentWeaponCooldown(cooldown);
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
@@ -142,7 +157,8 @@ public class PlayerAttackController : MonoBehaviour
         float finalKnockback = baseProjectileKnockback;
         if (weapon != null) finalKnockback *= weapon.knockbackMultiplier;
 
-        for (int i = 0; i < weapon.projectilesPerShot; i++)
+        // Loop only for the amount of projectiles we can actually afford
+        for (int i = 0; i < projectilesToFire; i++)
         {
             float currentSpread = Random.Range(-weapon.spread / 2f, weapon.spread / 2f);
             Vector2 finalDir = Quaternion.Euler(0, 0, currentSpread) * aimDir;
@@ -171,7 +187,6 @@ public class PlayerAttackController : MonoBehaviour
     {
         if (globalCooldownTimer > 0) return;
 
-        // --- FIX 1: Respect weapon cooldown here too ---
         if (meleeWeapon != null && weaponSystem != null && weaponSystem.GetCurrentWeaponCooldown() > 0) return;
 
         LimbData leftData = limbController.GetArmData(true);
@@ -197,11 +212,8 @@ public class PlayerAttackController : MonoBehaviour
                 ExecuteMelee(mainArm, mainData, !isRightMain, meleeWeapon, speedMult, true, totalDamage);
 
                 float fullCooldown = mainData.attackCooldown / Mathf.Max(0.1f, speedMult);
-                float swingDuration = mainData.punchDuration / Mathf.Max(0.1f, speedMult);
-                
                 weaponSystem.SetCurrentWeaponCooldown(fullCooldown);
                 
-                // --- FIX 2: Set arm cooldowns to FULL cooldown, not just animation duration ---
                 leftArmCooldownTimer = fullCooldown;
                 rightArmCooldownTimer = fullCooldown;
                 globalCooldownTimer = minPunchDelay;
@@ -266,8 +278,6 @@ public class PlayerAttackController : MonoBehaviour
             if (weapon != null)
             {
                 weaponSystem.SetCurrentWeaponCooldown(calculatedCooldown);
-                
-                // --- FIX 3: Ensure arms get the full cooldown when using weapon singly ---
                 if (isLeftArm) leftArmCooldownTimer = calculatedCooldown; 
                 else rightArmCooldownTimer = calculatedCooldown;
             }
