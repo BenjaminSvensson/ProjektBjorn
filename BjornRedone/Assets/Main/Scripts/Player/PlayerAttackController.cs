@@ -18,14 +18,13 @@ public class PlayerAttackController : MonoBehaviour
 
     private InputSystem_Actions playerControls;
     private bool isAttackHeld = false;
-    private bool hasFiredSincePress = false; // --- NEW: Tracks semi-auto firing ---
+    private bool hasFiredSincePress = false; 
     private bool isNextPunchLeft = true;
     
     private float leftArmCooldownTimer = 0f;
     private float rightArmCooldownTimer = 0f;
     private float globalCooldownTimer = 0f; 
     
-    // Timer to prevent click sound spam
     private float clickSoundCooldownTimer = 0f;
     
     private Camera cam;
@@ -48,8 +47,6 @@ public class PlayerAttackController : MonoBehaviour
     private void HandleAttack(InputAction.CallbackContext callbackContext)
     {
         isAttackHeld = callbackContext.performed;
-        
-        // --- NEW: Reset the trigger flag whenever we press the button ---
         if (callbackContext.performed)
         {
             hasFiredSincePress = false;
@@ -88,44 +85,35 @@ public class PlayerAttackController : MonoBehaviour
 
     private void HandleRangedInput(WeaponData weapon)
     {
-        // --- NEW: Check for Semi-Auto Logic ---
         if (!weapon.allowHoldToFire && hasFiredSincePress) return;
 
-        // 1. Check Fire Rate Cooldown first (always applies)
         if (weaponSystem.GetCurrentWeaponCooldown() > 0) return;
 
-        // 2. Check Reloading State
         if (weaponSystem.IsReloading())
         {
             TryPlayEmptySound(weapon);
             return;
         }
 
-        // 3. Check Ammo
         int currentAmmo = weaponSystem.GetCurrentClipAmmo();
         if (currentAmmo <= 0)
         {
-            // Empty Clip
             if (weaponSystem.GetTotalReserveAmmo() > 0)
             {
-                // Has reserve? Start Reloading automatically
                 weaponSystem.StartReload();
             }
             else
             {
-                // No reserve? Click sound.
                 TryPlayEmptySound(weapon);
             }
             return;
         }
 
-        // 4. Fire!
         FireRangedWeapon(weapon);
     }
 
     private void TryPlayEmptySound(WeaponData weapon)
     {
-        // Don't spam empty click for semi-auto if holding
         if (!weapon.allowHoldToFire && hasFiredSincePress) return;
 
         if (clickSoundCooldownTimer <= 0 && weapon.emptyClickSound != null)
@@ -136,8 +124,6 @@ public class PlayerAttackController : MonoBehaviour
                 actionAudioSource.PlayOneShot(weapon.emptyClickSound, 0.6f);
             }
             clickSoundCooldownTimer = 0.2f; 
-            
-            // Mark as "action taken" for semi-auto so it doesn't click every frame
             if (!weapon.allowHoldToFire) hasFiredSincePress = true; 
         }
     }
@@ -149,7 +135,6 @@ public class PlayerAttackController : MonoBehaviour
         int availableAmmo = weaponSystem.GetCurrentClipAmmo();
         int projectilesToFire = weapon.projectilesPerShot;
 
-        // Cap projectiles to ammo available
         if (projectilesToFire > availableAmmo)
         {
             projectilesToFire = availableAmmo;
@@ -157,16 +142,20 @@ public class PlayerAttackController : MonoBehaviour
 
         if (projectilesToFire <= 0) return;
 
-        // Consume exact amount of ammo (1 bullet = 1 ammo)
         weaponSystem.ConsumeAmmo(projectilesToFire);
         
-        // --- REVERTED: Safety Minimum Cooldown ---
-        // Changed back to 0.1f since we now use allowHoldToFire for safety against accidental double-taps
         float cooldown = Mathf.Max(weapon.fireRate, 0.1f);
         weaponSystem.SetCurrentWeaponCooldown(cooldown);
 
-        // --- NEW: Mark that we fired this press ---
         hasFiredSincePress = true;
+
+        // --- NEW: Trigger Camera Shake ---
+        if (RoomCamera.Instance != null && weapon.screenShakeAmount > 0)
+        {
+            // Duration is fixed short (0.1s) for a punchy feel, intensity comes from WeaponData
+            RoomCamera.Instance.Shake(0.1f, weapon.screenShakeAmount);
+        }
+        // ---------------------------------
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
@@ -175,7 +164,6 @@ public class PlayerAttackController : MonoBehaviour
         float finalKnockback = baseProjectileKnockback;
         if (weapon != null) finalKnockback *= weapon.knockbackMultiplier;
 
-        // Loop only for the amount of projectiles we can actually afford
         for (int i = 0; i < projectilesToFire; i++)
         {
             float currentSpread = Random.Range(-weapon.spread / 2f, weapon.spread / 2f);

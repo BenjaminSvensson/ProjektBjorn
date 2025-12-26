@@ -1654,7 +1654,7 @@ MonoBehaviour:
   roomSize: {x: 20, y: 10}
   smoothTime: 0.25
   fixedZ: -10
-  followStrength: 0
+  followStrength: 0.2
   clampToRoom: 1
   autoFitToRoom: 1
   zoomScale: 0.95
@@ -2716,7 +2716,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.064\n\nGameTestControlls:\nT - Restart Scene\nY-
+  m_text: "ProjektBj\xF6rn Devbuild 0.065\n\nGameTestControlls:\nT - Restart Scene\nY-
     Regenerate Map\nTab - ToggleDebugConsole\n\nGeneralControlls:\nR - Reload\nNolegs
     = Crawl (Drag)LMB\n\nFirst time instructions:\n(All interactions currently done
     on collision)\n\"Attack dumpsters for loot\"\n"

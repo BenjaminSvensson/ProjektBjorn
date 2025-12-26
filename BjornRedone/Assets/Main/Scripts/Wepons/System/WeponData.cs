@@ -52,12 +52,14 @@ public class WeaponData : ScriptableObject
 
     [Header("Ranged Settings")]
     [Tooltip("If true, holding the mouse button will fire continuously (Automatic). If false, you must click for each shot (Semi-Auto).")]
-    public bool allowHoldToFire = true; // --- NEW ---
+    public bool allowHoldToFire = true; 
     public GameObject projectilePrefab;
     public float fireRate = 0.2f; 
     public float projectileSpeed = 15f;
     public float projectileDamage = 5f;
     public float spread = 5f;
+    [Tooltip("How much the camera shakes when firing this weapon.")]
+    public float screenShakeAmount = 0.1f; // --- NEW ---
     public int projectilesPerShot = 1;
     public AudioClip[] shootSounds; 
     

@@ -31,10 +31,11 @@ MonoBehaviour:
   swingArc: 90
   allowHoldToFire: 1
   projectilePrefab: {fileID: 5854363392945389712, guid: 794ed137c5e40f84d8617a0761b37a85, type: 3}
-  fireRate: 0.07
-  projectileSpeed: 35
-  projectileDamage: 2
-  spread: 8
+  fireRate: 0.06
+  projectileSpeed: 40
+  projectileDamage: 4
+  spread: 6
+  screenShakeAmount: 0.02
   projectilesPerShot: 1
   shootSounds:
   - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
