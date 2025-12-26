@@ -97,7 +97,7 @@ Rigidbody2D:
   m_UseAutoMass: 0
   m_Mass: 1
   m_LinearDamping: 0
-  m_AngularDamping: 0.05
+  m_AngularDamping: 2
   m_GravityScale: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -123,8 +123,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponPickup
   weaponData: {fileID: 11400000, guid: ddb8e1c70685d1d4c9f6d2591684d054, type: 2}
-  groundFriction: 10
+  currentAmmoCount: -1
+  groundFriction: 25
   rotationSpeed: 200
+  baseThrowDamage: 3
+  knockbackForce: 8
 --- !u!210 &-1091155653809117897
 SortingGroup:
   m_ObjectHideFlags: 0

@@ -214,8 +214,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponPickup
   weaponData: {fileID: 11400000, guid: 0ed39bdd358db7c4697995321182130f, type: 2}
-  groundFriction: 5
+  currentAmmoCount: -1
+  groundFriction: 15
   rotationSpeed: 200
+  baseThrowDamage: 3
+  knockbackForce: 8
 --- !u!210 &6223738077240879870
 SortingGroup:
   m_ObjectHideFlags: 0
