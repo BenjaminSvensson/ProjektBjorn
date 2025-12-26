@@ -173,5 +173,5 @@ MonoBehaviour:
   autoPickupDelay: 0.15
   despawnTime: 60
   scatterForce: 5
-  pickupSound: {fileID: 8300000, guid: 1cf0fd4a8de641e4ea02a84d2e501c83, type: 3}
-  soundVolume: 15
+  pickupSound: {fileID: 8300000, guid: 9c2a37a93e4b03d44b9304e2e0a0b525, type: 3}
+  soundVolume: 20

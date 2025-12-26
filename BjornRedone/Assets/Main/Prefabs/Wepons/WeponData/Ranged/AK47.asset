@@ -29,6 +29,7 @@ MonoBehaviour:
   attackSpeedMultiplier: 1
   knockbackMultiplier: 1
   swingArc: 90
+  allowHoldToFire: 1
   projectilePrefab: {fileID: 5854363392945389712, guid: 794ed137c5e40f84d8617a0761b37a85, type: 3}
   fireRate: 0.07
   projectileSpeed: 35
@@ -39,5 +40,5 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
   magazineSize: 26
   reloadTime: 1.2
-  reloadSound: {fileID: 8300000, guid: c367fa6f6ec86b44285c12c83b94939a, type: 3}
+  reloadSound: {fileID: 8300000, guid: 03189be0bd047954fac601234d518ba7, type: 3}
   emptyClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}

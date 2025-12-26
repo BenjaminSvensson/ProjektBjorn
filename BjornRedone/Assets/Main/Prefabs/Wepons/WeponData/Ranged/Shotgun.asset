@@ -37,8 +37,8 @@ MonoBehaviour:
   spread: 20
   projectilesPerShot: 4
   shootSounds:
-  - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
+  - {fileID: 8300000, guid: 25aa15b8195ba094297b772d2f2931bd, type: 3}
   magazineSize: 8
   reloadTime: 1.2
-  reloadSound: {fileID: 8300000, guid: c367fa6f6ec86b44285c12c83b94939a, type: 3}
+  reloadSound: {fileID: 8300000, guid: 03189be0bd047954fac601234d518ba7, type: 3}
   emptyClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}
