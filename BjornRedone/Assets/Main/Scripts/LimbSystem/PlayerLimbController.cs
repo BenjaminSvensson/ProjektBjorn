@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI; // Required for Image
+using UnityEngine.UI; 
 using System.Collections;
 using System.Collections.Generic;
 
@@ -22,16 +22,20 @@ public class PlayerLimbController : MonoBehaviour
     [Header("Audio")] 
     [SerializeField] private AudioClip limbAttachSound;
 
-    [Header("Low Health Feedback")] // --- NEW ---
+    [Header("Low Health Feedback")]
     [Tooltip("An AudioSource dedicated to the heartbeat sound (separate from the main Action AudioSource).")]
     [SerializeField] private AudioSource heartbeatSource;
     [Tooltip("A UI Image covering the screen (e.g., a black or red vignette sprite).")]
     [SerializeField] private RawImage vignetteImage;
     [Range(0f, 1f)]
-    [SerializeField] private float lowHealthThreshold = 0.95f; 
-    [SerializeField] private float maxVignetteAlpha = 1.0f;
-    [SerializeField] private float minHeartbeatPitch = 0.8f;
-    [SerializeField] private float maxHeartbeatPitch = 2.0f;
+    [SerializeField] private float lowHealthThreshold = 0.4f; 
+    [SerializeField] private float maxVignetteAlpha = 0.8f;
+    [SerializeField] private float minHeartbeatPitch = 1.0f;
+    [SerializeField] private float maxHeartbeatPitch = 1.8f;
+
+    [Header("UI")]
+    [Tooltip("Reference to the DeathScreenUI script in the scene.")]
+    [SerializeField] private DeathScreenUI deathScreen;
 
     [Header("Sorting Orders")]
     [SerializeField] private int headOrder = 10, leftArmOrder = 5, rightArmOrder = -5, legOrder = -10;
@@ -57,19 +61,26 @@ public class PlayerLimbController : MonoBehaviour
     private Rigidbody2D rb; 
     private Vector3 visualsHolderOriginalPos; 
     private bool isShaking = false, canCrawl = false;
-    private AudioSource audioSource; // Used for One-Shots (Damage, Attach)
+    private AudioSource audioSource; 
     private List<SpriteRenderer> currentRenderers = new List<SpriteRenderer>();
     private Coroutine flashCoroutine;
 
     void Start()
     {
-        playerMovement = GetComponent<PlayerMovement>(); rb = GetComponent<Rigidbody2D>(); audioSource = GetComponent<AudioSource>();
+        playerMovement = GetComponent<PlayerMovement>(); 
+        rb = GetComponent<Rigidbody2D>(); 
+        audioSource = GetComponent<AudioSource>();
+        
         maxTorsoHealth = torsoHealth;
         if (visualsHolder) visualsHolderOriginalPos = visualsHolder.localPosition;
+        
         if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
         if(startingArm) { AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false); AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false); }
         if(startingLeg) { AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false); AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false); }
-        PickNextWeakLimb(); UpdateDamageVisuals(); UpdatePlayerStats();
+        
+        PickNextWeakLimb(); 
+        UpdateDamageVisuals(); 
+        UpdatePlayerStats();
 
         // Setup Heartbeat Loop
         if (heartbeatSource != null)
@@ -77,6 +88,10 @@ public class PlayerLimbController : MonoBehaviour
             heartbeatSource.loop = true;
             heartbeatSource.volume = 0f;
             if (!heartbeatSource.isPlaying) heartbeatSource.Play();
+        }
+        else
+        {
+            Debug.LogWarning("PlayerLimbController: Heartbeat AudioSource not assigned!");
         }
         
         // Initialize Vignette
@@ -87,9 +102,18 @@ public class PlayerLimbController : MonoBehaviour
             vignetteImage.color = c;
             vignetteImage.gameObject.SetActive(true);
         }
+        else
+        {
+            Debug.LogWarning("PlayerLimbController: Vignette Image not assigned!");
+        }
+
+        // Auto-find death screen if not assigned
+        if (deathScreen == null)
+        {
+            deathScreen = FindObjectOfType<DeathScreenUI>();
+        }
     }
 
-    // --- NEW: Handle Continuous Feedback ---
     void Update()
     {
         HandleLowHealthEffects();
@@ -104,13 +128,11 @@ public class PlayerLimbController : MonoBehaviour
         // If we are below threshold and alive
         if (healthPercent <= lowHealthThreshold && torsoHealth > 0)
         {
-            // Intensity goes from 0 (at threshold) to 1 (at near death)
             float intensity = 1f - (healthPercent / lowHealthThreshold);
             
             // Audio
             if (heartbeatSource)
             {
-                // Smoothly adjust volume and pitch
                 heartbeatSource.volume = Mathf.Lerp(heartbeatSource.volume, intensity, Time.deltaTime * 2f);
                 heartbeatSource.pitch = Mathf.Lerp(minHeartbeatPitch, maxHeartbeatPitch, intensity);
             }
@@ -125,7 +147,7 @@ public class PlayerLimbController : MonoBehaviour
         }
         else
         {
-            // Safe zone (or dead/handled elsewhere): Fade out effects
+            // Fade out effects
             if (heartbeatSource)
             {
                 heartbeatSource.volume = Mathf.Lerp(heartbeatSource.volume, 0f, Time.deltaTime * 2f);
@@ -156,8 +178,9 @@ public class PlayerLimbController : MonoBehaviour
             PickNextWeakLimb();
         }
         else if (currentHead && torsoHealth <= 0) DetachLimb(LimbSlot.Head);
+        
         if (torsoHealth <= 0) Die();
-        UpdateDamageVisuals();
+        else UpdateDamageVisuals(); // Only update visuals if still alive, otherwise Die handles it
     }
 
     private void PickNextWeakLimb()
@@ -242,15 +265,26 @@ public class PlayerLimbController : MonoBehaviour
 
     void Die() 
     { 
+        Debug.Log("Player Die() called.");
         this.enabled = false; 
-        playerMovement.enabled = false; 
+        if (playerMovement) playerMovement.enabled = false; 
         if (rb) rb.linearVelocity = Vector2.zero; 
         StopAllCoroutines(); 
         
-        // --- Kill Heartbeat ---
         if (heartbeatSource) heartbeatSource.Stop();
-        
         if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos; 
+
+        // Try to find death screen if we missed it in Start
+        if (deathScreen == null) deathScreen = FindObjectOfType<DeathScreenUI>();
+
+        if (deathScreen) 
+        {
+            deathScreen.TriggerDeath();
+        }
+        else
+        {
+            Debug.LogError("PlayerLimbController: Could not find DeathScreenUI to trigger!");
+        }
     }
 
     public bool CanAttack() => currentLeftArm != null || currentRightArm != null;
