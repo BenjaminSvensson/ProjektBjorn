@@ -18,6 +18,7 @@ public class PlayerAttackController : MonoBehaviour
 
     private InputSystem_Actions playerControls;
     private bool isAttackHeld = false;
+    private bool hasFiredSincePress = false; // --- NEW: Tracks semi-auto firing ---
     private bool isNextPunchLeft = true;
     
     private float leftArmCooldownTimer = 0f;
@@ -47,6 +48,12 @@ public class PlayerAttackController : MonoBehaviour
     private void HandleAttack(InputAction.CallbackContext callbackContext)
     {
         isAttackHeld = callbackContext.performed;
+        
+        // --- NEW: Reset the trigger flag whenever we press the button ---
+        if (callbackContext.performed)
+        {
+            hasFiredSincePress = false;
+        }
     }
 
     void Update()
@@ -81,6 +88,9 @@ public class PlayerAttackController : MonoBehaviour
 
     private void HandleRangedInput(WeaponData weapon)
     {
+        // --- NEW: Check for Semi-Auto Logic ---
+        if (!weapon.allowHoldToFire && hasFiredSincePress) return;
+
         // 1. Check Fire Rate Cooldown first (always applies)
         if (weaponSystem.GetCurrentWeaponCooldown() > 0) return;
 
@@ -115,6 +125,9 @@ public class PlayerAttackController : MonoBehaviour
 
     private void TryPlayEmptySound(WeaponData weapon)
     {
+        // Don't spam empty click for semi-auto if holding
+        if (!weapon.allowHoldToFire && hasFiredSincePress) return;
+
         if (clickSoundCooldownTimer <= 0 && weapon.emptyClickSound != null)
         {
             if (actionAudioSource != null)
@@ -123,6 +136,9 @@ public class PlayerAttackController : MonoBehaviour
                 actionAudioSource.PlayOneShot(weapon.emptyClickSound, 0.6f);
             }
             clickSoundCooldownTimer = 0.2f; 
+            
+            // Mark as "action taken" for semi-auto so it doesn't click every frame
+            if (!weapon.allowHoldToFire) hasFiredSincePress = true; 
         }
     }
 
@@ -133,8 +149,7 @@ public class PlayerAttackController : MonoBehaviour
         int availableAmmo = weaponSystem.GetCurrentClipAmmo();
         int projectilesToFire = weapon.projectilesPerShot;
 
-        // --- UPDATED: Cap projectiles to ammo available ---
-        // If gun shoots 5 pellets but has 3 ammo, fire 3 pellets.
+        // Cap projectiles to ammo available
         if (projectilesToFire > availableAmmo)
         {
             projectilesToFire = availableAmmo;
@@ -145,10 +160,13 @@ public class PlayerAttackController : MonoBehaviour
         // Consume exact amount of ammo (1 bullet = 1 ammo)
         weaponSystem.ConsumeAmmo(projectilesToFire);
         
-        // --- UPDATED: Safety Minimum Cooldown ---
-        // Prevents instant mag dumping if fireRate is 0 in Inspector
+        // --- REVERTED: Safety Minimum Cooldown ---
+        // Changed back to 0.1f since we now use allowHoldToFire for safety against accidental double-taps
         float cooldown = Mathf.Max(weapon.fireRate, 0.1f);
         weaponSystem.SetCurrentWeaponCooldown(cooldown);
+
+        // --- NEW: Mark that we fired this press ---
+        hasFiredSincePress = true;
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 fireOrigin = weaponSystem.GetFirePoint();

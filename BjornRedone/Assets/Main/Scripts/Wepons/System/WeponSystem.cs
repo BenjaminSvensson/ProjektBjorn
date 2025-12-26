@@ -31,6 +31,8 @@ public class WeaponSystem : MonoBehaviour
 
     [Header("Off-Hand Grip")]
     [SerializeField] private Vector3 secondaryGripOffset = new Vector3(-0.3f, 0f, 0f);
+    [Tooltip("How far the hand moves back during the reload animation.")]
+    [SerializeField] private float reloadSlideDistance = 0.4f;
 
     private PlayerLimbController limbController;
     private bool isHoldingWithRightHand = false; 
@@ -128,6 +130,12 @@ public class WeaponSystem : MonoBehaviour
         {
             slotAmmoCounts[activeSlotIndex] = Mathf.Max(0, slotAmmoCounts[activeSlotIndex] - amount);
             UpdateAmmoUI();
+
+            // --- AUTO RELOAD LOGIC ---
+            if (slotAmmoCounts[activeSlotIndex] <= 0 && totalReserveAmmo > 0)
+            {
+                StartReload();
+            }
         }
     }
 
@@ -226,7 +234,6 @@ public class WeaponSystem : MonoBehaviour
     public WeaponData GetActiveWeapon() { return weaponSlots[activeSlotIndex]; }
     public bool IsHoldingWithRightHand() { return isHoldingWithRightHand; }
 
-    // --- UPDATED: Accepts specific ammo amount for the magazine ---
     public bool TryPickupWeapon(WeaponData newData, int loadedAmmo)
     {
         if (newData == null) return false;
@@ -236,10 +243,7 @@ public class WeaponSystem : MonoBehaviour
 
         weaponSlots[activeSlotIndex] = newData;
         slotCooldowns[activeSlotIndex] = 0f; 
-        
-        // Use the pickup's ammo state
         slotAmmoCounts[activeSlotIndex] = loadedAmmo; 
-        
         isReloading = false;
 
         UpdateState();
@@ -252,7 +256,6 @@ public class WeaponSystem : MonoBehaviour
         WeaponData weaponToDrop = weaponSlots[slotIndex];
         if (weaponToDrop == null) return;
 
-        // Capture current ammo before clearing it
         int currentAmmo = slotAmmoCounts[slotIndex];
 
         weaponSlots[slotIndex] = null;
@@ -266,7 +269,6 @@ public class WeaponSystem : MonoBehaviour
             if (pickupScript != null)
             {
                 Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
-                // Pass current ammo to the drop
                 pickupScript.InitializeDrop(finalDir, force, currentAmmo);
             }
         }
@@ -366,10 +368,23 @@ public class WeaponSystem : MonoBehaviour
             if (activeWeapon != null)
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
+
+                // --- RELOAD ANIMATION LOGIC (REVERTED TO X-AXIS / 4-PARAM SNAP) ---
+                Vector3 dynamicSecondaryGrip = secondaryGripOffset;
+                if (isReloading && activeWeapon.reloadTime > 0)
+                {
+                    float progress = 1f - (reloadTimer / activeWeapon.reloadTime);
+                    // Use X axis for standard "sliding back and forth"
+                    float slide = Mathf.Sin(progress * Mathf.PI) * reloadSlideDistance;
+                    // Usually "back" is -X, so -= slides back then forth
+                    dynamicSecondaryGrip.x -= slide;
+                }
+                // ------------------------------
+
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
-                    SnapOffHand(limbController.GetLeftArmSlot(), heldWeaponRenderer.transform, baseRotation);
+                    SnapOffHand(limbController.GetLeftArmSlot(), heldWeaponRenderer.transform, baseRotation, dynamicSecondaryGrip);
                 else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
-                    SnapOffHand(limbController.GetRightArmSlot(), heldWeaponRenderer.transform, baseRotation);
+                    SnapOffHand(limbController.GetRightArmSlot(), heldWeaponRenderer.transform, baseRotation, dynamicSecondaryGrip);
             }
             else
             {
@@ -378,10 +393,10 @@ public class WeaponSystem : MonoBehaviour
         }
     }
 
-    private void SnapOffHand(Transform hand, Transform weaponTransform, Quaternion baseRotation)
+    private void SnapOffHand(Transform hand, Transform weaponTransform, Quaternion baseRotation, Vector3 offset)
     {
         if (hand == null) return;
-        Vector3 worldOffset = baseRotation * secondaryGripOffset;
+        Vector3 worldOffset = baseRotation * offset;
         Vector3 targetPos = weaponTransform.position + worldOffset;
         Quaternion targetRot = baseRotation * Quaternion.Euler(0, 0, 180f);
         hand.SetPositionAndRotation(targetPos, targetRot);

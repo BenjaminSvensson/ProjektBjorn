@@ -32,7 +32,7 @@ public class WeaponData : ScriptableObject
     [Tooltip("Rotation offset in degrees (Z-axis).")]
     public float heldRotationOffset = 0f;
     [Tooltip("Position offset relative to the hand pivot (Local Space). X = Along Arm, Y = Perpendicular.")]
-    public Vector3 heldPositionOffset = Vector3.zero; // --- NEW ---
+    public Vector3 heldPositionOffset = Vector3.zero;
     
     [Tooltip("Fallback offset if using Sprite mode. X = forward, Y = up/down.")]
     public Vector2 muzzleOffset = new Vector2(0.5f, 0f); 
@@ -51,6 +51,8 @@ public class WeaponData : ScriptableObject
     public float swingArc = 90f;
 
     [Header("Ranged Settings")]
+    [Tooltip("If true, holding the mouse button will fire continuously (Automatic). If false, you must click for each shot (Semi-Auto).")]
+    public bool allowHoldToFire = true; // --- NEW ---
     public GameObject projectilePrefab;
     public float fireRate = 0.2f; 
     public float projectileSpeed = 15f;
