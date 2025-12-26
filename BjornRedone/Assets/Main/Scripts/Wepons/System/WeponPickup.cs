@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
@@ -20,18 +21,19 @@ public class WeaponPickup : MonoBehaviour
     [SerializeField] private float knockbackForce = 8f;
 
     private Rigidbody2D rb;
+    private Collider2D myCollider;
     private bool isFlying = false;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        myCollider = GetComponent<Collider2D>();
         rb.gravityScale = 0f;
         rb.linearDamping = groundFriction; 
     }
 
     void Start()
     {
-        // If placed in the scene manually (not dropped), ensure it has full ammo
         if (!isFlying && currentAmmoCount < 0 && weaponData != null)
         {
             currentAmmoCount = weaponData.magazineSize;
@@ -40,42 +42,35 @@ public class WeaponPickup : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Stop "flying" state when slow enough, allowing pickup
         if (isFlying && rb.linearVelocity.sqrMagnitude < 1f)
         {
             isFlying = false;
         }
     }
 
-    // --- NEW: Handle collision damage while flying ---
+    // --- DAMAGE LOGIC ---
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (!isFlying) return;
 
-        // 1. Check for Enemy
         EnemyLimbController enemy = collision.gameObject.GetComponent<EnemyLimbController>();
         if (enemy != null)
         {
             float totalDamage = baseThrowDamage;
             if (weaponData != null) totalDamage += weaponData.meleeDamageBonus;
 
-            // Use current velocity direction for impact
             Vector2 hitDir = rb.linearVelocity.normalized;
-            
             enemy.TakeDamage(totalDamage, hitDir);
 
-            // Apply physics knockback to enemy if they have a rigidbody
             if (collision.gameObject.TryGetComponent<Rigidbody2D>(out Rigidbody2D enemyRb))
             {
                 enemyRb.AddForce(hitDir * knockbackForce, ForceMode2D.Impulse);
             }
 
-            // Weapon reacts to impact
             HandleImpact();
             return;
         }
 
-        // 2. Check for Loot Container (e.g., Crates)
         LootContainer container = collision.gameObject.GetComponent<LootContainer>();
         if (container != null)
         {
@@ -83,7 +78,6 @@ public class WeaponPickup : MonoBehaviour
             if (weaponData != null) totalDamage += weaponData.meleeDamageBonus;
 
             container.TakeDamage(totalDamage, rb.linearVelocity.normalized);
-            
             HandleImpact();
             return;
         }
@@ -91,17 +85,12 @@ public class WeaponPickup : MonoBehaviour
 
     private void HandleImpact()
     {
-        // Stop flying immediately so we don't double-hit or hurt the player on rebound
         isFlying = false;
-        
-        // Dampen velocity to simulate a heavy hit
         rb.linearVelocity = -rb.linearVelocity * 0.3f; 
         rb.angularVelocity *= 0.5f;
     }
 
-    /// <summary>
-    /// Called when the player drops this weapon.
-    /// </summary>
+    // --- INITIALIZATION ---
     public void InitializeDrop(Vector2 direction, float force = 5f, int ammo = -1)
     {
         if (weaponData != null)
@@ -111,14 +100,39 @@ public class WeaponPickup : MonoBehaviour
 
         if (rb != null)
         {
-            // Reset damping momentarily so it flies
             rb.linearDamping = 0.5f; 
             rb.AddForce(direction * force, ForceMode2D.Impulse);
             rb.angularVelocity = Random.Range(-rotationSpeed, rotationSpeed);
             isFlying = true; 
             
-            // Restore high damping after a short time to stop sliding
             Invoke(nameof(RestoreFriction), 0.5f);
+        }
+    }
+
+    // --- NEW: Collision Ignoring Helper ---
+    public void IgnorePhysicsCollisionWith(Collider2D[] otherColliders, float duration)
+    {
+        StartCoroutine(IgnoreCollisionRoutine(otherColliders, duration));
+    }
+
+    private IEnumerator IgnoreCollisionRoutine(Collider2D[] others, float duration)
+    {
+        if (myCollider == null || others == null) yield break;
+
+        // Ignore
+        foreach (var col in others)
+        {
+            if (col != null && col != myCollider) 
+                Physics2D.IgnoreCollision(col, myCollider, true);
+        }
+
+        yield return new WaitForSeconds(duration);
+
+        // Re-enable
+        foreach (var col in others)
+        {
+            if (col != null && col != myCollider) 
+                Physics2D.IgnoreCollision(col, myCollider, false);
         }
     }
 
@@ -127,13 +141,6 @@ public class WeaponPickup : MonoBehaviour
         if (rb != null) rb.linearDamping = groundFriction;
     }
 
-    public bool CanPickup()
-    {
-        return !isFlying;
-    }
-
-    public WeaponData GetWeaponData()
-    {
-        return weaponData;
-    }
+    public bool CanPickup() { return !isFlying; }
+    public WeaponData GetWeaponData() { return weaponData; }
 }

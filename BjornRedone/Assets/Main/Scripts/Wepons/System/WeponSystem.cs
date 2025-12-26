@@ -131,7 +131,7 @@ public class WeaponSystem : MonoBehaviour
             slotAmmoCounts[activeSlotIndex] = Mathf.Max(0, slotAmmoCounts[activeSlotIndex] - amount);
             UpdateAmmoUI();
 
-            // --- AUTO RELOAD LOGIC ---
+            // Auto Reload
             if (slotAmmoCounts[activeSlotIndex] <= 0 && totalReserveAmmo > 0)
             {
                 StartReload();
@@ -250,6 +250,7 @@ public class WeaponSystem : MonoBehaviour
         return true;
     }
 
+    // --- UPDATED: Spawning Offset & Collision Ignore ---
     public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
@@ -264,12 +265,21 @@ public class WeaponSystem : MonoBehaviour
 
         if (weaponToDrop.pickupPrefab != null)
         {
-            GameObject drop = Instantiate(weaponToDrop.pickupPrefab, transform.position, Quaternion.identity);
+            Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
+            
+            // --- FIX: Spawn Offset ---
+            // Spawn 0.75 units in the direction of the throw to prevent sticking inside the player
+            Vector3 spawnPos = transform.position + (Vector3)(finalDir * 0.75f);
+
+            GameObject drop = Instantiate(weaponToDrop.pickupPrefab, spawnPos, Quaternion.identity);
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
+            
             if (pickupScript != null)
             {
-                Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
                 pickupScript.InitializeDrop(finalDir, force, currentAmmo);
+                // --- FIX: Ignore Collision ---
+                // Tell the drop to ignore all my colliders for 0.8 seconds
+                pickupScript.IgnorePhysicsCollisionWith(GetComponentsInChildren<Collider2D>(), 0.8f);
             }
         }
 
@@ -369,14 +379,13 @@ public class WeaponSystem : MonoBehaviour
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
 
-                // --- RELOAD ANIMATION LOGIC (REVERTED TO X-AXIS / 4-PARAM SNAP) ---
+                // --- RELOAD ANIMATION LOGIC ---
                 Vector3 dynamicSecondaryGrip = secondaryGripOffset;
                 if (isReloading && activeWeapon.reloadTime > 0)
                 {
                     float progress = 1f - (reloadTimer / activeWeapon.reloadTime);
-                    // Use X axis for standard "sliding back and forth"
+                    // Use X axis for standard "sliding back and forth" along the barrel
                     float slide = Mathf.Sin(progress * Mathf.PI) * reloadSlideDistance;
-                    // Usually "back" is -X, so -= slides back then forth
                     dynamicSecondaryGrip.x -= slide;
                 }
                 // ------------------------------

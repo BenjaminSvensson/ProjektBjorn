@@ -30,6 +30,7 @@ MonoBehaviour:
   attackSpeedMultiplier: 0.8
   knockbackMultiplier: 0.6
   swingArc: 90
+  allowHoldToFire: 1
   projectilePrefab: {fileID: 0}
   fireRate: 0.2
   projectileSpeed: 15

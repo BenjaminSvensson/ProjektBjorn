@@ -15,15 +15,21 @@ MonoBehaviour:
   weaponName: Hammer
   icon: {fileID: 6741607474328365339, guid: 39f166cb248644843b3e25f591a93b03, type: 3}
   pickupPrefab: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+  equippedPrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
   heldSprite: {fileID: 6741607474328365339, guid: 39f166cb248644843b3e25f591a93b03, type: 3}
   heldScale: {x: 1.4, y: 1.4, z: 1.4}
+  heldRotationOffset: 0
+  heldPositionOffset: {x: 0, y: 0, z: 0}
+  muzzleOffset: {x: 0.5, y: 0}
   type: 0
   attackStyle: 1
   meleeDamageBonus: 13
   meleeImpactSounds: []
-  attackSpeedMultiplier: 0.4
+  attackSpeedMultiplier: 0.55
   knockbackMultiplier: 1.4
   swingArc: 90
+  allowHoldToFire: 1
   projectilePrefab: {fileID: 0}
   fireRate: 0.2
   projectileSpeed: 15
@@ -31,3 +37,7 @@ MonoBehaviour:
   spread: 5
   projectilesPerShot: 1
   shootSounds: []
+  magazineSize: 6
+  reloadTime: 1.5
+  reloadSound: {fileID: 0}
+  emptyClickSound: {fileID: 0}

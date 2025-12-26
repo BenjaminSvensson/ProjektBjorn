@@ -557,7 +557,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7047e607ad25c234abf5e9b224a1a9ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletPickup
-  ammoAmount: 16
+  ammoAmount: 24
   pickupSound: {fileID: 8300000, guid: 2bb216c992b988745a460098ea18a328, type: 3}
   groundFriction: 3
 --- !u!50 &5410631626818445946
