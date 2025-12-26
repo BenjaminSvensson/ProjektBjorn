@@ -5,7 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(EnemyAnimationController))]
 public class EnemyAI : MonoBehaviour
 {
-    private enum State { Roam, Chase, Attack, Investigate, Scavenge, Flee }
+    // Added 'Idle' at the start to match EnemyAnimationController.State indices
+    private enum State { Idle, Roam, Chase, Attack, Investigate, Scavenge, Flee }
 
     [Header("AI Settings")]
     public float detectionRadius = 5f;
@@ -16,7 +17,7 @@ public class EnemyAI : MonoBehaviour
     public float baseMoveSpeed = 2f;
     public float baseDamage = 5f;
 
-    [Header("Movement Behavior")] // --- NEW ---
+    [Header("Movement Behavior")]
     [Tooltip("If true, the enemy will try to keep a specific distance from the player instead of rushing in.")]
     [SerializeField] private bool maintainDistance = false;
     [Tooltip("The distance to maintain from the player (only if maintainDistance is true).")]
@@ -155,6 +156,13 @@ public class EnemyAI : MonoBehaviour
             // Re-enable animation controller if we are back in range
             if (anim != null && !anim.enabled) anim.enabled = true;
         }
+
+        // --- NEW: Sync Animation State ---
+        if (anim != null)
+        {
+            anim.SetState((EnemyAnimationController.State)currentState);
+        }
+        // ---------------------------------
 
         if (isTrapped)
         {
