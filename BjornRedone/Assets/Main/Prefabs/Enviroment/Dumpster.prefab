@@ -623,4 +623,4 @@ MonoBehaviour:
   shakeDuration: 0.15
   shakeMagnitude: 0.1
   hitFlashDuration: 0.1
-  hitParticles: {fileID: 0}
+  hitParticles: {fileID: 5090237684635068140, guid: 8df4dc914642b0a498e56360ec59abd0, type: 3}
