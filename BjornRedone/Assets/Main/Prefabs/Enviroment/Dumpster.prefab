@@ -599,7 +599,7 @@ MonoBehaviour:
     weight: 1
   - name: Trash
     prefab: {fileID: 31219011598708189, guid: b7824f1ac60d68041a4f4071a2d5b8c7, type: 3}
-    weight: 2
+    weight: 1
   - name: TrashBjorn
     prefab: {fileID: 8074822229694108039, guid: d9f592240d80cee4591cdc1191651294, type: 3}
     weight: 0.1
@@ -612,6 +612,9 @@ MonoBehaviour:
   - name: Bullet
     prefab: {fileID: 8413724525430478086, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
     weight: 4
+  - name: Bottle
+    prefab: {fileID: 835541165619439079, guid: 11b65ca832946f948abf32358987aaee, type: 3}
+    weight: 2
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
   - {fileID: 8300000, guid: ec9895c7b62ca884aa86e5e710bf243b, type: 3}

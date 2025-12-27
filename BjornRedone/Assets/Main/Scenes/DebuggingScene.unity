@@ -190,7 +190,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4140775743607575761, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.0718932
+      value: -3.38
       objectReference: {fileID: 0}
     - target: {fileID: 4140775743607575761, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
       propertyPath: m_LocalPosition.z
@@ -429,7 +429,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4140775743607575761, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.1542568
+      value: -3.2976365
       objectReference: {fileID: 0}
     - target: {fileID: 4140775743607575761, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2823,6 +2823,64 @@ MonoBehaviour:
   clipText: {fileID: 764582011}
   reserveText: {fileID: 1359248594}
   ammoPanel: {fileID: 406618836}
+--- !u!1001 &1553721255
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_Name
+      value: Hammer
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.7298901
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.32506335
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4149502750852304737, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 3688191007623834262, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
 --- !u!1 &1559697985
 GameObject:
   m_ObjectHideFlags: 0
@@ -3746,7 +3804,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.065\n\nGameTestControlls:\nT - Restart Scene\nY-
+  m_text: "ProjektBj\xF6rn Devbuild 0.066\n\nGameTestControlls:\nT - Restart Scene\nY-
     Regenerate Map\nTab - ToggleDebugConsole\n\nGeneralControlls:\nR - Reload\nNolegs
     = Crawl (Drag)LMB\n\nFirst time instructions:\n(All interactions currently done
     on collision)\n\"Attack dumpsters for loot\"\n"
@@ -4117,3 +4175,4 @@ SceneRoots:
   - {fileID: 122600805}
   - {fileID: 333863259}
   - {fileID: 1540737181}
+  - {fileID: 1553721255}
