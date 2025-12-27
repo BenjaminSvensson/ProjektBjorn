@@ -13,12 +13,11 @@ GameObject:
   - component: {fileID: 934158948677646038}
   - component: {fileID: 6299629128816813780}
   - component: {fileID: 7925432195527252408}
-  - component: {fileID: 5409159604443699719}
   - component: {fileID: 5911403354815566664}
   - component: {fileID: -6535377556503413948}
-  - component: {fileID: 5108506140128721279}
+  - component: {fileID: 4898585213766709231}
   m_Layer: 0
-  m_Name: Bottle
+  m_Name: BrokenBottle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -138,24 +137,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &5409159604443699719
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 835541165619439079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 80558b91628ab9e408a7e005751db354, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WeaponPickup
-  weaponData: {fileID: 11400000, guid: 6efb2bde9cf633241915e5ed738a157a, type: 2}
-  currentAmmoCount: -1
-  groundFriction: 15
-  rotationSpeed: 200
-  baseThrowDamage: 2
-  knockbackForce: 8
 --- !u!212 &5911403354815566664
 SpriteRenderer:
   serializedVersion: 2
@@ -312,7 +293,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &5108506140128721279
+--- !u!114 &4898585213766709231
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -321,18 +302,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 835541165619439079}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: be277b9ff681ac64a9e4718d10d28e37, type: 3}
+  m_Script: {fileID: 11500000, guid: 9ea4aa759e024b248b1f8b97d5542bb7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CollisionSound
-  impactSounds:
-  - {fileID: 8300000, guid: 79b73b97dc8265641a7fbe0379832f26, type: 3}
-  velocityThreshold: 1
-  maxVolumeVelocity: 10
-  baseVolume: 1
-  randomizePitch: 1
-  minPitch: 0.8
-  maxPitch: 1.2
-  cooldown: 0.1
+  m_EditorClassIdentifier: Assembly-CSharp::BreakableEffect
+  breakSound: {fileID: 8300000, guid: 4b130b39e146fbe44a0d66a405baa58d, type: 3}
+  lifetime: 0.5
+  fadeDuration: 0.4
+  gravityScale: 0
 --- !u!1 &6935405525834775169
 GameObject:
   m_ObjectHideFlags: 0
@@ -360,8 +336,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.1, y: 1.1, z: 1.1}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 8591812474149842161}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -414,7 +390,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 4145100776150910970, guid: 18cd2160f5c929a4cae190150d240ce4, type: 3}
+  m_Sprite: {fileID: 4366617683041740711, guid: cda92053a408dff4e843b9d43f027170, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

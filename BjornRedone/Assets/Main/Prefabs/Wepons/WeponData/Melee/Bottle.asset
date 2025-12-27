@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
+  m_Name: Bottle
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: Bottle
+  icon: {fileID: 4145100776150910970, guid: 18cd2160f5c929a4cae190150d240ce4, type: 3}
+  pickupPrefab: {fileID: 835541165619439079, guid: 11b65ca832946f948abf32358987aaee, type: 3}
+  equippedPrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  heldSprite: {fileID: 4145100776150910970, guid: 18cd2160f5c929a4cae190150d240ce4, type: 3}
+  heldScale: {x: 0.9, y: 0.9, z: 0.9}
+  heldRotationOffset: 0
+  heldPositionOffset: {x: 0, y: 0, z: 0}
+  muzzleOffset: {x: 0.5, y: 0}
+  breaksOnMeleeHit: 1
+  breaksOnThrowHit: 1
+  brokenPrefab: {fileID: 835541165619439079, guid: d185dbc680bb7244aa5f2910731290e0, type: 3}
+  type: 0
+  attackStyle: 0
+  meleeDamageBonus: 1
+  meleeImpactSounds:
+  - {fileID: 8300000, guid: 79b73b97dc8265641a7fbe0379832f26, type: 3}
+  attackSpeedMultiplier: 1
+  knockbackMultiplier: 1
+  swingArc: 90
+  allowHoldToFire: 1
+  projectilePrefab: {fileID: 0}
+  fireRate: 0.2
+  projectileSpeed: 15
+  projectileDamage: 5
+  spread: 5
+  screenShakeAmount: 0.1
+  projectilesPerShot: 1
+  shootSounds: []
+  magazineSize: 6
+  reloadTime: 1.5
+  reloadSound: {fileID: 0}
+  emptyClickSound: {fileID: 0}

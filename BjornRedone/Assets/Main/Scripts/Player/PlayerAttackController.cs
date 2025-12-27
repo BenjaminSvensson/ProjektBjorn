@@ -149,13 +149,10 @@ public class PlayerAttackController : MonoBehaviour
 
         hasFiredSincePress = true;
 
-        // --- NEW: Trigger Camera Shake ---
         if (RoomCamera.Instance != null && weapon.screenShakeAmount > 0)
         {
-            // Duration is fixed short (0.1s) for a punchy feel, intensity comes from WeaponData
             RoomCamera.Instance.Shake(0.1f, weapon.screenShakeAmount);
         }
-        // ---------------------------------
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
@@ -336,10 +333,13 @@ public class PlayerAttackController : MonoBehaviour
     private void CheckHit(Vector2 pos, float radius, float damage, float knockback, Vector2 dir, LimbData data)
     {
         int hitCount = Physics2D.OverlapCircleNonAlloc(pos, radius, hitBuffer, hittableLayers);
+        
+        bool brokeWeapon = false; // Flag to ensure we only break once per swing
 
         for (int i = 0; i < hitCount; i++)
         {
             Collider2D hit = hitBuffer[i];
+            bool validHit = false;
             
             if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
             {
@@ -349,16 +349,32 @@ public class PlayerAttackController : MonoBehaviour
                     enemyRb.linearVelocity = Vector2.zero; 
                     enemyRb.AddForce(dir * knockback, ForceMode2D.Impulse);
                 }
+                validHit = true;
             }
             else if (hit.TryGetComponent<LootContainer>(out LootContainer container))
             {
                 container.TakeDamage(damage, dir);
+                validHit = true;
             }
             else if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
             {
                 if (rb.bodyType == RigidbodyType2D.Dynamic && !hit.CompareTag("Player"))
                 {
                     rb.AddForce(dir * knockback, ForceMode2D.Impulse);
+                    validHit = true;
+                }
+            }
+
+            // --- NEW: Breakable Weapon Logic ---
+            if (validHit && !brokeWeapon)
+            {
+                WeaponData w = weaponSystem.GetActiveWeapon();
+                if (w != null && w.breaksOnMeleeHit)
+                {
+                    weaponSystem.BreakActiveWeapon();
+                    brokeWeapon = true;
+                    // Note: We don't break the loop, so the "final swing" can still hit multiple enemies,
+                    // but the weapon is removed immediately after this frame.
                 }
             }
         }

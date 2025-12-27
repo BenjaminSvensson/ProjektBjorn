@@ -72,6 +72,29 @@ public class WeaponSystem : MonoBehaviour
         UpdateWeaponTransform();
     }
 
+    // --- NEW: Handle Weapon Breaking ---
+    public void BreakActiveWeapon()
+    {
+        WeaponData activeWeapon = GetActiveWeapon();
+        if (activeWeapon == null) return;
+
+        // 1. Spawn Broken Visual (if any)
+        if (activeWeapon.brokenPrefab != null)
+        {
+            // Spawn at the weapon's current position/rotation
+            Instantiate(activeWeapon.brokenPrefab, heldWeaponRenderer.transform.position, heldWeaponRenderer.transform.rotation);
+        }
+
+        // 2. Clear the slot (Destroy logic)
+        weaponSlots[activeSlotIndex] = null;
+        slotAmmoCounts[activeSlotIndex] = 0;
+        slotCooldowns[activeSlotIndex] = 0;
+        isReloading = false;
+
+        UpdateState();
+    }
+    // -----------------------------------
+
     private void HandleReloadLogic()
     {
         if (isReloading)
@@ -131,7 +154,6 @@ public class WeaponSystem : MonoBehaviour
             slotAmmoCounts[activeSlotIndex] = Mathf.Max(0, slotAmmoCounts[activeSlotIndex] - amount);
             UpdateAmmoUI();
 
-            // Auto Reload
             if (slotAmmoCounts[activeSlotIndex] <= 0 && totalReserveAmmo > 0)
             {
                 StartReload();
@@ -250,7 +272,6 @@ public class WeaponSystem : MonoBehaviour
         return true;
     }
 
-    // --- UPDATED: Spawning Offset & Collision Ignore ---
     public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
     {
         if (slotIndex < 0 || slotIndex >= weaponSlots.Length) return;
@@ -266,19 +287,13 @@ public class WeaponSystem : MonoBehaviour
         if (weaponToDrop.pickupPrefab != null)
         {
             Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
-            
-            // --- FIX: Spawn Offset ---
-            // Spawn 0.75 units in the direction of the throw to prevent sticking inside the player
-            Vector3 spawnPos = transform.position + (Vector3)(finalDir * 0.75f);
+            Vector2 spawnPos = (Vector2)transform.position + (finalDir * 0.75f); // Spawn Offset
 
             GameObject drop = Instantiate(weaponToDrop.pickupPrefab, spawnPos, Quaternion.identity);
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
-            
             if (pickupScript != null)
             {
                 pickupScript.InitializeDrop(finalDir, force, currentAmmo);
-                // --- FIX: Ignore Collision ---
-                // Tell the drop to ignore all my colliders for 0.8 seconds
                 pickupScript.IgnorePhysicsCollisionWith(GetComponentsInChildren<Collider2D>(), 0.8f);
             }
         }
@@ -379,16 +394,13 @@ public class WeaponSystem : MonoBehaviour
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
 
-                // --- RELOAD ANIMATION LOGIC ---
                 Vector3 dynamicSecondaryGrip = secondaryGripOffset;
                 if (isReloading && activeWeapon.reloadTime > 0)
                 {
                     float progress = 1f - (reloadTimer / activeWeapon.reloadTime);
-                    // Use X axis for standard "sliding back and forth" along the barrel
                     float slide = Mathf.Sin(progress * Mathf.PI) * reloadSlideDistance;
                     dynamicSecondaryGrip.x -= slide;
                 }
-                // ------------------------------
 
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
                     SnapOffHand(limbController.GetLeftArmSlot(), heldWeaponRenderer.transform, baseRotation, dynamicSecondaryGrip);

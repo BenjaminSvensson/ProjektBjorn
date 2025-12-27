@@ -37,6 +37,14 @@ public class WeaponData : ScriptableObject
     [Tooltip("Fallback offset if using Sprite mode. X = forward, Y = up/down.")]
     public Vector2 muzzleOffset = new Vector2(0.5f, 0f); 
 
+    [Header("Durability / Breaking")] // --- NEW ---
+    [Tooltip("If true, the weapon is destroyed after hitting an enemy (e.g., Bottle).")]
+    public bool breaksOnMeleeHit = false;
+    [Tooltip("If true, the weapon is destroyed after hitting an enemy/wall when thrown.")]
+    public bool breaksOnThrowHit = false;
+    [Tooltip("The visual prefab to spawn when broken (must have BreakableEffect script).")]
+    public GameObject brokenPrefab;
+
     [Header("Combat Type")]
     public WeaponType type;
 
@@ -59,7 +67,7 @@ public class WeaponData : ScriptableObject
     public float projectileDamage = 5f;
     public float spread = 5f;
     [Tooltip("How much the camera shakes when firing this weapon.")]
-    public float screenShakeAmount = 0.1f; // --- NEW ---
+    public float screenShakeAmount = 0.1f;
     public int projectilesPerShot = 1;
     public AudioClip[] shootSounds; 
     

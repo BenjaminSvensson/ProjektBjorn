@@ -13,11 +13,11 @@ public class WeaponPickup : MonoBehaviour
     public int currentAmmoCount = -1; 
 
     [Header("Physics")]
-    [SerializeField] private float groundFriction = 15f;
+    [SerializeField] private float groundFriction = 5f;
     [SerializeField] private float rotationSpeed = 200f;
 
     [Header("Throw Damage")]
-    [SerializeField] private float baseThrowDamage = 2f;
+    [SerializeField] private float baseThrowDamage = 15f;
     [SerializeField] private float knockbackForce = 8f;
 
     private Rigidbody2D rb;
@@ -52,9 +52,13 @@ public class WeaponPickup : MonoBehaviour
     {
         if (!isFlying) return;
 
+        bool hitEnemy = false;
+        bool hitContainer = false;
+
         EnemyLimbController enemy = collision.gameObject.GetComponent<EnemyLimbController>();
         if (enemy != null)
         {
+            hitEnemy = true;
             float totalDamage = baseThrowDamage;
             if (weaponData != null) totalDamage += weaponData.meleeDamageBonus;
 
@@ -65,20 +69,33 @@ public class WeaponPickup : MonoBehaviour
             {
                 enemyRb.AddForce(hitDir * knockbackForce, ForceMode2D.Impulse);
             }
-
-            HandleImpact();
-            return;
         }
 
         LootContainer container = collision.gameObject.GetComponent<LootContainer>();
         if (container != null)
         {
+            hitContainer = true;
             float totalDamage = baseThrowDamage;
             if (weaponData != null) totalDamage += weaponData.meleeDamageBonus;
 
             container.TakeDamage(totalDamage, rb.linearVelocity.normalized);
+        }
+
+        if (hitEnemy || hitContainer)
+        {
+            // --- NEW: Break on Throw Impact ---
+            if (weaponData != null && weaponData.breaksOnThrowHit)
+            {
+                if (weaponData.brokenPrefab != null)
+                {
+                    Instantiate(weaponData.brokenPrefab, transform.position, Quaternion.identity);
+                }
+                Destroy(gameObject);
+                return;
+            }
+            
+            // Standard bounce
             HandleImpact();
-            return;
         }
     }
 
@@ -89,7 +106,6 @@ public class WeaponPickup : MonoBehaviour
         rb.angularVelocity *= 0.5f;
     }
 
-    // --- NEW: Called by DamageSource (Trap) ---
     public void GetStuck()
     {
         isFlying = false;
@@ -100,7 +116,7 @@ public class WeaponPickup : MonoBehaviour
             rb.angularVelocity = 0f;
         }
         if (myCollider) myCollider.enabled = false;
-        this.enabled = false; // Stop Update loop
+        this.enabled = false; 
     }
 
     public void InitializeDrop(Vector2 direction, float force = 5f, int ammo = -1)
