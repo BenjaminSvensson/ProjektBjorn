@@ -2699,7 +2699,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8825551160853246b602db03b8cc2b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextFade
-  delayBeforeStart: 1.6
+  delayBeforeStart: 1.2
   fadeInDuration: 1.6
   stayDuration: 2
   fadeOutDuration: 1.4
