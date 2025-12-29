@@ -42,7 +42,7 @@ public class WeaponPickup : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (isFlying && rb.linearVelocity.sqrMagnitude < 5f)
+        if (isFlying && rb.linearVelocity.sqrMagnitude < 20f)
         {
             isFlying = false;
         }

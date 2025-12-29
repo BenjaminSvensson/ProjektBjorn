@@ -3825,6 +3825,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 3894288053524889714, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Size.x
+      value: 0.99999976
+      objectReference: {fileID: 0}
+    - target: {fileID: 3894288053524889714, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Size.y
+      value: 1.1903645
+      objectReference: {fileID: 0}
+    - target: {fileID: 3894288053524889714, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: m_Offset.y
+      value: -0.06227465
+      objectReference: {fileID: 0}
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
