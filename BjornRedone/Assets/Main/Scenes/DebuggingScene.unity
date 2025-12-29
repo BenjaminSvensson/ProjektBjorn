@@ -1737,7 +1737,7 @@ MonoBehaviour:
   playerTransform: {fileID: 1970201048}
   smoothTime: 0.15
   mouseInfluence: 0.12
-  maxPeekDistance: 2.5
+  maxPeekDistance: 0.5
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 8192
@@ -1762,7 +1762,7 @@ MonoBehaviour:
   followStrength: 0.2
   clampToRoom: 1
   autoFitToRoom: 1
-  zoomScale: 1
+  zoomScale: 0.95
 --- !u!1 &1273286515
 GameObject:
   m_ObjectHideFlags: 0
