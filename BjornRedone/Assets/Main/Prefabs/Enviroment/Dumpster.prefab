@@ -605,13 +605,13 @@ MonoBehaviour:
     weight: 0.1
   - name: Shotgun
     prefab: {fileID: 6631119458644919795, guid: 974bbb91ba198c24f8c4c22a1a9edb9e, type: 3}
-    weight: 0.5
+    weight: 0.6
   - name: AK47
     prefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}
-    weight: 0.5
+    weight: 0.6
   - name: Bullet
     prefab: {fileID: 8413724525430478086, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
-    weight: 4
+    weight: 5
   - name: Bottle
     prefab: {fileID: 835541165619439079, guid: 11b65ca832946f948abf32358987aaee, type: 3}
     weight: 2

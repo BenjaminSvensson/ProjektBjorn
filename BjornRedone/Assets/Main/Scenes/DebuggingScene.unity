@@ -153,8 +153,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 13.1088, y: -1.6505}
-  m_SizeDelta: {x: 1496.5162, y: 603.3}
+  m_AnchoredPosition: {x: -0.0037651, y: -1.6505}
+  m_SizeDelta: {x: 2015.6, y: 603.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &136925910
 MonoBehaviour:
@@ -1389,16 +1389,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 801718410}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 406618837}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -28.5, y: 4.8}
+  m_AnchoredPosition: {x: -46.703, y: 23}
   m_SizeDelta: {x: 19.0033, y: 38.007294}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &801718412
@@ -2450,8 +2450,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 11.799805, y: 5.7282104}
-  m_SizeDelta: {x: 45, y: 45}
+  m_AnchoredPosition: {x: 8.200073, y: 3}
+  m_SizeDelta: {x: 51.9733, y: 73.1723}
   m_Pivot: {x: 0, y: 0}
 --- !u!114 &1511573499
 MonoBehaviour:
@@ -2473,7 +2473,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: e5174b45ab65afc41a3b4a2abf3fb446, type: 3}
+  m_Texture: {fileID: 2800000, guid: b1403c5148ba1bb4fa8436bd8c5964b0, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -2557,8 +2557,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 16777215
+  m_fontColor: {r: 1, g: 1, b: 1, a: 0}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -3109,16 +3109,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1685268917}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 406618837}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -23.100006, y: 4.79998}
+  m_AnchoredPosition: {x: -42.103, y: 15.2}
   m_SizeDelta: {x: 19.0033, y: 38.007294}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &1685268919
@@ -3733,7 +3733,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.069\n\nGameTestControlls:\nT - Restart Scene\nY-
+  m_text: "ProjektBj\xF6rn Devbuild 0.07\n\nGameTestControlls:\nT - Restart Scene\nY-
     Regenerate Map\n______________________\n\nNolegs = Crawl (Drag)LMB\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -542,6 +542,12 @@ MonoBehaviour:
   rb: {fileID: 8602720179994128400}
   bobSpeed: 10
   bobAmount: 0.1
+  breathSpeed: 2
+  breathAmount: 0.05
+  swaySpeed: 1.5
+  swayAngle: 5
+  shakeIntensity: 0.05
+  shakeSpeed: 20
 --- !u!1 &3175672554633027530
 GameObject:
   m_ObjectHideFlags: 0

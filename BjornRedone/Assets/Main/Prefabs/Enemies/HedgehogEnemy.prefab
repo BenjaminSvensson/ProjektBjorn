@@ -953,6 +953,12 @@ MonoBehaviour:
   rb: {fileID: 1147609957351382229}
   bobSpeed: 12
   bobAmount: 0.1
+  breathSpeed: 2
+  breathAmount: 0.05
+  swaySpeed: 1.5
+  swayAngle: 5
+  shakeIntensity: 0.05
+  shakeSpeed: 20
 --- !u!114 &1463525113735732293
 MonoBehaviour:
   m_ObjectHideFlags: 0
