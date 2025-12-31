@@ -3394,7 +3394,7 @@ MonoBehaviour:
     minDistanceReq: 2
   - name: Dog
     prefab: {fileID: 8447582695004223394, guid: c6d08eb7ad69dfb4fb038600c260ced9, type: 3}
-    cost: 2
+    cost: 3
     minDistanceReq: 2
   - name: Hedgehog
     prefab: {fileID: 8447582695004223394, guid: 22733423fca786e4bac7110703f6ea8d, type: 3}
