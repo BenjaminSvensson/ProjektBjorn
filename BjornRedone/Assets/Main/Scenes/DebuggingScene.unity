@@ -3385,6 +3385,7 @@ MonoBehaviour:
   - {fileID: 3293985558420901034, guid: a73afc622c67ea143affedd826f97712, type: 3}
   - {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
   - {fileID: 3293985558420901034, guid: 18937705890835c498f64ca42fe90c9f, type: 3}
+  - {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
   bossRoomPrefabs:
   - {fileID: 3770010974507935584, guid: ca71d995ab454d448b24c9d98842b9a0, type: 3}
   enemySpawnList:
@@ -3434,18 +3435,19 @@ MonoBehaviour:
     minScale: 0.95
     maxScale: 1.2
   - prefab: {fileID: 1768368281478687168, guid: 43037da5e15ac85428ab75150a83fd08, type: 3}
-    spawnChance: 0.01
+    spawnChance: 0.005
     allowRandomFlip: 1
     minScale: 0.95
     maxScale: 1.2
   - prefab: {fileID: 5235036984782308517, guid: 3c2ec92d5e4eaa04e81111ea16480cbc, type: 3}
-    spawnChance: 0.01
+    spawnChance: 0.005
     allowRandomFlip: 1
     minScale: 0.95
     maxScale: 1.2
   propSpawnAttemptsPerUnit: 0.1
   spawnPropsInBossRooms: 0
-  preventPropSpawningInRooms: []
+  preventPropSpawningInRooms:
+  - {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
 --- !u!4 &1818502933
 Transform:
   m_ObjectHideFlags: 0
