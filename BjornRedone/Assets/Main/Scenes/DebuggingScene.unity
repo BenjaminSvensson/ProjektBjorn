@@ -3433,6 +3433,16 @@ MonoBehaviour:
     allowRandomFlip: 1
     minScale: 0.95
     maxScale: 1.2
+  - prefab: {fileID: 1768368281478687168, guid: 43037da5e15ac85428ab75150a83fd08, type: 3}
+    spawnChance: 0.01
+    allowRandomFlip: 1
+    minScale: 0.95
+    maxScale: 1.2
+  - prefab: {fileID: 5235036984782308517, guid: 3c2ec92d5e4eaa04e81111ea16480cbc, type: 3}
+    spawnChance: 0.01
+    allowRandomFlip: 1
+    minScale: 0.95
+    maxScale: 1.2
   propSpawnAttemptsPerUnit: 0.1
   spawnPropsInBossRooms: 0
   preventPropSpawningInRooms: []
