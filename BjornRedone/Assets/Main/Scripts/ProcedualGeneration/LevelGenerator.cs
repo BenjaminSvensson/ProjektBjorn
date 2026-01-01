@@ -47,7 +47,7 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private int totalRooms = 20;
     [SerializeField] private int numberOfBossRooms = 1;
     [Tooltip("The minimum number of rooms between Start and Boss.")]
-    [SerializeField] private int minBossDistance = 5; // --- NEW ---
+    [SerializeField] private int minBossDistance = 5; 
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
     [SerializeField] private int maxGenerationAttempts = 100; 
 
@@ -73,12 +73,15 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private bool spawnPropsInBossRooms = false;
     [SerializeField] private List<Room> preventPropSpawningInRooms;
 
+    [Header("UI")] // --- NEW ---
+    [SerializeField] private LoadingScreen loadingScreen;
+
     private class RoomNode
     {
         public Vector2Int gridPos;
         public Room roomPrefab;
         public bool isBossRoom;
-        public int distanceFromStart; // --- NEW ---
+        public int distanceFromStart; 
         
         public RoomNode(Vector2Int pos, Room prefab, int dist, bool boss = false) 
         { 
@@ -93,7 +96,7 @@ public class LevelGenerator : MonoBehaviour
     { 
         public Vector2Int gridPos; 
         public Direction fromDir; 
-        public int distance; // --- NEW ---
+        public int distance; 
     }
 
     private List<RoomNode> finalLayout = new List<RoomNode>();
@@ -110,6 +113,9 @@ public class LevelGenerator : MonoBehaviour
 
     public void GenerateLevel()
     {
+        // Try find loading screen if not assigned
+        if (loadingScreen == null) loadingScreen = FindObjectOfType<LoadingScreen>();
+
         foreach (var room in instantiatedRooms) if (room) Destroy(room.gameObject);
         instantiatedRooms.Clear(); finalLayout.Clear();
 
@@ -117,8 +123,20 @@ public class LevelGenerator : MonoBehaviour
         int attempt = 0;
         while (!success && attempt < maxGenerationAttempts) { attempt++; success = AttemptVirtualGeneration(); }
 
-        if (success) SpawnWorld();
-        else Debug.LogError($"Failed to generate level after {maxGenerationAttempts} attempts. Try reducing Min Boss Distance or increasing Total Rooms.");
+        if (success) 
+        {
+            SpawnWorld();
+            
+            // --- NEW: Dismiss Loading Screen ---
+            if (loadingScreen != null)
+            {
+                loadingScreen.Dismiss();
+            }
+        }
+        else 
+        {
+            Debug.LogError($"Failed to generate level after {maxGenerationAttempts} attempts. Try reducing Min Boss Distance or increasing Total Rooms.");
+        }
     }
 
     private bool AttemptVirtualGeneration()
