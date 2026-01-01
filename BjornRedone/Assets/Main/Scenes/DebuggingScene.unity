@@ -3378,14 +3378,34 @@ MonoBehaviour:
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 20
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
-  normalRoomPrefabs:
-  - {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
-  - {fileID: 3293985558420901034, guid: 3203430101b3ff247894230fd213982a, type: 3}
-  - {fileID: 3293985558420901034, guid: f65a179cba51094448cc67cddca39f8e, type: 3}
-  - {fileID: 3293985558420901034, guid: a73afc622c67ea143affedd826f97712, type: 3}
-  - {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
-  - {fileID: 3293985558420901034, guid: 18937705890835c498f64ca42fe90c9f, type: 3}
-  - {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
+  normalRoomRules:
+  - roomPrefab: {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: 3203430101b3ff247894230fd213982a, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: f65a179cba51094448cc67cddca39f8e, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: a73afc622c67ea143affedd826f97712, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: 18937705890835c498f64ca42fe90c9f, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: d89b4344a762a0e4b8a8a33c98a5c5d1, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
+    spawnWeight: 20
+    maxSpawns: 100
+  - roomPrefab: {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
+    spawnWeight: 10
+    maxSpawns: 1
   bossRoomPrefabs:
   - {fileID: 3770010974507935584, guid: ca71d995ab454d448b24c9d98842b9a0, type: 3}
   enemySpawnList:
