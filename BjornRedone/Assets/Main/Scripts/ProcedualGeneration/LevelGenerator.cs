@@ -46,6 +46,8 @@ public class LevelGenerator : MonoBehaviour
     [Header("Generation Settings")]
     [SerializeField] private int totalRooms = 20;
     [SerializeField] private int numberOfBossRooms = 1;
+    [Tooltip("The minimum number of rooms between Start and Boss.")]
+    [SerializeField] private int minBossDistance = 5; // --- NEW ---
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
     [SerializeField] private int maxGenerationAttempts = 100; 
 
@@ -76,10 +78,23 @@ public class LevelGenerator : MonoBehaviour
         public Vector2Int gridPos;
         public Room roomPrefab;
         public bool isBossRoom;
-        public RoomNode(Vector2Int pos, Room prefab, bool boss = false) { gridPos = pos; roomPrefab = prefab; isBossRoom = boss; }
+        public int distanceFromStart; // --- NEW ---
+        
+        public RoomNode(Vector2Int pos, Room prefab, int dist, bool boss = false) 
+        { 
+            gridPos = pos; 
+            roomPrefab = prefab; 
+            distanceFromStart = dist;
+            isBossRoom = boss; 
+        }
     }
 
-    private class GenerationState { public Vector2Int gridPos; public Direction fromDir; }
+    private class GenerationState 
+    { 
+        public Vector2Int gridPos; 
+        public Direction fromDir; 
+        public int distance; // --- NEW ---
+    }
 
     private List<RoomNode> finalLayout = new List<RoomNode>();
     private List<Room> instantiatedRooms = new List<Room>();
@@ -103,7 +118,7 @@ public class LevelGenerator : MonoBehaviour
         while (!success && attempt < maxGenerationAttempts) { attempt++; success = AttemptVirtualGeneration(); }
 
         if (success) SpawnWorld();
-        else Debug.LogError($"Failed to generate level after {maxGenerationAttempts} attempts.");
+        else Debug.LogError($"Failed to generate level after {maxGenerationAttempts} attempts. Try reducing Min Boss Distance or increasing Total Rooms.");
     }
 
     private bool AttemptVirtualGeneration()
@@ -115,9 +130,11 @@ public class LevelGenerator : MonoBehaviour
         Dictionary<Room, int> spawnCounts = new Dictionary<Room, int>();
 
         if (startRoomPrefab == null) return false;
-        RoomNode startNode = new RoomNode(Vector2Int.zero, startRoomPrefab);
+        
+        // Start Room is distance 0
+        RoomNode startNode = new RoomNode(Vector2Int.zero, startRoomPrefab, 0);
         virtualGrid[Vector2Int.zero] = startNode; generatedNodes.Add(startNode);
-        AddNeighborsToFrontier(virtualGrid, frontier, startNode);
+        AddNeighborsToFrontier(virtualGrid, frontier, startNode, 0);
 
         int targetNormalRooms = totalRooms - numberOfBossRooms - 1;
         int roomsBuilt = 0, safetyLoop = 0;
@@ -135,7 +152,7 @@ public class LevelGenerator : MonoBehaviour
             
             if (validPrefab != null)
             {
-                RoomNode newNode = new RoomNode(state.gridPos, validPrefab);
+                RoomNode newNode = new RoomNode(state.gridPos, validPrefab, state.distance);
                 virtualGrid[state.gridPos] = newNode; 
                 generatedNodes.Add(newNode);
                 
@@ -143,25 +160,36 @@ public class LevelGenerator : MonoBehaviour
                 spawnCounts[validPrefab]++;
 
                 roomsBuilt++; 
-                AddNeighborsToFrontier(virtualGrid, frontier, newNode);
+                AddNeighborsToFrontier(virtualGrid, frontier, newNode, state.distance);
             }
         }
 
         if (roomsBuilt < targetNormalRooms) return false; 
 
-        int bossesPlaced = 0, bossSafety = 0;
-        while (bossesPlaced < numberOfBossRooms && frontier.Count > 0 && bossSafety < 100)
+        // --- Boss Placement ---
+        // Filter frontier for spots far enough away
+        var validBossSpots = frontier.Where(x => x.distance >= minBossDistance && !virtualGrid.ContainsKey(x.gridPos)).ToList();
+        
+        if (validBossSpots.Count < numberOfBossRooms) return false; // Retry if we didn't get far enough
+
+        int bossesPlaced = 0;
+        int bossSafety = 0;
+        
+        // Use the valid spots list instead of generic frontier
+        while (bossesPlaced < numberOfBossRooms && validBossSpots.Count > 0 && bossSafety < 100)
         {
             bossSafety++;
-            int randIndex = Random.Range(0, frontier.Count);
-            GenerationState state = frontier[randIndex]; frontier.RemoveAt(randIndex);
+            int randIndex = Random.Range(0, validBossSpots.Count);
+            GenerationState state = validBossSpots[randIndex]; 
+            validBossSpots.RemoveAt(randIndex);
+
             if (virtualGrid.ContainsKey(state.gridPos)) continue;
             
             Room validBoss = FindBestMatchingRoomSimple(virtualGrid, state.gridPos, bossRoomPrefabs);
             
             if (validBoss != null)
             {
-                RoomNode bossNode = new RoomNode(state.gridPos, validBoss, true);
+                RoomNode bossNode = new RoomNode(state.gridPos, validBoss, state.distance, true);
                 virtualGrid[state.gridPos] = bossNode; generatedNodes.Add(bossNode);
                 bossesPlaced++;
             }
@@ -169,7 +197,6 @@ public class LevelGenerator : MonoBehaviour
 
         if (bossesPlaced < numberOfBossRooms) return false; 
 
-        // --- NEW: Cap Open Paths ---
         CapOpenConnections(virtualGrid, generatedNodes);
 
         finalLayout = generatedNodes; 
@@ -183,18 +210,20 @@ public class LevelGenerator : MonoBehaviour
         foreach (var pos in existingPositions)
         {
             RoomNode node = grid[pos];
-            if (node.roomPrefab.hasTopDoor)    TryCap(grid, allNodes, pos + Vector2Int.up, Direction.Bottom);
-            if (node.roomPrefab.hasBottomDoor) TryCap(grid, allNodes, pos + Vector2Int.down, Direction.Top);
-            if (node.roomPrefab.hasLeftDoor)   TryCap(grid, allNodes, pos + Vector2Int.left, Direction.Right);
-            if (node.roomPrefab.hasRightDoor)  TryCap(grid, allNodes, pos + Vector2Int.right, Direction.Left);
+            // Dead ends inherit distance from neighbor + 1
+            int dist = node.distanceFromStart + 1;
+
+            if (node.roomPrefab.hasTopDoor)    TryCap(grid, allNodes, pos + Vector2Int.up, Direction.Bottom, dist);
+            if (node.roomPrefab.hasBottomDoor) TryCap(grid, allNodes, pos + Vector2Int.down, Direction.Top, dist);
+            if (node.roomPrefab.hasLeftDoor)   TryCap(grid, allNodes, pos + Vector2Int.left, Direction.Right, dist);
+            if (node.roomPrefab.hasRightDoor)  TryCap(grid, allNodes, pos + Vector2Int.right, Direction.Left, dist);
         }
     }
 
-    private void TryCap(Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> allNodes, Vector2Int pos, Direction requiredDoor)
+    private void TryCap(Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> allNodes, Vector2Int pos, Direction requiredDoor, int dist)
     {
         if (grid.ContainsKey(pos)) return; 
 
-        // Prioritize strict dead ends (only 1 door)
         Room capPrefab = deadEndRoomPrefabs.FirstOrDefault(r => 
             (requiredDoor == Direction.Top && r.hasTopDoor && !r.hasBottomDoor && !r.hasLeftDoor && !r.hasRightDoor) ||
             (requiredDoor == Direction.Bottom && r.hasBottomDoor && !r.hasTopDoor && !r.hasLeftDoor && !r.hasRightDoor) ||
@@ -202,30 +231,29 @@ public class LevelGenerator : MonoBehaviour
             (requiredDoor == Direction.Right && r.hasRightDoor && !r.hasTopDoor && !r.hasBottomDoor && !r.hasLeftDoor)
         );
 
-        if (capPrefab == null)
-        {
-            capPrefab = FindBestMatchingRoomSimple(grid, pos, deadEndRoomPrefabs);
-        }
+        if (capPrefab == null) capPrefab = FindBestMatchingRoomSimple(grid, pos, deadEndRoomPrefabs);
 
         if (capPrefab != null)
         {
-            RoomNode capNode = new RoomNode(pos, capPrefab);
+            RoomNode capNode = new RoomNode(pos, capPrefab, dist);
             grid[pos] = capNode;
             allNodes.Add(capNode);
         }
     }
 
-    private void AddNeighborsToFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, RoomNode node)
+    private void AddNeighborsToFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, RoomNode node, int curDist)
     {
-        if (node.roomPrefab.hasTopDoor)    TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.up, Direction.Bottom);
-        if (node.roomPrefab.hasBottomDoor) TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.down, Direction.Top);
-        if (node.roomPrefab.hasLeftDoor)   TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.left, Direction.Right);
-        if (node.roomPrefab.hasRightDoor)  TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.right, Direction.Left);
+        int nextDist = curDist + 1;
+        if (node.roomPrefab.hasTopDoor)    TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.up, Direction.Bottom, nextDist);
+        if (node.roomPrefab.hasBottomDoor) TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.down, Direction.Top, nextDist);
+        if (node.roomPrefab.hasLeftDoor)   TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.left, Direction.Right, nextDist);
+        if (node.roomPrefab.hasRightDoor)  TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.right, Direction.Left, nextDist);
     }
 
-    private void TryAddFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, Vector2Int pos, Direction fromDir)
+    private void TryAddFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, Vector2Int pos, Direction fromDir, int dist)
     {
-        if (!grid.ContainsKey(pos) && !frontier.Any(x => x.gridPos == pos)) frontier.Add(new GenerationState { gridPos = pos, fromDir = fromDir });
+        if (!grid.ContainsKey(pos) && !frontier.Any(x => x.gridPos == pos)) 
+            frontier.Add(new GenerationState { gridPos = pos, fromDir = fromDir, distance = dist });
     }
 
     private Room FindBestMatchingRoomWeighted(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<RoomSpawnRule> rules, Dictionary<Room, int> currentCounts)
@@ -241,7 +269,6 @@ public class LevelGenerator : MonoBehaviour
         foreach (var rule in rules)
         {
             if (rule.roomPrefab == null) continue;
-
             if (rule.maxSpawns > 0)
             {
                 int usedCount = currentCounts.ContainsKey(rule.roomPrefab) ? currentCounts[rule.roomPrefab] : 0;
@@ -265,10 +292,7 @@ public class LevelGenerator : MonoBehaviour
         foreach (var rule in validRules)
         {
             weightSum += rule.spawnWeight;
-            if (randomValue <= weightSum)
-            {
-                return rule.roomPrefab;
-            }
+            if (randomValue <= weightSum) return rule.roomPrefab;
         }
 
         return validRules.Last().roomPrefab; 
@@ -319,7 +343,9 @@ public class LevelGenerator : MonoBehaviour
             if (worldGrid.ContainsKey(pos + Vector2Int.left)) room.OpenDoor(Direction.Left);
             if (worldGrid.ContainsKey(pos + Vector2Int.right)) room.OpenDoor(Direction.Right);
 
-            int dist = Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
+            // --- Pass Distance Info to Rooms ---
+            int dist = originalNode != null ? originalNode.distanceFromStart : Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
+
             bool allowProps = dist != 0 && (originalNode == null || !originalNode.isBossRoom || spawnPropsInBossRooms) && (preventPropSpawningInRooms == null || originalNode == null || !preventPropSpawningInRooms.Contains(originalNode.roomPrefab));
             if (allowProps && environmentProps != null) room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
             if (dist > 0 && enemySpawnList != null && enemySpawnList.Count > 0) room.SpawnEnemies(enemySpawnList, baseEnemyBudget + (dist * enemyBudgetPerDistance), roomSize);

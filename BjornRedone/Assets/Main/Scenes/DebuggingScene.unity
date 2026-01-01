@@ -3375,8 +3375,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
   totalRooms: 30
   numberOfBossRooms: 1
+  minBossDistance: 20
   roomSize: {x: 20, y: 10}
-  maxGenerationAttempts: 20
+  maxGenerationAttempts: 50
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
   normalRoomRules:
   - roomPrefab: {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
