@@ -3408,6 +3408,11 @@ MonoBehaviour:
     maxSpawns: 1
   bossRoomPrefabs:
   - {fileID: 3770010974507935584, guid: ca71d995ab454d448b24c9d98842b9a0, type: 3}
+  deadEndRoomPrefabs:
+  - {fileID: 3293985558420901034, guid: da6dca7119554c54fbe85806c4cbb340, type: 3}
+  - {fileID: 3293985558420901034, guid: ec7e059b1fbb52f4eb82dce9aae7ddc6, type: 3}
+  - {fileID: 3293985558420901034, guid: 8a73db516bd2f2d48bb0277dfcc538e7, type: 3}
+  - {fileID: 3293985558420901034, guid: dd7c38e5d094dd14eb8177e10c30412f, type: 3}
   enemySpawnList:
   - name: Prototype
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}

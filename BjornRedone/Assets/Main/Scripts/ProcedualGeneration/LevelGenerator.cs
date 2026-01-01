@@ -8,7 +8,6 @@ public enum Direction { Top, Bottom, Left, Right }
 
 public class LevelGenerator : MonoBehaviour
 {
-    // --- NEW: Rule Structure for Rooms ---
     [System.Serializable]
     public class RoomSpawnRule
     {
@@ -52,9 +51,12 @@ public class LevelGenerator : MonoBehaviour
 
     [Header("Room Rules")]
     [SerializeField] private Room startRoomPrefab;
-    // --- UPDATED: Replaced simple list with Rule List ---
     [SerializeField] private List<RoomSpawnRule> normalRoomRules; 
-    [SerializeField] private List<Room> bossRoomPrefabs; // Keep bosses simple for now
+    [SerializeField] private List<Room> bossRoomPrefabs;
+    
+    [Header("Dead Ends")]
+    [Tooltip("Prefabs used to cap off open paths (Must have exactly 1 door to work best).")]
+    [SerializeField] private List<Room> deadEndRoomPrefabs;
 
     [Header("Enemy Spawning")]
     [SerializeField] private List<EnemySpawnData> enemySpawnList;
@@ -110,7 +112,6 @@ public class LevelGenerator : MonoBehaviour
         List<GenerationState> frontier = new List<GenerationState>();
         List<RoomNode> generatedNodes = new List<RoomNode>();
         
-        // --- NEW: Track Spawn Counts per Prefab ---
         Dictionary<Room, int> spawnCounts = new Dictionary<Room, int>();
 
         if (startRoomPrefab == null) return false;
@@ -130,7 +131,6 @@ public class LevelGenerator : MonoBehaviour
 
             if (virtualGrid.ContainsKey(state.gridPos)) continue;
 
-            // --- UPDATED: Pass Rules and Spawn Counts ---
             Room validPrefab = FindBestMatchingRoomWeighted(virtualGrid, state.gridPos, normalRoomRules, spawnCounts);
             
             if (validPrefab != null)
@@ -139,7 +139,6 @@ public class LevelGenerator : MonoBehaviour
                 virtualGrid[state.gridPos] = newNode; 
                 generatedNodes.Add(newNode);
                 
-                // Track usage
                 if (!spawnCounts.ContainsKey(validPrefab)) spawnCounts[validPrefab] = 0;
                 spawnCounts[validPrefab]++;
 
@@ -158,7 +157,6 @@ public class LevelGenerator : MonoBehaviour
             GenerationState state = frontier[randIndex]; frontier.RemoveAt(randIndex);
             if (virtualGrid.ContainsKey(state.gridPos)) continue;
             
-            // Bosses use simple list logic still (can be updated similarly if needed)
             Room validBoss = FindBestMatchingRoomSimple(virtualGrid, state.gridPos, bossRoomPrefabs);
             
             if (validBoss != null)
@@ -170,7 +168,51 @@ public class LevelGenerator : MonoBehaviour
         }
 
         if (bossesPlaced < numberOfBossRooms) return false; 
-        finalLayout = generatedNodes; return true;
+
+        // --- NEW: Cap Open Paths ---
+        CapOpenConnections(virtualGrid, generatedNodes);
+
+        finalLayout = generatedNodes; 
+        return true;
+    }
+
+    private void CapOpenConnections(Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> allNodes)
+    {
+        var existingPositions = grid.Keys.ToList();
+
+        foreach (var pos in existingPositions)
+        {
+            RoomNode node = grid[pos];
+            if (node.roomPrefab.hasTopDoor)    TryCap(grid, allNodes, pos + Vector2Int.up, Direction.Bottom);
+            if (node.roomPrefab.hasBottomDoor) TryCap(grid, allNodes, pos + Vector2Int.down, Direction.Top);
+            if (node.roomPrefab.hasLeftDoor)   TryCap(grid, allNodes, pos + Vector2Int.left, Direction.Right);
+            if (node.roomPrefab.hasRightDoor)  TryCap(grid, allNodes, pos + Vector2Int.right, Direction.Left);
+        }
+    }
+
+    private void TryCap(Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> allNodes, Vector2Int pos, Direction requiredDoor)
+    {
+        if (grid.ContainsKey(pos)) return; 
+
+        // Prioritize strict dead ends (only 1 door)
+        Room capPrefab = deadEndRoomPrefabs.FirstOrDefault(r => 
+            (requiredDoor == Direction.Top && r.hasTopDoor && !r.hasBottomDoor && !r.hasLeftDoor && !r.hasRightDoor) ||
+            (requiredDoor == Direction.Bottom && r.hasBottomDoor && !r.hasTopDoor && !r.hasLeftDoor && !r.hasRightDoor) ||
+            (requiredDoor == Direction.Left && r.hasLeftDoor && !r.hasTopDoor && !r.hasBottomDoor && !r.hasRightDoor) ||
+            (requiredDoor == Direction.Right && r.hasRightDoor && !r.hasTopDoor && !r.hasBottomDoor && !r.hasLeftDoor)
+        );
+
+        if (capPrefab == null)
+        {
+            capPrefab = FindBestMatchingRoomSimple(grid, pos, deadEndRoomPrefabs);
+        }
+
+        if (capPrefab != null)
+        {
+            RoomNode capNode = new RoomNode(pos, capPrefab);
+            grid[pos] = capNode;
+            allNodes.Add(capNode);
+        }
     }
 
     private void AddNeighborsToFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, RoomNode node)
@@ -186,7 +228,6 @@ public class LevelGenerator : MonoBehaviour
         if (!grid.ContainsKey(pos) && !frontier.Any(x => x.gridPos == pos)) frontier.Add(new GenerationState { gridPos = pos, fromDir = fromDir });
     }
 
-    // --- NEW: Weighted Selection with Limits ---
     private Room FindBestMatchingRoomWeighted(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<RoomSpawnRule> rules, Dictionary<Room, int> currentCounts)
     {
         bool? t = GetRequirement(grid, pos + Vector2Int.up, Direction.Bottom);
@@ -201,14 +242,12 @@ public class LevelGenerator : MonoBehaviour
         {
             if (rule.roomPrefab == null) continue;
 
-            // 1. Check Limits
             if (rule.maxSpawns > 0)
             {
                 int usedCount = currentCounts.ContainsKey(rule.roomPrefab) ? currentCounts[rule.roomPrefab] : 0;
-                if (usedCount >= rule.maxSpawns) continue; // Skip if limit reached
+                if (usedCount >= rule.maxSpawns) continue; 
             }
 
-            // 2. Check Door Connections
             Room room = rule.roomPrefab;
             if (Matches(room.hasTopDoor, t) && Matches(room.hasBottomDoor, b) && 
                 Matches(room.hasLeftDoor, l) && Matches(room.hasRightDoor, r))
@@ -220,7 +259,6 @@ public class LevelGenerator : MonoBehaviour
 
         if (validRules.Count == 0) return null;
 
-        // 3. Weighted Random Pick
         float randomValue = Random.Range(0, totalWeight);
         float weightSum = 0;
 
@@ -233,10 +271,9 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        return validRules.Last().roomPrefab; // Fallback
+        return validRules.Last().roomPrefab; 
     }
 
-    // Kept for Bosses/Simple lists
     private Room FindBestMatchingRoomSimple(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<Room> candidates)
     {
         bool? t = GetRequirement(grid, pos + Vector2Int.up, Direction.Bottom);
