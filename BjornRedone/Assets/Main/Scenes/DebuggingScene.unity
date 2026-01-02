@@ -2188,7 +2188,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1239269378
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3183,7 +3183,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8825551160853246b602db03b8cc2b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextFade
-  delayBeforeStart: 3
+  delayBeforeStart: 2.2
   fadeInDuration: 1.6
   stayDuration: 2
   fadeOutDuration: 1.4
@@ -3842,7 +3842,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LoadingScreen
   loadingPanel: {fileID: 1239269377}
-  postGenerationDelay: 3
+  postGenerationDelay: 2
 --- !u!1 &1818502931
 GameObject:
   m_ObjectHideFlags: 0
@@ -3877,7 +3877,7 @@ MonoBehaviour:
   numberOfBossRooms: 1
   minBossDistance: 20
   roomSize: {x: 20, y: 10}
-  maxGenerationAttempts: 50
+  maxGenerationAttempts: 250
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
   normalRoomRules:
   - roomPrefab: {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
