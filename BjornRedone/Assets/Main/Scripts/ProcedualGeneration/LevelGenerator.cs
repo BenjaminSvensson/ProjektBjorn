@@ -73,7 +73,7 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private bool spawnPropsInBossRooms = false;
     [SerializeField] private List<Room> preventPropSpawningInRooms;
 
-    [Header("UI")] // --- NEW ---
+    [Header("UI")]
     [SerializeField] private LoadingScreen loadingScreen;
 
     private class RoomNode
@@ -113,7 +113,6 @@ public class LevelGenerator : MonoBehaviour
 
     public void GenerateLevel()
     {
-        // Try find loading screen if not assigned
         if (loadingScreen == null) loadingScreen = FindObjectOfType<LoadingScreen>();
 
         foreach (var room in instantiatedRooms) if (room) Destroy(room.gameObject);
@@ -126,12 +125,7 @@ public class LevelGenerator : MonoBehaviour
         if (success) 
         {
             SpawnWorld();
-            
-            // --- NEW: Dismiss Loading Screen ---
-            if (loadingScreen != null)
-            {
-                loadingScreen.Dismiss();
-            }
+            if (loadingScreen != null) loadingScreen.Dismiss();
         }
         else 
         {
@@ -149,7 +143,6 @@ public class LevelGenerator : MonoBehaviour
 
         if (startRoomPrefab == null) return false;
         
-        // Start Room is distance 0
         RoomNode startNode = new RoomNode(Vector2Int.zero, startRoomPrefab, 0);
         virtualGrid[Vector2Int.zero] = startNode; generatedNodes.Add(startNode);
         AddNeighborsToFrontier(virtualGrid, frontier, startNode, 0);
@@ -184,16 +177,13 @@ public class LevelGenerator : MonoBehaviour
 
         if (roomsBuilt < targetNormalRooms) return false; 
 
-        // --- Boss Placement ---
-        // Filter frontier for spots far enough away
         var validBossSpots = frontier.Where(x => x.distance >= minBossDistance && !virtualGrid.ContainsKey(x.gridPos)).ToList();
         
-        if (validBossSpots.Count < numberOfBossRooms) return false; // Retry if we didn't get far enough
+        if (validBossSpots.Count < numberOfBossRooms) return false; 
 
         int bossesPlaced = 0;
         int bossSafety = 0;
         
-        // Use the valid spots list instead of generic frontier
         while (bossesPlaced < numberOfBossRooms && validBossSpots.Count > 0 && bossSafety < 100)
         {
             bossSafety++;
@@ -228,7 +218,11 @@ public class LevelGenerator : MonoBehaviour
         foreach (var pos in existingPositions)
         {
             RoomNode node = grid[pos];
-            // Dead ends inherit distance from neighbor + 1
+            
+            // --- NEW: Skip Boss Rooms ---
+            // Prevents putting dead ends on the boss room's extra doors.
+            if (node.isBossRoom) continue;
+
             int dist = node.distanceFromStart + 1;
 
             if (node.roomPrefab.hasTopDoor)    TryCap(grid, allNodes, pos + Vector2Int.up, Direction.Bottom, dist);
@@ -361,7 +355,6 @@ public class LevelGenerator : MonoBehaviour
             if (worldGrid.ContainsKey(pos + Vector2Int.left)) room.OpenDoor(Direction.Left);
             if (worldGrid.ContainsKey(pos + Vector2Int.right)) room.OpenDoor(Direction.Right);
 
-            // --- Pass Distance Info to Rooms ---
             int dist = originalNode != null ? originalNode.distanceFromStart : Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
 
             bool allowProps = dist != 0 && (originalNode == null || !originalNode.isBossRoom || spawnPropsInBossRooms) && (preventPropSpawningInRooms == null || originalNode == null || !preventPropSpawningInRooms.Contains(originalNode.roomPrefab));
