@@ -74,7 +74,6 @@ public class EnemyLimbController : MonoBehaviour
     [HideInInspector] public bool hasLegs = false;
     [HideInInspector] public bool hasArms = false;
     
-    // --- NEW: Fix for shotgun multi-kill loot bug ---
     private bool isDead = false; 
 
     private AudioSource audioSource;
@@ -102,10 +101,17 @@ public class EnemyLimbController : MonoBehaviour
 
     public void TakeDamage(float amount, Vector2 hitDirection = default)
     {
-        if (isDead) return; // --- FIX: Ignore damage if already dead ---
+        if (isDead) return;
 
         currentHealth -= amount;
         
+        // --- NEW: Alert SELF (Instantly Chase) ---
+        if (TryGetComponent<EnemyAI>(out EnemyAI myAI))
+        {
+            myAI.OnDamageTaken();
+        }
+        // ----------------------------------------
+
         AlertNearbyEnemies();
 
         if (BloodManager.Instance != null)

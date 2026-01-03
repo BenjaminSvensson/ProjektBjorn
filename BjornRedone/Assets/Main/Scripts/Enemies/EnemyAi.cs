@@ -157,12 +157,11 @@ public class EnemyAI : MonoBehaviour
             if (anim != null && !anim.enabled) anim.enabled = true;
         }
 
-        // --- NEW: Sync Animation State ---
+        // --- Sync Animation State ---
         if (anim != null)
         {
             anim.SetState((EnemyAnimationController.State)currentState);
         }
-        // ---------------------------------
 
         if (isTrapped)
         {
@@ -245,16 +244,20 @@ public class EnemyAI : MonoBehaviour
             }
         }
     }
-    // ---------------------------------------
 
     void SwitchToChaseState()
     {
-        if (currentState != State.Chase && currentState != State.Flee)
+        // Don't switch if already fleeing (unless explicitly handled elsewhere)
+        // If we are already chasing, this refresh is harmless.
+        if (currentState != State.Flee)
         {
             if (!ShouldFlee())
             {
-                currentState = State.Chase;
-                body.PlaySpotSound();
+                if (currentState != State.Chase)
+                {
+                    currentState = State.Chase;
+                    body.PlaySpotSound();
+                }
             }
             else
             {
@@ -262,6 +265,19 @@ public class EnemyAI : MonoBehaviour
             }
         }
     }
+
+    // --- NEW: Public method called when damaged ---
+    public void OnDamageTaken()
+    {
+        if (player == null) return;
+
+        // Instantly know where the player is
+        lastKnownPlayerPos = player.position;
+
+        // Try to chase
+        SwitchToChaseState();
+    }
+    // ----------------------------------------------
 
     void LogicFlee()
     {
@@ -308,8 +324,7 @@ public class EnemyAI : MonoBehaviour
 
         float dist = Vector2.Distance(transform.position, targetLimb.transform.position);
         
-        // --- UPDATED: Increased pickup radius to 2.0f ---
-        // Allows enemies to pick up limbs even if they can't stand directly on top of them (e.g. near walls/dumpsters)
+        // Increased pickup radius
         if (dist < 2.0f) 
         {
             // Safety Check: Ensure data exists
@@ -323,7 +338,7 @@ public class EnemyAI : MonoBehaviour
                 }
             }
             
-            // Pick a new target regardless of success to prevent getting stuck in a loop trying to pick up a broken/full limb
+            // Pick a new target regardless of success to prevent getting stuck in a loop
             PickNewRoamTarget();
         }
     }
@@ -354,8 +369,7 @@ public class EnemyAI : MonoBehaviour
                 {
                     LimbType type = limb.GetLimbData().limbType;
                     
-                    // --- UNIVERSAL LOGIC UPDATE ---
-                    // Accept the limb if it is the specific type we need, OR if it is Universal and we need anything.
+                    // --- UNIVERSAL LOGIC ---
                     bool isUseful = false;
                     if (type == LimbType.Arm && needArm) isUseful = true;
                     else if (type == LimbType.Leg && needLeg) isUseful = true;
@@ -456,7 +470,6 @@ public class EnemyAI : MonoBehaviour
 
     void LogicChase()
     {
-        // --- Use Flee Helper ---
         if (ShouldFlee())
         {
             SwitchToFleeState();
@@ -476,6 +489,7 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
+            // Player lost from sight, go to last known position
             moveTarget = lastKnownPlayerPos;
             stateTimer = investigateTime;
             currentState = State.Investigate;
@@ -485,27 +499,22 @@ public class EnemyAI : MonoBehaviour
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
         if (!body.hasLegs) speed = 0f;
 
-        // --- UPDATED MOVEMENT LOGIC ---
+        // --- MOVEMENT LOGIC ---
         if (maintainDistance)
         {
             if (distToPlayer > preferredDistance + distanceBuffer)
             {
-                // Too far, move closer
                 MoveTowards(player.position, speed);
             }
             else if (distToPlayer < preferredDistance - distanceBuffer)
             {
-                // Too close, back away
                 Vector2 dirAway = ((Vector2)transform.position - (Vector2)player.position).normalized;
                 Vector2 fleePos = (Vector2)transform.position + dirAway;
                 MoveTowards(fleePos, speed);
             }
             else
             {
-                // In sweet spot, stop moving
                 rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, turningSpeed * Time.fixedDeltaTime);
-                
-                // Ensure we face the player even when standing still
                 float dirX = player.position.x - transform.position.x;
                 if (Mathf.Abs(dirX) > 0.1f)
                 {
@@ -517,14 +526,12 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            // Original "Rush" behavior
             MoveTowards(player.position, speed);
         }
     }
 
     void LogicAttack()
     {
-        // --- Use Flee Helper ---
         if (ShouldFlee())
         {
             SwitchToFleeState();
@@ -533,10 +540,8 @@ public class EnemyAI : MonoBehaviour
 
         float distToPlayer = Vector2.Distance(transform.position, player.position);
 
-        // --- UPDATED: Allow movement during attack if maintaining distance ---
         if (maintainDistance && distToPlayer < preferredDistance - distanceBuffer)
         {
-            // Back away while attacking
             float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
             if (!body.hasLegs) speed = 0f;
             
@@ -545,7 +550,6 @@ public class EnemyAI : MonoBehaviour
         }
         else
         {
-            // Stop moving to attack (Default behavior)
             rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.deltaTime * 10f);
         }
         
