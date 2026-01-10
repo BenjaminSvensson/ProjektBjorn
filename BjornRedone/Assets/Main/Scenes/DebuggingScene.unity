@@ -3941,7 +3941,7 @@ MonoBehaviour:
     minScale: 0.9
     maxScale: 1.1
   - prefab: {fileID: 7845664515393865056, guid: 8cdaf7521d0e1164788d21f726fda281, type: 3}
-    spawnChance: 0.06
+    spawnChance: 0.1
     allowRandomFlip: 1
     minScale: 0.98
     maxScale: 1.02
@@ -4143,7 +4143,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "ProjektBj\xF6rn Devbuild 0.071\n\n\n"
+  m_text: "ProjektBj\xF6rn Devbuild 0.072\n\n\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -611,7 +611,7 @@ MonoBehaviour:
     weight: 0.6
   - name: Bullet
     prefab: {fileID: 8413724525430478086, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
-    weight: 5
+    weight: 6
   - name: Bottle
     prefab: {fileID: 835541165619439079, guid: 11b65ca832946f948abf32358987aaee, type: 3}
     weight: 2
