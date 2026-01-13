@@ -455,20 +455,29 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   damageSounds:
-  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
-  - {fileID: 8300000, guid: 48a0b08f74dee744a927f59907030c82, type: 3}
-  - {fileID: 8300000, guid: ea60473b98b3f3848bce01d2fa38544b, type: 3}
-  - {fileID: 8300000, guid: 661633bb9caa537498a81a54687a3485, type: 3}
-  - {fileID: 8300000, guid: 62799f7d5c270624ea0007ba339580ea, type: 3}
+  - {fileID: 8300000, guid: d7a9116f33b892a4ba1ba07fc8ab0413, type: 3}
+  - {fileID: 8300000, guid: 6236ce15886d2c94089dcd5626573258, type: 3}
+  - {fileID: 8300000, guid: 8c46e5bb7f406cc4194994f0a74339eb, type: 3}
+  - {fileID: 8300000, guid: 0753100cf304476468943e679d26591e, type: 3}
+  - {fileID: 8300000, guid: b73caa751f96be64b9015bf195af7209, type: 3}
+  - {fileID: 8300000, guid: bee704234f47d684db025179a437d864, type: 3}
+  - {fileID: 8300000, guid: 3b879832a6220f34d9ea172f1b6523f3, type: 3}
   idleSounds:
-  - {fileID: 8300000, guid: 20570c881034cf34d9172e3e9b91b7c6, type: 3}
-  - {fileID: 8300000, guid: 076e5811bb91275478177cd94639f218, type: 3}
-  - {fileID: 8300000, guid: 719eab725997e3547887c19002d6fb9e, type: 3}
+  - {fileID: 8300000, guid: fef859b45f3a22148967f0ec4b8fa8f9, type: 3}
+  - {fileID: 8300000, guid: 73e66f59ea3d4e44b8f1a8ea5842525f, type: 3}
+  - {fileID: 8300000, guid: f65a15a3c5d591b49b03a937292a4a3d, type: 3}
+  - {fileID: 8300000, guid: f8188c73de2af2941b07b713cc0274ed, type: 3}
+  - {fileID: 8300000, guid: bca9d023f53442649898f854db5c42e1, type: 3}
+  - {fileID: 8300000, guid: 7b83a47c35ba26e41b06b38d2bf5822b, type: 3}
   spotSounds:
-  - {fileID: 8300000, guid: 6a221fe9073aa9640a08dc1dafa0e315, type: 3}
+  - {fileID: 8300000, guid: 4b4292484138a0a40a9b98210409f0a7, type: 3}
+  - {fileID: 8300000, guid: fcab08b00f5f1db4e8da41a22ddf6cdc, type: 3}
+  - {fileID: 8300000, guid: c7c4ee75ddb882b44a6ef834b524d460, type: 3}
+  - {fileID: 8300000, guid: da6979b5181add5468113bb22b7596f2, type: 3}
+  - {fileID: 8300000, guid: dedbcb41597f2484bb369e38efaf4dcd, type: 3}
+  - {fileID: 8300000, guid: bca565e2f759d38449d716fa6171f584, type: 3}
   attackSounds: []
-  fleeSounds:
-  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
+  fleeSounds: []
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   bloodSounds:

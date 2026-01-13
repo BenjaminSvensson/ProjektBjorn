@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
   m_Name: AK47
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  weaponName: Shotgun
+  weaponName: AK47
   icon: {fileID: 1490390596225347881, guid: 9dac1d6679bc3f043a2547bd90a67864, type: 3}
   pickupPrefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}
   equippedPrefab: {fileID: 51549661887671870, guid: 7f428945c59df334793830044143f7da, type: 3}
@@ -22,6 +22,9 @@ MonoBehaviour:
   heldRotationOffset: 90
   heldPositionOffset: {x: 0, y: 0.4, z: 0}
   muzzleOffset: {x: 0, y: 0}
+  breaksOnMeleeHit: 0
+  breaksOnThrowHit: 0
+  brokenPrefab: {fileID: 0}
   type: 1
   attackStyle: 0
   meleeDamageBonus: 5
