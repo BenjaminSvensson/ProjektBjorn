@@ -874,7 +874,6 @@ MonoBehaviour:
   spotSounds:
   - {fileID: 8300000, guid: 4b4292484138a0a40a9b98210409f0a7, type: 3}
   - {fileID: 8300000, guid: da6979b5181add5468113bb22b7596f2, type: 3}
-  - {fileID: 8300000, guid: 6a221fe9073aa9640a08dc1dafa0e315, type: 3}
   attackSounds: []
   fleeSounds: []
   deathSounds:

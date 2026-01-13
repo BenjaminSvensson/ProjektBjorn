@@ -8,6 +8,8 @@ public class EnemyAI : MonoBehaviour
     // Added 'Idle' at the start to match EnemyAnimationController.State indices
     private enum State { Idle, Roam, Chase, Attack, Investigate, Scavenge, Flee }
 
+    public int mouthVaritation = 0;
+
     [Header("AI Settings")]
     public float detectionRadius = 5f;
     [Tooltip("How far away the enemy can hear bushes rustling.")]
@@ -239,6 +241,7 @@ public class EnemyAI : MonoBehaviour
             // Only play sound if cooldown is ready
             if (fleeSoundTimer <= 0)
             {
+                mouthVaritation = 1;
                 body.PlayFleeSound();
                 fleeSoundTimer = minFleeSoundInterval;
             }
@@ -273,7 +276,7 @@ public class EnemyAI : MonoBehaviour
 
         // Instantly know where the player is
         lastKnownPlayerPos = player.position;
-
+        mouthVaritation = 2;
         // Try to chase
         SwitchToChaseState();
     }

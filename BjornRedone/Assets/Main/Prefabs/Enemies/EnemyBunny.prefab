@@ -468,8 +468,10 @@ MonoBehaviour:
   spotSounds:
   - {fileID: 8300000, guid: bca565e2f759d38449d716fa6171f584, type: 3}
   - {fileID: 8300000, guid: c7c4ee75ddb882b44a6ef834b524d460, type: 3}
-  attackSounds: []
-  fleeSounds: []
+  attackSounds:
+  - {fileID: 8300000, guid: eb77e0166d191b54c997f3cd6604a2c5, type: 3}
+  fleeSounds:
+  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   bloodSounds:
@@ -491,6 +493,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00b9fbb9502f27f4283622cedea06bf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
+  mouthVaritation: 0
   detectionRadius: 5.3
   hearingRadius: 8.5
   attackRange: 1.8

@@ -27,7 +27,7 @@ MonoBehaviour:
   brokenPrefab: {fileID: 835541165619439079, guid: d185dbc680bb7244aa5f2910731290e0, type: 3}
   type: 0
   attackStyle: 0
-  meleeDamageBonus: 1
+  meleeDamageBonus: 8
   meleeImpactSounds:
   - {fileID: 8300000, guid: 79b73b97dc8265641a7fbe0379832f26, type: 3}
   attackSpeedMultiplier: 1
