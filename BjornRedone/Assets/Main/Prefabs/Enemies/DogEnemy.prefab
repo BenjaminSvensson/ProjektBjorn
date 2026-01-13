@@ -736,13 +736,29 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 512
-  damageSounds: []
-  idleSounds: []
+  damageSounds:
+  - {fileID: 8300000, guid: 62799f7d5c270624ea0007ba339580ea, type: 3}
+  - {fileID: 8300000, guid: 6eac4648275ee19488c21285cc2d4a44, type: 3}
+  - {fileID: 8300000, guid: ea10e08ae9134e040a4492f3b473fd3c, type: 3}
+  - {fileID: 8300000, guid: 4be5700607dd3934c9b9352c5e625c0a, type: 3}
+  idleSounds:
+  - {fileID: 8300000, guid: f8188c73de2af2941b07b713cc0274ed, type: 3}
+  - {fileID: 8300000, guid: bca9d023f53442649898f854db5c42e1, type: 3}
+  - {fileID: 8300000, guid: 7b83a47c35ba26e41b06b38d2bf5822b, type: 3}
+  - {fileID: 8300000, guid: 7b83a47c35ba26e41b06b38d2bf5822b, type: 3}
   spotSounds:
-  - {fileID: 8300000, guid: 6a221fe9073aa9640a08dc1dafa0e315, type: 3}
-  attackSounds: []
+  - {fileID: 8300000, guid: fcab08b00f5f1db4e8da41a22ddf6cdc, type: 3}
+  - {fileID: 8300000, guid: c7c4ee75ddb882b44a6ef834b524d460, type: 3}
+  - {fileID: 8300000, guid: dedbcb41597f2484bb369e38efaf4dcd, type: 3}
+  attackSounds:
+  - {fileID: 8300000, guid: 6176b149d10e6ec4bbd179e79ed560d1, type: 3}
   fleeSounds:
-  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
+  - {fileID: 8300000, guid: b5a43c41d7d03264e8d635f5306b55b7, type: 3}
+  - {fileID: 8300000, guid: 7d4b229ee55d73742a3908a76cb47171, type: 3}
+  - {fileID: 8300000, guid: 6a96be0c35242e246b63b4c74f0580b0, type: 3}
+  - {fileID: 8300000, guid: 342474ae7a150cd49b0a3631dcf0bfd3, type: 3}
+  - {fileID: 8300000, guid: f364fae03ee64ea4daaa6add9c61a45d, type: 3}
+  - {fileID: 8300000, guid: 2821a363af765a142ba64210a3744eea, type: 3}
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   bloodSounds:
