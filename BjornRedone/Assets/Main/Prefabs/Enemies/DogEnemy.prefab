@@ -736,16 +736,8 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 512
-  damageSounds:
-  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
-  - {fileID: 8300000, guid: 48a0b08f74dee744a927f59907030c82, type: 3}
-  - {fileID: 8300000, guid: ea60473b98b3f3848bce01d2fa38544b, type: 3}
-  - {fileID: 8300000, guid: 661633bb9caa537498a81a54687a3485, type: 3}
-  - {fileID: 8300000, guid: 62799f7d5c270624ea0007ba339580ea, type: 3}
-  idleSounds:
-  - {fileID: 8300000, guid: 20570c881034cf34d9172e3e9b91b7c6, type: 3}
-  - {fileID: 8300000, guid: 076e5811bb91275478177cd94639f218, type: 3}
-  - {fileID: 8300000, guid: 719eab725997e3547887c19002d6fb9e, type: 3}
+  damageSounds: []
+  idleSounds: []
   spotSounds:
   - {fileID: 8300000, guid: 6a221fe9073aa9640a08dc1dafa0e315, type: 3}
   attackSounds: []
