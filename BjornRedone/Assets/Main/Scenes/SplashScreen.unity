@@ -151,7 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SplashScreenManager
   nextSceneName: BjornMenu
   displayDuration: 1.2
-  fadeDuration: 1
+  fadeDuration: 0.5
   optionalAnimator: {fileID: 1019171871}
   animationTriggerName: Play
 --- !u!225 &483659077
