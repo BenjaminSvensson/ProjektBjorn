@@ -27,21 +27,20 @@ public class PlayerMovement : MonoBehaviour
     private Rigidbody2D rb;
     private InputSystem_Actions playerControls;
     private PlayerLimbController playerLimbController;
+    private Multipliers multiplier;
 
     private Vector2 moveInput = Vector2.zero;
     private float currentMoveSpeed;
     private bool isSprinting = false;
 
     private bool isTrapped = false;
-
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerControls = new InputSystem_Actions();
         playerLimbController = GetComponent<PlayerLimbController>();
-        
+        multiplier = GetComponent<Multipliers>();
         currentMoveSpeed = baseMoveSpeed;
-
         // This prevents the player from spinning around when colliding with things
         rb.freezeRotation = true;
 
@@ -54,6 +53,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    
     void OnEnable()
     {
         // --- Subscribe to the actions ---
@@ -194,8 +194,15 @@ public class PlayerMovement : MonoBehaviour
             }
             return;
         }
-        
-        float speed = isSprinting ? currentMoveSpeed * sprintSpeedMultiplier : currentMoveSpeed;
+
+        float speed = currentMoveSpeed;
+
+        // Apply multiplier from your Multipliers script
+        if (multiplier != null)
+            speed *= multiplier.speed;
+
+        speed = isSprinting ? speed * sprintSpeedMultiplier : speed;
+
         rb.linearVelocity = moveInput * speed;
     }
 

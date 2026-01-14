@@ -599,10 +599,10 @@ MonoBehaviour:
     weight: 1
   - name: Shotgun
     prefab: {fileID: 6631119458644919795, guid: 974bbb91ba198c24f8c4c22a1a9edb9e, type: 3}
-    weight: 1
-  - name: Shotgun
+    weight: 1.5
+  - name: AK47
     prefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}
-    weight: 1
+    weight: 1.5
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
   - {fileID: 8300000, guid: ec9895c7b62ca884aa86e5e710bf243b, type: 3}

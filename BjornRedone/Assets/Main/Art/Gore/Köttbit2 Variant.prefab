@@ -1,0 +1,107 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &6796078505485540682
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1803902005197738718, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 1862429386745960032, guid: 70da80c2d4ded8841a85d57eb0a8e341, type: 3}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821755232155933087, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6460705209366565959, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.x
+      value: 0.54
+      objectReference: {fileID: 0}
+    - target: {fileID: 6460705209366565959, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_SpriteTilingProperty.oldSize.y
+      value: 0.39
+      objectReference: {fileID: 0}
+    - target: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_Name
+      value: "K\xF6ttbit2 Variant"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 8338044380680138410, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_LinearDamping
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 8338044380680138410, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      propertyPath: m_AngularDamping
+      value: 50
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2823054276042702423}
+  m_SourcePrefab: {fileID: 100100000, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+--- !u!1 &4581056051781266002 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+  m_PrefabInstance: {fileID: 6796078505485540682}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2823054276042702423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4581056051781266002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ea4aa759e024b248b1f8b97d5542bb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BreakableEffect
+  breakSound: {fileID: 0}
+  lifetime: 10
+  fadeDuration: 1
+  gravityScale: 0

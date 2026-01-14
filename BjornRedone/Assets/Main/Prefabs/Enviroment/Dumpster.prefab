@@ -594,7 +594,7 @@ MonoBehaviour:
   - name: Axe
     prefab: {fileID: 7779890851109100925, guid: 6c7fe5bf37e89ab4e8a94788d7d41e19, type: 3}
     weight: 1.2
-  - name: Axe
+  - name: Hammer
     prefab: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
     weight: 1
   - name: Trash
@@ -605,16 +605,19 @@ MonoBehaviour:
     weight: 0.1
   - name: Shotgun
     prefab: {fileID: 6631119458644919795, guid: 974bbb91ba198c24f8c4c22a1a9edb9e, type: 3}
-    weight: 0.6
+    weight: 1
   - name: AK47
     prefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}
-    weight: 0.6
+    weight: 1
   - name: Bullet
     prefab: {fileID: 8413724525430478086, guid: 084a1d334a4a1714da0c6ad067560704, type: 3}
     weight: 6
   - name: Bottle
     prefab: {fileID: 835541165619439079, guid: 11b65ca832946f948abf32358987aaee, type: 3}
-    weight: 2
+    weight: 2.5
+  - name: SpeedPill
+    prefab: {fileID: 6850550609115750317, guid: 803e227a61f7b144aa1008edff19220c, type: 3}
+    weight: 3
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
   - {fileID: 8300000, guid: ec9895c7b62ca884aa86e5e710bf243b, type: 3}
