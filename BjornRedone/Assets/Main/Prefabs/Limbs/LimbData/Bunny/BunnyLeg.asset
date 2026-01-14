@@ -12,17 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfc652f006a04b3479f2c4452d4ab38b, type: 3}
   m_Name: BunnyLeg
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
-  limbType: 2
+  limbType: 3
   visualPrefab: {fileID: 2324061009247522880, guid: f76a217946f4c2c4883866d87b6aad1a, type: 3}
   maxHealth: 20
   moveSpeedBonus: 0
   punchSounds: []
   punchPitch: 1
   punchVolume: 1
-  attackDamageBonus: 0
-  punchDuration: 0.2
-  attackCooldown: 0.5
-  attackReach: 0
-  impactSize: 0
-  knockbackForce: 5
+  attackDamageBonus: 1
+  punchDuration: 0.1
+  attackCooldown: 0.6
+  attackReach: 1
+  impactSize: 1
+  knockbackForce: 2
   healthBonus: 0
