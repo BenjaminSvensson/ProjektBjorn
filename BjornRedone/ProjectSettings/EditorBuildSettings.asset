@@ -6,6 +6,12 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Main/Scenes/SplashScreen.unity
+    guid: 3a9e53e5286480e4390bfb63b6b9f82f
+  - enabled: 1
+    path: Assets/Main/Scenes/BjornMenu.unity
+    guid: 602ec9acdc46a1143b0213505241598a
+  - enabled: 1
     path: Assets/Main/Scenes/CuddleTown.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
   m_configObjects:
