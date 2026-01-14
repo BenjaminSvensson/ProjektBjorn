@@ -276,7 +276,7 @@ public class EnemyAI : MonoBehaviour
 
         // Instantly know where the player is
         lastKnownPlayerPos = player.position;
-        mouthVaritation = 2;
+        mouthVaritation = 3;
         // Try to chase
         SwitchToChaseState();
     }
