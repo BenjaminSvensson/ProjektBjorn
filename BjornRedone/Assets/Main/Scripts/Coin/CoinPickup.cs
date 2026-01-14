@@ -10,6 +10,10 @@ public class CoinPickup : MonoBehaviour
     [SerializeField] private float autoPickupDelay = 0.5f; // Time before it can be picked up
     [SerializeField] private float despawnTime = 60f;
 
+    [Header("Magnet Settings")]
+    [SerializeField] private float magnetRadius = 5f; // How close player needs to be
+    [SerializeField] private float magnetSpeed = 10f; // How fast it flies to player
+
     [Header("Physics")]
     [SerializeField] private float scatterForce = 5f;
 
@@ -21,6 +25,7 @@ public class CoinPickup : MonoBehaviour
     private bool initialized = false;
     private Collider2D col;
     private Rigidbody2D rb;
+    private Transform playerTransform; // Reference to the player
 
     void Awake()
     {
@@ -30,10 +35,36 @@ public class CoinPickup : MonoBehaviour
 
     void Start()
     {
-        // Fallback: If spawned manually in scene for testing (not by enemy), initialize automatically
+        // 1. Find the player automatically by Tag
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            playerTransform = playerObj.transform;
+        }
+
+        // Fallback: If spawned manually in scene for testing
         if (!initialized)
         {
             Initialize();
+        }
+    }
+
+    // 2. Add Update loop to handle the Magnet movement
+    void Update()
+    {
+        // Only magnetize if the scatter animation is finished and player exists
+        if (!isReady || playerTransform == null) return;
+
+        float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+
+        if (distanceToPlayer < magnetRadius)
+        {
+            // Move towards the player
+            transform.position = Vector2.MoveTowards(
+                transform.position, 
+                playerTransform.position, 
+                magnetSpeed * Time.deltaTime
+            );
         }
     }
 
@@ -44,7 +75,7 @@ public class CoinPickup : MonoBehaviour
         // Scatter!
         if (rb != null)
         {
-            rb.gravityScale = 0f; // Ensure it doesn't fall off screen in Top-Down view
+            rb.gravityScale = 0f; 
             Vector2 randomDir = Random.insideUnitCircle.normalized;
             rb.AddForce(randomDir * scatterForce, ForceMode2D.Impulse);
         }
@@ -70,19 +101,17 @@ public class CoinPickup : MonoBehaviour
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero; 
-            rb.bodyType = RigidbodyType2D.Kinematic; 
+            rb.bodyType = RigidbodyType2D.Kinematic; // Kinematic allows us to move it via Transform in Update
         }
         
         isReady = true;
     }
 
-    // Fires when entering the trigger
     void OnTriggerEnter2D(Collider2D other)
     {
         TryCollect(other);
     }
 
-    // Fires every frame you stand inside (Fixes the "standing still" bug)
     void OnTriggerStay2D(Collider2D other)
     {
         TryCollect(other);
@@ -92,12 +121,10 @@ public class CoinPickup : MonoBehaviour
     {
         if (!isReady) return;
 
-        // IMPORTANT: Ensure your Player GameObject has the Tag "Player"
         if (other.CompareTag("Player"))
         {
             PlayerWallet wallet = other.GetComponent<PlayerWallet>();
             
-            // If the collider is on a child object (like feet), look in parent
             if (wallet == null) wallet = other.GetComponentInParent<PlayerWallet>();
 
             if (wallet != null)
@@ -106,15 +133,13 @@ public class CoinPickup : MonoBehaviour
             }
             else
             {
-                // DEBUG: If you see this, you forgot to add the PlayerWallet script to your player!
-                Debug.LogWarning($"Coin hit object tagged 'Player' ({other.name}), but no 'PlayerWallet' script was found on it or its parents!");
+                Debug.LogWarning($"Coin hit Player ({other.name}), but no 'PlayerWallet' script found!");
             }
         }
     }
 
     private void Collect(PlayerWallet wallet)
     {
-        // Debug.Log("Coin Collected!"); // Uncomment to verify collection
         wallet.AddCoins(coinValue);
 
         if (pickupSound != null)
@@ -123,5 +148,12 @@ public class CoinPickup : MonoBehaviour
         }
 
         Destroy(gameObject);
+    }
+
+    // 3. Editor visualization for the magnet range
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, magnetRadius);
     }
 }

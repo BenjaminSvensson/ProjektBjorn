@@ -172,6 +172,8 @@ MonoBehaviour:
   coinValue: 1
   autoPickupDelay: 0.15
   despawnTime: 60
+  magnetRadius: 2
+  magnetSpeed: 25
   scatterForce: 5
   pickupSound: {fileID: 8300000, guid: 9c2a37a93e4b03d44b9304e2e0a0b525, type: 3}
   soundVolume: 20
