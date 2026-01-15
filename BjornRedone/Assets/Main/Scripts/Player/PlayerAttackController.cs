@@ -251,7 +251,7 @@ public class PlayerAttackController : MonoBehaviour
         if (cam == null || Mouse.current == null) return;
 
         // --- Get strength multiplier ---
-       
+        
         float strengthMult = (multiplier != null) ? multiplier.strength : 1f;
 
         // --- Base damage and knockback ---
@@ -355,6 +355,7 @@ public class PlayerAttackController : MonoBehaviour
             Collider2D hit = hitBuffer[i];
             bool validHit = false;
             
+            // 1. CHECK FOR ZOMBIES
             if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
             {
                 enemy.TakeDamage(damage, dir);
@@ -365,11 +366,25 @@ public class PlayerAttackController : MonoBehaviour
                 }
                 validHit = true;
             }
+            // 2. CHECK FOR BIRDS (NEW!)
+            else if (hit.TryGetComponent<BirdEnemyAI>(out BirdEnemyAI bird))
+            {
+                bird.TakeDamage(damage);
+                // Apply knockback to bird
+                if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D birdRb))
+                {
+                    birdRb.linearVelocity = Vector2.zero;
+                    birdRb.AddForce(dir * knockback, ForceMode2D.Impulse);
+                }
+                validHit = true;
+            }
+            // 3. CHECK FOR LOOT CONTAINERS
             else if (hit.TryGetComponent<LootContainer>(out LootContainer container))
             {
                 container.TakeDamage(damage, dir);
                 validHit = true;
             }
+            // 4. CHECK FOR GENERIC PHYSICS OBJECTS
             else if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
             {
                 if (rb.bodyType == RigidbodyType2D.Dynamic && !hit.CompareTag("Player"))
@@ -379,7 +394,7 @@ public class PlayerAttackController : MonoBehaviour
                 }
             }
 
-            // --- NEW: Breakable Weapon Logic ---
+            // --- Breakable Weapon Logic ---
             if (validHit && !brokeWeapon)
             {
                 WeaponData w = weaponSystem.GetActiveWeapon();
@@ -387,8 +402,6 @@ public class PlayerAttackController : MonoBehaviour
                 {
                     weaponSystem.BreakActiveWeapon();
                     brokeWeapon = true;
-                    // Note: We don't break the loop, so the "final swing" can still hit multiple enemies,
-                    // but the weapon is removed immediately after this frame.
                 }
             }
         }

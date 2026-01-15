@@ -1,7 +1,10 @@
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))] // 1. Ensure an AudioSource exists
 public class BirdEgg : MonoBehaviour
 {
+    [SerializeField] AudioSource crackSoundSource;
+
     [Header("Components")]
     public Transform spriteVisual;
     public Transform shadowVisual;
@@ -29,6 +32,15 @@ public class BirdEgg : MonoBehaviour
     private float totalHeight;
     private float fallDuration;
     private float timer;
+
+    void Start()
+    {
+        // 2. Auto-assign if empty to prevent crashes
+        if (crackSoundSource == null)
+        {
+            crackSoundSource = GetComponent<AudioSource>();
+        }
+    }
 
     public void Initialize(Vector2 targetPos, Vector2 visualStartPos)
     {
@@ -100,15 +112,20 @@ public class BirdEgg : MonoBehaviour
 
     void Explode()
     {
-        shadowVisual.gameObject.SetActive(false);
+        // 3. Safety Check before playing
+        if (crackSoundSource != null) 
+        {
+            crackSoundSource.Play();
+        }
+
+        if(shadowVisual) shadowVisual.gameObject.SetActive(false);
+        
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
         foreach (var hit in hits)
         {
-            // FIX: Explicitly get the component to safely call TakeDamage with 2 arguments
             PlayerLimbController playerController = hit.GetComponent<PlayerLimbController>();
             if (playerController != null)
             {
-                // Calculate hit direction from egg center to player center
                 Vector2 dir = (hit.transform.position - transform.position).normalized;
                 playerController.TakeDamage(damage, dir);
             }

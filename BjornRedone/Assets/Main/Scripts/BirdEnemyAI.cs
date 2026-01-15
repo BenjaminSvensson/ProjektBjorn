@@ -5,7 +5,7 @@ using System.Collections.Generic;
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(EnemyLimbController))]
-[RequireComponent(typeof(AudioSource))] // Added AudioSource requirement
+[RequireComponent(typeof(AudioSource))]
 public class BirdEnemyAI : MonoBehaviour
 {
     private enum BirdState { Grounded, TakingOff, Chasing, Retreating, OffScreenAttack, Diving, Stuck, Dead }
@@ -16,18 +16,30 @@ public class BirdEnemyAI : MonoBehaviour
     public Transform eggSpawnPoint; 
     [SerializeField] private Animator animator;
 
+    [Header("Audio Profile")]
+    [Tooltip("Sound played repeatedly while flying")]
+    public AudioClip flapSound;
+    [Tooltip("Time in seconds between flap sounds")]
+    public float flapInterval = 0.4f;
+    [Tooltip("Sound played when starting a dive attack")]
+    public AudioClip diveSound;
+    [Tooltip("Sound played when dropping an egg")]
+    public AudioClip eggDropSound;
+    [Tooltip("Sound played when hit")]
+    public AudioClip hitSound;
+    [Tooltip("Sound played when dying")]
+    public AudioClip deathSound;
+    
     [Header("Health & Feedback")]
     public float maxHealth = 30f;
     public float contactDamage = 5f;
-    [Tooltip("Color to flash when hit")]
     public Color damageFlashColor = Color.red;
-    [Tooltip("Sound to play when hit")]
-    public AudioClip hitSound;
     
     private float currentHealth;
     private AudioSource audioSource;
-    private SpriteRenderer[] childRenderers; // To store all sprites (wings, body, etc)
+    private SpriteRenderer[] childRenderers; 
     private Coroutine flashCoroutine;
+    private float flapTimer; // Internal timer for flapping sound
 
     [Header("Optimization")]
     public float maxActivityDistance = 30.0f;
@@ -77,7 +89,7 @@ public class BirdEnemyAI : MonoBehaviour
     private float eggTimer;
     private Vector2 diveTargetPos;
     
-    // Shadow Logic variables
+    // Shadow Logic
     private Vector2 shadowTargetPos;
     private bool lockShadowToTarget = false;
     private Vector2 retreatDirection;
@@ -92,7 +104,6 @@ public class BirdEnemyAI : MonoBehaviour
         if (shadowSprite) shadowRenderer = shadowSprite.GetComponent<SpriteRenderer>();
         if (eggSpawnPoint == null) eggSpawnPoint = transform;
 
-        // Gather all sprites in the holder (Body, Wings, etc.) so they all flash red
         if (spriteHolder)
         {
             childRenderers = spriteHolder.GetComponentsInChildren<SpriteRenderer>();
@@ -111,7 +122,6 @@ public class BirdEnemyAI : MonoBehaviour
     {
         if (player == null || currentState == BirdState.Dead) return;
 
-        // Optimization
         float dist = Vector2.Distance(transform.position, player.position);
         if (dist > maxActivityDistance && currentState != BirdState.OffScreenAttack)
         {
@@ -120,6 +130,7 @@ public class BirdEnemyAI : MonoBehaviour
         }
 
         UpdateVisualsAndShadow();
+        HandleAmbientAudio(); // Check if we should play flap sounds
 
         switch (currentState)
         {
@@ -140,7 +151,6 @@ public class BirdEnemyAI : MonoBehaviour
                 HandleOffScreenAttack();
                 break;
             case BirdState.Diving:
-                // Logic handled in Coroutine
                 break;
             case BirdState.Stuck:
                 stateTimer -= Time.deltaTime;
@@ -149,31 +159,54 @@ public class BirdEnemyAI : MonoBehaviour
         }
     }
 
-    // --- DAMAGE & FEEDBACK LOGIC ---
+    // --- AUDIO LOGIC ---
+
+    void HandleAmbientAudio()
+    {
+        // Only flap if we are in a flying state
+        bool isFlying = (currentState == BirdState.Chasing || 
+                         currentState == BirdState.Retreating || 
+                         currentState == BirdState.OffScreenAttack || 
+                         currentState == BirdState.TakingOff);
+
+        if (isFlying)
+        {
+            flapTimer -= Time.deltaTime;
+            if (flapTimer <= 0)
+            {
+                PlaySound(flapSound, 0.4f, 0.9f, 1.1f); // Lower volume for wings, variable pitch
+                flapTimer = flapInterval;
+            }
+        }
+    }
+
+    void PlaySound(AudioClip clip, float volume = 1.0f, float pitchMin = 0.9f, float pitchMax = 1.1f)
+    {
+        if (clip != null && audioSource != null)
+        {
+            audioSource.pitch = Random.Range(pitchMin, pitchMax);
+            audioSource.PlayOneShot(clip, volume);
+        }
+    }
+
+    // --- DAMAGE LOGIC ---
 
     public void TakeDamage(float damageAmount)
     {
         if (currentState == BirdState.Dead) return;
 
         currentHealth -= damageAmount;
+        
+        PlaySound(hitSound, 1f); // Play Hit Sound
 
-        // 1. Play Sound
-        if (audioSource && hitSound)
-        {
-            audioSource.PlayOneShot(hitSound);
-        }
-
-        // 2. Play Animation
         if (animator) animator.SetTrigger("Hit");
 
-        // 3. Flash Red (Visual Feedback)
         if (gameObject.activeInHierarchy)
         {
             if (flashCoroutine != null) StopCoroutine(flashCoroutine);
             flashCoroutine = StartCoroutine(FlashDamageEffect());
         }
 
-        // 4. Death Check
         if (currentHealth <= 0)
         {
             Die();
@@ -182,34 +215,27 @@ public class BirdEnemyAI : MonoBehaviour
 
     private IEnumerator FlashDamageEffect()
     {
-        // Turn Red
         if (childRenderers != null)
         {
-            foreach (var sr in childRenderers)
-            {
-                if (sr) sr.color = damageFlashColor;
-            }
+            foreach (var sr in childRenderers) if (sr) sr.color = damageFlashColor;
         }
 
-        yield return new WaitForSeconds(0.15f); // Short flash duration
+        yield return new WaitForSeconds(0.15f);
 
-        // Return to White
         if (childRenderers != null)
         {
-            foreach (var sr in childRenderers)
-            {
-                if (sr) sr.color = Color.white;
-            }
+            foreach (var sr in childRenderers) if (sr) sr.color = Color.white;
         }
     }
 
     void Die()
     {
+        PlaySound(deathSound, 1f); // Play Death Sound
+
         currentState = BirdState.Dead;
         rb.linearVelocity = Vector2.zero;
         StopAllCoroutines();
 
-        // Ensure visuals are reset to white before dying
         if (childRenderers != null)
         {
             foreach (var sr in childRenderers) if(sr) sr.color = Color.white;
@@ -222,8 +248,6 @@ public class BirdEnemyAI : MonoBehaviour
 
         Destroy(gameObject, 2.0f);
     }
-
-    // --- CONTACT DAMAGE ---
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
@@ -328,6 +352,9 @@ public class BirdEnemyAI : MonoBehaviour
         lockShadowToTarget = true;
         shadowTargetPos = diveTargetPos;
 
+        // Play Attack Sound
+        PlaySound(diveSound, 1f, 1f, 1.2f); 
+
         yield return new WaitForSeconds(diveTellDuration);
 
         float t = 0;
@@ -353,12 +380,12 @@ public class BirdEnemyAI : MonoBehaviour
         SwitchState(BirdState.Stuck);
     }
 
-    // --- HELPERS ---
-
     void DropEgg()
     {
         if (eggPrefab)
         {
+            PlaySound(eggDropSound, 0.7f); // Play Egg Sound
+
             Vector2 targetLandPos = player.position;
             Vector2 releasePos = eggSpawnPoint.position;
             GameObject egg = Instantiate(eggPrefab, targetLandPos, Quaternion.identity);
@@ -366,6 +393,8 @@ public class BirdEnemyAI : MonoBehaviour
             if (eggScript != null) eggScript.Initialize(targetLandPos, releasePos);
         }
     }
+
+    // --- VISUAL & HELPER METHODS ---
 
     void FaceDirection(float xDir)
     {
