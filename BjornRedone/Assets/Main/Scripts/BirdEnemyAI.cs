@@ -183,10 +183,14 @@ public class BirdEnemyAI : MonoBehaviour
 
    void UpdateWingSoundState()
     {
-        bool isDoingFlyLoop = (currentState == BirdState.Chasing || 
-                               currentState == BirdState.Retreating);
+        // 1. CHASE = Flapping
+        // 2. RETREAT = Flapping
+        // 3. EVERYTHING ELSE (TakingOff, Attack, Dive, Stuck) = SILENT
+        
+        bool shouldFlap = (currentState == BirdState.Chasing || 
+                           currentState == BirdState.Retreating);
 
-        if (isDoingFlyLoop)
+        if (shouldFlap)
         {
             if (!wingAudioSource.isPlaying && flapSound != null)
             {
@@ -195,6 +199,7 @@ public class BirdEnemyAI : MonoBehaviour
         }
         else
         {
+            // Aggressively stop the sound if we aren't explicitly flying around
             if (wingAudioSource.isPlaying)
             {
                 wingAudioSource.Stop();
@@ -367,8 +372,11 @@ public class BirdEnemyAI : MonoBehaviour
         if (stateTimer <= 0) SwitchState(BirdState.Diving);
     }
 
-    IEnumerator ExecuteDiveSequence()
+IEnumerator ExecuteDiveSequence()
     {
+        // FORCE STOP: Silence the wings immediately when the dive begins
+        if (wingAudioSource.isPlaying) wingAudioSource.Stop();
+
         rb.linearVelocity = Vector2.zero;
         diveTargetPos = player.position;
         Vector2 startPos = rb.position; 
@@ -377,14 +385,18 @@ public class BirdEnemyAI : MonoBehaviour
         lockShadowToTarget = true;
         shadowTargetPos = diveTargetPos;
 
+        // Play the specific "Scream" or "Dive" sound here
+        // Make sure 'diveSound' in the Inspector is NOT the flapping clip!
         PlayOneShot(diveSound, 1f); 
 
+        // Wait for the "Tell" (Animation warning)
         yield return new WaitForSeconds(diveTellDuration);
 
         float t = 0;
         float dist = Vector2.Distance(startPos, diveTargetPos);
         float duration = Mathf.Max(dist / diveSpeed, 0.2f); 
 
+        // The Physical Dive
         while (t < 1.0f)
         {
             t += Time.deltaTime / duration;
@@ -399,8 +411,8 @@ public class BirdEnemyAI : MonoBehaviour
         currentHeight = 0f;
         lockShadowToTarget = false;
         
+        // Impact
         PlayOneShot(groundImpactSound, 1.0f);
-        
         CheckImpactDamage();
 
         SwitchState(BirdState.Stuck);

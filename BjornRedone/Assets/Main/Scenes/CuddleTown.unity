@@ -5857,7 +5857,11 @@ PrefabInstance:
     - target: {fileID: 4959696803776185492, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
       propertyPath: diveSound
       value: 
-      objectReference: {fileID: 8300000, guid: 5b6c8991d327d42459e121571a741abf, type: 3}
+      objectReference: {fileID: 8300000, guid: 6f205f8f4be16064b9285b930e148991, type: 3}
+    - target: {fileID: 4959696803776185492, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
+      propertyPath: groundImpactSound
+      value: 
+      objectReference: {fileID: 8300000, guid: ad875db219f80654288cbb0aa3d89b7e, type: 3}
     - target: {fileID: 7443698164649891963, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
       propertyPath: m_Name
       value: BirdieBirdieBirdie
