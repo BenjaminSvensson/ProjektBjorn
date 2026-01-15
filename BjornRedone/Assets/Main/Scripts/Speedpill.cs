@@ -2,24 +2,71 @@ using UnityEngine;
 
 public class Speedpill : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    [Header("Settings")]
+    [SerializeField] AudioSource pickupSound;
     public float addspeed = 0.25f;
-    private Multipliers multipliers;
+
+    [Header("Magnet Settings")]
+    [SerializeField] private float magnetRadius = 5f; // Distance to trigger magnet
+    [SerializeField] private float magnetSpeed = 10f; // Flight speed
+
+    private Transform playerTransform;
+
     void Start()
     {
-        multipliers = GetComponent<Multipliers>();
+        // Automatically find the player by Tag
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            playerTransform = playerObj.transform;
+        }
     }
+
+    void Update()
+    {
+        // If player exists, check distance
+        if (playerTransform != null)
+        {
+            float distance = Vector2.Distance(transform.position, playerTransform.position);
+
+            // If inside range, fly towards player
+            if (distance < magnetRadius)
+            {
+                transform.position = Vector2.MoveTowards(
+                    transform.position, 
+                    playerTransform.position, 
+                    magnetSpeed * Time.deltaTime
+                );
+            }
+        }
+    }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("Player"))
         {
+            // 1. Play Sound (Fixed: Uses PlayClipAtPoint so Destroy() doesn't cut the audio off)
+            if (pickupSound != null && pickupSound.clip != null)
+            {
+                AudioSource.PlayClipAtPoint(pickupSound.clip, transform.position);
+            }
+
+            // 2. Apply Speed Effect
             Multipliers playerMultipliers = collision.GetComponent<Multipliers>();
             if (playerMultipliers != null)
             {
-                playerMultipliers.speed += addspeed; // increase player's speed
+                playerMultipliers.speed += addspeed; 
             }
 
-            Destroy(gameObject); // destroy the pill
+            // 3. Remove Pill
+            Destroy(gameObject); 
         }
+    }
+
+    // Visualize range in Editor
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, magnetRadius);
     }
 }
