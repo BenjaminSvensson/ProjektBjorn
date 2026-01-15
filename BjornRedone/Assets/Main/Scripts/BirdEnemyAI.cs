@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
@@ -17,17 +16,11 @@ public class BirdEnemyAI : MonoBehaviour
     [SerializeField] private Animator animator;
 
     [Header("Audio Profile")]
-    [Tooltip("Sound played repeatedly while flying")]
     public AudioClip flapSound;
-    [Tooltip("Time in seconds between flap sounds")]
-    public float flapInterval = 0.4f;
-    [Tooltip("Sound played when starting a dive attack")]
     public AudioClip diveSound;
-    [Tooltip("Sound played when dropping an egg")]
+    public AudioClip groundImpactSound;
     public AudioClip eggDropSound;
-    [Tooltip("Sound played when hit")]
     public AudioClip hitSound;
-    [Tooltip("Sound played when dying")]
     public AudioClip deathSound;
     
     [Header("Health & Feedback")]
@@ -36,13 +29,15 @@ public class BirdEnemyAI : MonoBehaviour
     public Color damageFlashColor = Color.red;
     
     private float currentHealth;
-    private AudioSource audioSource;
+    private AudioSource mainAudioSource; 
+    private AudioSource wingAudioSource; 
     private SpriteRenderer[] childRenderers; 
     private Coroutine flashCoroutine;
-    private float flapTimer; // Internal timer for flapping sound
 
     [Header("Optimization")]
     public float maxActivityDistance = 30.0f;
+    [Tooltip("How close the player must be for the bird to fly up")]
+    public float wakeUpDistance = 15.0f; // Increased slightly
 
     [Header("Flying Settings")]
     public float flyHeight = 4.0f;
@@ -89,7 +84,6 @@ public class BirdEnemyAI : MonoBehaviour
     private float eggTimer;
     private Vector2 diveTargetPos;
     
-    // Shadow Logic
     private Vector2 shadowTargetPos;
     private bool lockShadowToTarget = false;
     private Vector2 retreatDirection;
@@ -98,7 +92,20 @@ public class BirdEnemyAI : MonoBehaviour
     {
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
-        audioSource = GetComponent<AudioSource>();
+        
+        // FIX: Ensure gravity doesn't pull the bird down if it's a top-down game
+        rb.gravityScale = 0f; 
+        
+        mainAudioSource = GetComponent<AudioSource>();
+        
+        wingAudioSource = gameObject.AddComponent<AudioSource>();
+        wingAudioSource.loop = true;
+        wingAudioSource.playOnAwake = false;
+        wingAudioSource.clip = flapSound;
+        wingAudioSource.spatialBlend = 1.0f; 
+        wingAudioSource.minDistance = 2.0f; 
+        wingAudioSource.maxDistance = 25.0f; 
+        wingAudioSource.rolloffMode = AudioRolloffMode.Linear;
         
         if(animator == null && spriteHolder) animator = spriteHolder.GetComponent<Animator>();
         if (shadowSprite) shadowRenderer = shadowSprite.GetComponent<SpriteRenderer>();
@@ -109,8 +116,16 @@ public class BirdEnemyAI : MonoBehaviour
             childRenderers = spriteHolder.GetComponentsInChildren<SpriteRenderer>();
         }
 
+        // --- CRITICAL FIX: FIND PLAYER ---
         GameObject p = GameObject.FindGameObjectWithTag("Player");
-        if (p) player = p.transform;
+        if (p) 
+        {
+            player = p.transform;
+        }
+        else
+        {
+            Debug.LogError("BIRD AI ERROR: Could not find object with tag 'Player'! The bird will not move.");
+        }
 
         mainCam = Camera.main;
         if(spriteHolder) spriteHolder.localScale = new Vector3(groundScale, groundScale, 1);
@@ -120,22 +135,27 @@ public class BirdEnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (player == null || currentState == BirdState.Dead) return;
+        // Safety check
+        if (player == null) return;
+        if (currentState == BirdState.Dead) return;
 
         float dist = Vector2.Distance(transform.position, player.position);
+        
+        // If too far away, do nothing (idle)
         if (dist > maxActivityDistance && currentState != BirdState.OffScreenAttack)
         {
-            rb.linearVelocity = Vector2.zero; 
+            rb.linearVelocity = Vector2.zero;
+            if (wingAudioSource.isPlaying) wingAudioSource.Stop(); 
             return; 
         }
 
         UpdateVisualsAndShadow();
-        HandleAmbientAudio(); // Check if we should play flap sounds
 
         switch (currentState)
         {
             case BirdState.Grounded:
-                if (dist < 12f) SwitchState(BirdState.TakingOff);
+                // FIX: Used wakeUpDistance variable
+                if (dist < wakeUpDistance) SwitchState(BirdState.TakingOff);
                 break;
             case BirdState.TakingOff:
                 currentHeight = Mathf.MoveTowards(currentHeight, flyHeight, takeoffSpeed * Time.deltaTime);
@@ -159,33 +179,35 @@ public class BirdEnemyAI : MonoBehaviour
         }
     }
 
-    // --- AUDIO LOGIC ---
+    // --- AUDIO HELPERS ---
 
-    void HandleAmbientAudio()
+   void UpdateWingSoundState()
     {
-        // Only flap if we are in a flying state
-        bool isFlying = (currentState == BirdState.Chasing || 
-                         currentState == BirdState.Retreating || 
-                         currentState == BirdState.OffScreenAttack || 
-                         currentState == BirdState.TakingOff);
+        bool isDoingFlyLoop = (currentState == BirdState.Chasing || 
+                               currentState == BirdState.Retreating);
 
-        if (isFlying)
+        if (isDoingFlyLoop)
         {
-            flapTimer -= Time.deltaTime;
-            if (flapTimer <= 0)
+            if (!wingAudioSource.isPlaying && flapSound != null)
             {
-                PlaySound(flapSound, 0.4f, 0.9f, 1.1f); // Lower volume for wings, variable pitch
-                flapTimer = flapInterval;
+                wingAudioSource.Play();
+            }
+        }
+        else
+        {
+            if (wingAudioSource.isPlaying)
+            {
+                wingAudioSource.Stop();
             }
         }
     }
 
-    void PlaySound(AudioClip clip, float volume = 1.0f, float pitchMin = 0.9f, float pitchMax = 1.1f)
+    void PlayOneShot(AudioClip clip, float volume = 1.0f)
     {
-        if (clip != null && audioSource != null)
+        if (clip != null && mainAudioSource != null)
         {
-            audioSource.pitch = Random.Range(pitchMin, pitchMax);
-            audioSource.PlayOneShot(clip, volume);
+            mainAudioSource.pitch = Random.Range(0.9f, 1.1f);
+            mainAudioSource.PlayOneShot(clip, volume);
         }
     }
 
@@ -197,7 +219,7 @@ public class BirdEnemyAI : MonoBehaviour
 
         currentHealth -= damageAmount;
         
-        PlaySound(hitSound, 1f); // Play Hit Sound
+        PlayOneShot(hitSound, 1f); 
 
         if (animator) animator.SetTrigger("Hit");
 
@@ -230,7 +252,8 @@ public class BirdEnemyAI : MonoBehaviour
 
     void Die()
     {
-        PlaySound(deathSound, 1f); // Play Death Sound
+        PlayOneShot(deathSound, 1f);
+        wingAudioSource.Stop();
 
         currentState = BirdState.Dead;
         rb.linearVelocity = Vector2.zero;
@@ -272,6 +295,8 @@ public class BirdEnemyAI : MonoBehaviour
 
         currentState = newState;
         stateTimer = 0;
+
+        UpdateWingSoundState();
 
         switch (currentState)
         {
@@ -352,8 +377,7 @@ public class BirdEnemyAI : MonoBehaviour
         lockShadowToTarget = true;
         shadowTargetPos = diveTargetPos;
 
-        // Play Attack Sound
-        PlaySound(diveSound, 1f, 1f, 1.2f); 
+        PlayOneShot(diveSound, 1f); 
 
         yield return new WaitForSeconds(diveTellDuration);
 
@@ -375,6 +399,8 @@ public class BirdEnemyAI : MonoBehaviour
         currentHeight = 0f;
         lockShadowToTarget = false;
         
+        PlayOneShot(groundImpactSound, 1.0f);
+        
         CheckImpactDamage();
 
         SwitchState(BirdState.Stuck);
@@ -384,7 +410,7 @@ public class BirdEnemyAI : MonoBehaviour
     {
         if (eggPrefab)
         {
-            PlaySound(eggDropSound, 0.7f); // Play Egg Sound
+            PlayOneShot(eggDropSound, 0.7f); 
 
             Vector2 targetLandPos = player.position;
             Vector2 releasePos = eggSpawnPoint.position;
@@ -459,10 +485,18 @@ public class BirdEnemyAI : MonoBehaviour
 
     void OnDrawGizmos()
     {
+        // Draw the Attack Range (Red)
         Gizmos.color = Color.red;
         if(lockShadowToTarget) Gizmos.DrawWireSphere(diveTargetPos, damageRadius);
+
+        // Draw the "Wake Up" Range (Green) - Use this to check distance!
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, wakeUpDistance);
+        
+        // Draw Max Active Distance (Yellow)
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, maxActivityDistance);
+
         if(eggSpawnPoint) { Gizmos.color = Color.cyan; Gizmos.DrawWireSphere(eggSpawnPoint.position, 0.2f); }
     }
 }
