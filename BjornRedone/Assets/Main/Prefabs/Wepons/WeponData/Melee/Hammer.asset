@@ -13,15 +13,18 @@ MonoBehaviour:
   m_Name: Hammer
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   weaponName: Hammer
-  icon: {fileID: 6741607474328365339, guid: 39f166cb248644843b3e25f591a93b03, type: 3}
+  icon: {fileID: 2789472100929886794, guid: 8f247d82e9470084aafb81768eef2945, type: 3}
   pickupPrefab: {fileID: 3091896305283139794, guid: b877e56171c77ab458ead6a3a797e0bb, type: 3}
   equippedPrefab: {fileID: 0}
   muzzleSocketName: Muzzle
-  heldSprite: {fileID: 6741607474328365339, guid: 39f166cb248644843b3e25f591a93b03, type: 3}
+  heldSprite: {fileID: 2789472100929886794, guid: 8f247d82e9470084aafb81768eef2945, type: 3}
   heldScale: {x: 1.4, y: 1.4, z: 1.4}
   heldRotationOffset: 0
   heldPositionOffset: {x: 0, y: 0, z: 0}
   muzzleOffset: {x: 0.5, y: 0}
+  breaksOnMeleeHit: 0
+  breaksOnThrowHit: 0
+  brokenPrefab: {fileID: 0}
   type: 0
   attackStyle: 1
   meleeDamageBonus: 13
@@ -35,6 +38,7 @@ MonoBehaviour:
   projectileSpeed: 15
   projectileDamage: 5
   spread: 5
+  screenShakeAmount: 0.1
   projectilesPerShot: 1
   shootSounds: []
   magazineSize: 6

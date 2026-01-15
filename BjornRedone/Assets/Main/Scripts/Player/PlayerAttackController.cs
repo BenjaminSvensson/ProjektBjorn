@@ -26,7 +26,7 @@ public class PlayerAttackController : MonoBehaviour
     private float globalCooldownTimer = 0f; 
     
     private float clickSoundCooldownTimer = 0f;
-    
+    private Multipliers multiplier;
     private Camera cam;
     private Collider2D[] hitBuffer = new Collider2D[10]; 
 
@@ -39,6 +39,7 @@ public class PlayerAttackController : MonoBehaviour
         if (limbController == null) limbController = GetComponent<PlayerLimbController>();
         if (animController == null) animController = GetComponent<PlayerAnimationController>();
         if (weaponSystem == null) weaponSystem = GetComponent<WeaponSystem>();
+        if (multiplier == null)  multiplier = GetComponent<Multipliers>();
     }
 
     void OnEnable() { playerControls.Player.Attack.performed += HandleAttack; playerControls.Player.Attack.canceled += HandleAttack; playerControls.Player.Enable(); }
@@ -210,8 +211,11 @@ public class PlayerAttackController : MonoBehaviour
                 bool isRightMain = weaponSystem.IsHoldingWithRightHand();
                 Transform mainArm = isRightMain ? limbController.GetRightArmSlot() : limbController.GetLeftArmSlot();
                 LimbData mainData = isRightMain ? rightData : leftData;
-                float totalDamage = limbController.baseAttackDamage + leftData.attackDamageBonus + rightData.attackDamageBonus + meleeWeapon.meleeDamageBonus;
-                
+                float totalDamage = limbController.baseAttackDamage
+                  + mainData.attackDamageBonus
+                  + meleeWeapon.meleeDamageBonus;
+
+
                 ExecuteMelee(mainArm, mainData, !isRightMain, meleeWeapon, speedMult, true, totalDamage);
 
                 float fullCooldown = mainData.attackCooldown / Mathf.Max(0.1f, speedMult);
@@ -244,15 +248,18 @@ public class PlayerAttackController : MonoBehaviour
 
     private void ExecuteMelee(Transform armTransform, LimbData armData, bool isLeftArm, WeaponData weapon, float speedMult, bool playAudio, float? damageOverride = null)
     {
-        if (cam == null || Mouse.current == null) return; 
+        if (cam == null || Mouse.current == null) return;
 
+        // --- Get strength multiplier ---
+       
+        float strengthMult = (multiplier != null) ? multiplier.strength : 1f;
+
+        // --- Base damage and knockback ---
         float damage = damageOverride.HasValue ? damageOverride.Value : (limbController.baseAttackDamage + armData.attackDamageBonus);
         float knockback = armData.knockbackForce;
         AudioClip[] soundPool = armData.punchSounds;
-        
-        float calculatedDuration = armData.punchDuration / Mathf.Max(0.1f, speedMult);
-        float calculatedCooldown = armData.attackCooldown / Mathf.Max(0.1f, speedMult);
 
+        // --- Weapon bonus check ---
         bool hasWeaponBonus = false;
         if (weapon != null && weaponSystem != null)
         {
@@ -273,25 +280,30 @@ public class PlayerAttackController : MonoBehaviour
             }
 
             if (weapon.meleeImpactSounds != null && weapon.meleeImpactSounds.Length > 0)
-                soundPool = weapon.meleeImpactSounds; 
+                soundPool = weapon.meleeImpactSounds;
         }
 
+        // --- Apply strength multiplier to all attacks ---
+        damage *= strengthMult;
+        knockback *= strengthMult;
+
+        // --- Calculate durations ---
+        float calculatedDuration = armData.punchDuration / Mathf.Max(0.1f, speedMult);
+        float calculatedCooldown = armData.attackCooldown / Mathf.Max(0.1f, speedMult);
+
+        // --- Set cooldowns ---
         if (!damageOverride.HasValue)
         {
             if (weapon != null)
-            {
                 weaponSystem.SetCurrentWeaponCooldown(calculatedCooldown);
-                if (isLeftArm) leftArmCooldownTimer = calculatedCooldown; 
-                else rightArmCooldownTimer = calculatedCooldown;
-            }
-            else
-            {
-                if (isLeftArm) leftArmCooldownTimer = calculatedCooldown;
-                else rightArmCooldownTimer = calculatedCooldown;
-            }
+
+            if (isLeftArm) leftArmCooldownTimer = calculatedCooldown;
+            else rightArmCooldownTimer = calculatedCooldown;
+
             globalCooldownTimer = minPunchDelay;
         }
 
+        // --- Play punch/swing audio ---
         if (playAudio && actionAudioSource != null && soundPool != null && soundPool.Length > 0)
         {
             AudioClip clip = soundPool[Random.Range(0, soundPool.Length)];
@@ -303,7 +315,8 @@ public class PlayerAttackController : MonoBehaviour
         }
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-        
+
+        // --- Swing attack ---
         if (weapon != null && hasWeaponBonus && weapon.attackStyle == MeleeAttackStyle.Swing)
         {
             float swingDirection = (mouseWorldPos.x < transform.position.x) ? 1f : -1f;
@@ -312,7 +325,7 @@ public class PlayerAttackController : MonoBehaviour
             animController.TriggerSwing(armTransform, calculatedDuration, mouseWorldPos, finalArc);
             StartCoroutine(DelayedSwingHit(armTransform, mouseWorldPos, damage, knockback, armData, weapon.swingArc, calculatedDuration * 0.5f));
         }
-        else
+        else // --- Punch attack ---
         {
             Vector2 punchDirection = (mouseWorldPos - (Vector2)armTransform.position).normalized;
             Vector2 hitPosition = (Vector2)armTransform.position + (punchDirection * armData.attackReach);
@@ -321,6 +334,7 @@ public class PlayerAttackController : MonoBehaviour
             CheckHit(hitPosition, armData.impactSize, damage, knockback, punchDirection, armData);
         }
     }
+
 
     private System.Collections.IEnumerator DelayedSwingHit(Transform arm, Vector2 targetPos, float dmg, float kb, LimbData data, float arc, float delay)
     {
