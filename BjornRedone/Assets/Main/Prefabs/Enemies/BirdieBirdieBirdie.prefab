@@ -171,7 +171,7 @@ Transform:
   m_GameObject: {fileID: 6324408271761395815}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.8, z: 0}
+  m_LocalPosition: {x: 0, y: -0.9, z: 0}
   m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -419,7 +419,19 @@ MonoBehaviour:
   coinPrefab: {fileID: 0}
   minCoins: 1
   maxCoins: 3
-  goreDrops: []
+  goreDrops:
+  - name: Tarmar
+    prefab: {fileID: 3073958071732642810, guid: 02f6c1c49f4bac04ebc22f861aa8e2c5, type: 3}
+    dropChance: 0.2
+    maxAmount: 1
+  - name: "K\xF6ttbit"
+    prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+    dropChance: 0.4
+    maxAmount: 3
+  - name: "K\xF6ttbit2"
+    prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
+    dropChance: 0.5
+    maxAmount: 2
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}
@@ -440,7 +452,8 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 512
-  damageSounds: []
+  damageSounds:
+  - {fileID: 8300000, guid: b7c4e0ed2e3278a47baee51809a6e995, type: 3}
   idleSounds:
   - {fileID: 0}
   spotSounds:
@@ -449,8 +462,10 @@ MonoBehaviour:
   - {fileID: 0}
   fleeSounds:
   - {fileID: 0}
-  deathSounds: []
-  bloodSounds: []
+  deathSounds:
+  - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
+  bloodSounds:
+  - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   moveSpeedBonus: 0
   attackDamageBonus: 0
@@ -473,14 +488,16 @@ MonoBehaviour:
   eggSpawnPoint: {fileID: 3058464208078927508}
   animator: {fileID: 6443836219559415128}
   flapSound: {fileID: 8300000, guid: 5b6c8991d327d42459e121571a741abf, type: 3}
-  diveSound: {fileID: 8300000, guid: 5b6c8991d327d42459e121571a741abf, type: 3}
-  eggDropSound: {fileID: 0}
+  diveSound: {fileID: 8300000, guid: 6f205f8f4be16064b9285b930e148991, type: 3}
+  groundImpactSound: {fileID: 8300000, guid: ad875db219f80654288cbb0aa3d89b7e, type: 3}
+  eggDropSound: {fileID: 8300000, guid: 0effd904622c19641a610b80c44a897d, type: 3}
   hitSound: {fileID: 8300000, guid: ea60473b98b3f3848bce01d2fa38544b, type: 3}
   deathSound: {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   maxHealth: 15
   contactDamage: 3
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   maxActivityDistance: 10
+  wakeUpDistance: 15
   flyHeight: 15
   offScreenHeight: 110
   flySpeed: 6
