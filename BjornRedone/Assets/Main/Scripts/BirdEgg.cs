@@ -96,6 +96,11 @@ public class BirdEgg : MonoBehaviour
     {
         hasLanded = true;
         
+        if (crackSoundSource != null) 
+        {
+            crackSoundSource.Play();
+        }
+        
         if (spriteVisual) spriteVisual.localPosition = Vector3.zero;
         if (shadowVisual)
         {
@@ -112,12 +117,7 @@ public class BirdEgg : MonoBehaviour
 
     void Explode()
     {
-        // 3. Safety Check before playing
-        if (crackSoundSource != null) 
-        {
-            crackSoundSource.Play();
-        }
-
+        
         if(shadowVisual) shadowVisual.gameObject.SetActive(false);
         
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
