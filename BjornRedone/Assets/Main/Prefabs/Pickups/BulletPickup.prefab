@@ -560,6 +560,8 @@ MonoBehaviour:
   ammoAmount: 32
   pickupSound: {fileID: 8300000, guid: 2bb216c992b988745a460098ea18a328, type: 3}
   groundFriction: 3
+  magnetRadius: 2
+  magnetSpeed: 5
 --- !u!50 &5410631626818445946
 Rigidbody2D:
   serializedVersion: 5

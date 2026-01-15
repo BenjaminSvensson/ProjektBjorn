@@ -5651,6 +5651,7 @@ MonoBehaviour:
   speed: 1
   maxspeedmultiplier: 5
   strength: 1
+  maxstreangthmultiplier: 10
   health: 1
 --- !u!1 &2015661865
 GameObject:
