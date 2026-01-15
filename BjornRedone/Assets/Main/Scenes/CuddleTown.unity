@@ -2820,18 +2820,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1172561458}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b04d67e9fe62f534692e551a6ac9f566, type: 3}
+  m_Script: {fileID: 11500000, guid: 043d60adbab5a994b93cdbc7df597a28, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
+  m_EditorClassIdentifier: Assembly-CSharp::SimpleCameraFollow
   playerTransform: {fileID: 1970201048}
-  smoothTime: 0.15
-  mouseInfluence: 0.12
-  maxPeekDistance: 0.5
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 8192
-  wallScanDistance: {x: 8, y: 6}
-  roomBuffer: 0.5
+  smoothTime: 0.1
+  mouseInfluence: 0.3
+  maxPeekDistance: 4
+  maxMouseInputDistance: 3
 --- !u!114 &1172561465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2848,10 +2844,10 @@ MonoBehaviour:
   roomSize: {x: 20, y: 10}
   smoothTime: 0.25
   fixedZ: -10
-  followStrength: 0.2
+  followStrength: 0.15
   clampToRoom: 1
   autoFitToRoom: 1
-  zoomScale: 0.95
+  zoomScale: 0.9
 --- !u!1 &1226538926
 GameObject:
   m_ObjectHideFlags: 0
