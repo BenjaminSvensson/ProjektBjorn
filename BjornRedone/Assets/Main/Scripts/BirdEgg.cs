@@ -100,6 +100,7 @@ public class BirdEgg : MonoBehaviour
 
     void Explode()
     {
+        shadowVisual.gameObject.SetActive(false);
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
         foreach (var hit in hits)
         {

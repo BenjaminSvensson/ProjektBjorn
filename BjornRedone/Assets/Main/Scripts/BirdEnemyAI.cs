@@ -1,11 +1,14 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(EnemyLimbController))]
+[RequireComponent(typeof(AudioSource))] // Added AudioSource requirement
 public class BirdEnemyAI : MonoBehaviour
 {
-    private enum BirdState { Grounded, TakingOff, Chasing, Retreating, OffScreenAttack, Diving, Stuck }
+    private enum BirdState { Grounded, TakingOff, Chasing, Retreating, OffScreenAttack, Diving, Stuck, Dead }
 
     [Header("Components")]
     public Transform spriteHolder;
@@ -13,8 +16,20 @@ public class BirdEnemyAI : MonoBehaviour
     public Transform eggSpawnPoint; 
     [SerializeField] private Animator animator;
 
+    [Header("Health & Feedback")]
+    public float maxHealth = 30f;
+    public float contactDamage = 5f;
+    [Tooltip("Color to flash when hit")]
+    public Color damageFlashColor = Color.red;
+    [Tooltip("Sound to play when hit")]
+    public AudioClip hitSound;
+    
+    private float currentHealth;
+    private AudioSource audioSource;
+    private SpriteRenderer[] childRenderers; // To store all sprites (wings, body, etc)
+    private Coroutine flashCoroutine;
+
     [Header("Optimization")]
-    [Tooltip("If the player is further than this, the bird stops thinking to save performance.")]
     public float maxActivityDistance = 30.0f;
 
     [Header("Flying Settings")]
@@ -69,11 +84,19 @@ public class BirdEnemyAI : MonoBehaviour
 
     void Start()
     {
+        currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
+        audioSource = GetComponent<AudioSource>();
         
-        if(animator == null) animator = spriteHolder.GetComponent<Animator>();
+        if(animator == null && spriteHolder) animator = spriteHolder.GetComponent<Animator>();
         if (shadowSprite) shadowRenderer = shadowSprite.GetComponent<SpriteRenderer>();
         if (eggSpawnPoint == null) eggSpawnPoint = transform;
+
+        // Gather all sprites in the holder (Body, Wings, etc.) so they all flash red
+        if (spriteHolder)
+        {
+            childRenderers = spriteHolder.GetComponentsInChildren<SpriteRenderer>();
+        }
 
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p) player = p.transform;
@@ -86,68 +109,143 @@ public class BirdEnemyAI : MonoBehaviour
 
     void Update()
     {
-        if (player == null) return;
+        if (player == null || currentState == BirdState.Dead) return;
 
-        // --- OPTIMIZATION START ---
-        // Calculate distance to player
+        // Optimization
         float dist = Vector2.Distance(transform.position, player.position);
-
-        // If too far away AND not currently in the middle of a critical attack (OffScreen)
-        // We skip OffScreenAttack check because we don't want it to freeze while high in the air invisible
         if (dist > maxActivityDistance && currentState != BirdState.OffScreenAttack)
         {
-            rb.linearVelocity = Vector2.zero; // Stop moving
-            return; // Skip the rest of the logic
+            rb.linearVelocity = Vector2.zero; 
+            return; 
         }
-        // --- OPTIMIZATION END ---
 
         UpdateVisualsAndShadow();
 
         switch (currentState)
         {
             case BirdState.Grounded:
-                if (dist < 12f)
-                {
-                    SwitchState(BirdState.TakingOff);
-                }
+                if (dist < 12f) SwitchState(BirdState.TakingOff);
                 break;
-
             case BirdState.TakingOff:
                 currentHeight = Mathf.MoveTowards(currentHeight, flyHeight, takeoffSpeed * Time.deltaTime);
-                if (Mathf.Abs(currentHeight - flyHeight) < 0.1f)
-                {
-                    SwitchState(BirdState.Chasing);
-                }
+                if (Mathf.Abs(currentHeight - flyHeight) < 0.1f) SwitchState(BirdState.Chasing);
                 break;
-
             case BirdState.Chasing:
                 HandleChasing();
                 break;
-
             case BirdState.Retreating:
                 HandleRetreating();
                 break;
-
             case BirdState.OffScreenAttack:
                 HandleOffScreenAttack();
                 break;
-
             case BirdState.Diving:
                 // Logic handled in Coroutine
                 break;
-
             case BirdState.Stuck:
                 stateTimer -= Time.deltaTime;
-                if (stateTimer <= 0)
-                {
-                    SwitchState(BirdState.TakingOff);
-                }
+                if (stateTimer <= 0) SwitchState(BirdState.TakingOff);
                 break;
         }
     }
 
+    // --- DAMAGE & FEEDBACK LOGIC ---
+
+    public void TakeDamage(float damageAmount)
+    {
+        if (currentState == BirdState.Dead) return;
+
+        currentHealth -= damageAmount;
+
+        // 1. Play Sound
+        if (audioSource && hitSound)
+        {
+            audioSource.PlayOneShot(hitSound);
+        }
+
+        // 2. Play Animation
+        if (animator) animator.SetTrigger("Hit");
+
+        // 3. Flash Red (Visual Feedback)
+        if (gameObject.activeInHierarchy)
+        {
+            if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+            flashCoroutine = StartCoroutine(FlashDamageEffect());
+        }
+
+        // 4. Death Check
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    private IEnumerator FlashDamageEffect()
+    {
+        // Turn Red
+        if (childRenderers != null)
+        {
+            foreach (var sr in childRenderers)
+            {
+                if (sr) sr.color = damageFlashColor;
+            }
+        }
+
+        yield return new WaitForSeconds(0.15f); // Short flash duration
+
+        // Return to White
+        if (childRenderers != null)
+        {
+            foreach (var sr in childRenderers)
+            {
+                if (sr) sr.color = Color.white;
+            }
+        }
+    }
+
+    void Die()
+    {
+        currentState = BirdState.Dead;
+        rb.linearVelocity = Vector2.zero;
+        StopAllCoroutines();
+
+        // Ensure visuals are reset to white before dying
+        if (childRenderers != null)
+        {
+            foreach (var sr in childRenderers) if(sr) sr.color = Color.white;
+        }
+
+        if (animator) animator.Play("Die");
+        
+        if (shadowSprite) shadowSprite.gameObject.SetActive(false);
+        GetComponent<Collider2D>().enabled = false;
+
+        Destroy(gameObject, 2.0f);
+    }
+
+    // --- CONTACT DAMAGE ---
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (currentState == BirdState.Dead) return;
+
+        if (collision.CompareTag("Player"))
+        {
+            PlayerLimbController playerController = collision.GetComponent<PlayerLimbController>();
+            if (playerController != null)
+            {
+                Vector2 dir = (collision.transform.position - transform.position).normalized;
+                playerController.TakeDamage(contactDamage, dir);
+            }
+        }
+    }
+
+    // --- STATE LOGIC ---
+
     void SwitchState(BirdState newState)
     {
+        if (currentState == BirdState.Dead) return;
+
         currentState = newState;
         stateTimer = 0;
 
@@ -156,28 +254,23 @@ public class BirdEnemyAI : MonoBehaviour
             case BirdState.TakingOff:
                 animator.Play("FlyUpp");
                 break;
-
             case BirdState.Chasing:
                 animator.Play("FlyLoop");
                 stateTimer = timeOnScreen; 
                 break;
-
             case BirdState.Retreating:
                 animator.Play("FlyLoop");
                 retreatDirection = Vector2.up; 
                 break;
-
             case BirdState.OffScreenAttack:
                 animator.Play("FlyLoop");
                 stateTimer = offScreenDuration; 
                 eggTimer = 0.5f; 
                 break;
-
             case BirdState.Diving:
                 animator.Play("Attack");
                 StartCoroutine(ExecuteDiveSequence());
                 break;
-
             case BirdState.Stuck:
                 rb.linearVelocity = Vector2.zero; 
                 stateTimer = stuckDuration;
@@ -185,8 +278,6 @@ public class BirdEnemyAI : MonoBehaviour
                 break;
         }
     }
-
-    // ---------------- BEHAVIORS ---------------- //
 
     void HandleChasing()
     {
@@ -196,10 +287,7 @@ public class BirdEnemyAI : MonoBehaviour
         FaceDirection(dir.x);
 
         stateTimer -= Time.deltaTime;
-        if (stateTimer <= 0)
-        {
-            SwitchState(BirdState.Retreating);
-        }
+        if (stateTimer <= 0) SwitchState(BirdState.Retreating);
     }
 
     void HandleRetreating()
@@ -208,10 +296,7 @@ public class BirdEnemyAI : MonoBehaviour
         currentHeight = Mathf.MoveTowards(currentHeight, offScreenHeight, Time.deltaTime * 5f);
 
         Vector3 viewportPos = mainCam.WorldToViewportPoint(transform.position);
-        if (viewportPos.y > 1.2f) 
-        {
-            SwitchState(BirdState.OffScreenAttack);
-        }
+        if (viewportPos.y > 1.2f) SwitchState(BirdState.OffScreenAttack);
     }
 
     void HandleOffScreenAttack()
@@ -230,10 +315,7 @@ public class BirdEnemyAI : MonoBehaviour
         }
 
         stateTimer -= Time.deltaTime;
-        if (stateTimer <= 0)
-        {
-            SwitchState(BirdState.Diving);
-        }
+        if (stateTimer <= 0) SwitchState(BirdState.Diving);
     }
 
     IEnumerator ExecuteDiveSequence()
@@ -271,7 +353,7 @@ public class BirdEnemyAI : MonoBehaviour
         SwitchState(BirdState.Stuck);
     }
 
-    // ---------------- HELPERS ---------------- //
+    // --- HELPERS ---
 
     void DropEgg()
     {
@@ -279,14 +361,9 @@ public class BirdEnemyAI : MonoBehaviour
         {
             Vector2 targetLandPos = player.position;
             Vector2 releasePos = eggSpawnPoint.position;
-
             GameObject egg = Instantiate(eggPrefab, targetLandPos, Quaternion.identity);
-            
             BirdEgg eggScript = egg.GetComponent<BirdEgg>();
-            if (eggScript != null)
-            {
-                eggScript.Initialize(targetLandPos, releasePos);
-            }
+            if (eggScript != null) eggScript.Initialize(targetLandPos, releasePos);
         }
     }
 
@@ -308,7 +385,6 @@ public class BirdEnemyAI : MonoBehaviour
         if (spriteHolder)
         {
             spriteHolder.localPosition = new Vector3(0, currentHeight, 0);
-            
             float dir = Mathf.Sign(spriteHolder.localScale.x);
             float scale = GetCurrentPerspectiveScale();
             spriteHolder.localScale = new Vector3(dir * scale, scale, 1);
@@ -327,14 +403,10 @@ public class BirdEnemyAI : MonoBehaviour
             else
             {
                 shadowSprite.position = transform.position; 
-
                 float ratio = Mathf.Clamp01(currentHeight / flyHeight);
                 float alpha = Mathf.Lerp(shadowAlphaGround, shadowAlphaAir, ratio);
-                
                 if (currentHeight > flyHeight * 2.0f) alpha = 0f;
-
                 shadowSprite.localScale = Vector3.Lerp(shadowScaleGround, shadowScaleAir, ratio);
-
                 Color c = shadowRenderer.color;
                 c.a = alpha;
                 shadowRenderer.color = c;
@@ -347,11 +419,9 @@ public class BirdEnemyAI : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
         foreach(var hit in hits)
         {
-            // FIX: Use GetComponent instead of SendMessage
             PlayerLimbController playerController = hit.GetComponent<PlayerLimbController>();
             if(playerController != null)
             {
-                // Calculate direction from bird to player
                 Vector2 dir = (hit.transform.position - transform.position).normalized;
                 playerController.TakeDamage(impactDamage, dir);
             }
@@ -362,15 +432,8 @@ public class BirdEnemyAI : MonoBehaviour
     {
         Gizmos.color = Color.red;
         if(lockShadowToTarget) Gizmos.DrawWireSphere(diveTargetPos, damageRadius);
-        
-        // Visualize the optimization radius in editor
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, maxActivityDistance);
-
-        if(eggSpawnPoint)
-        {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(eggSpawnPoint.position, 0.2f);
-        }
+        if(eggSpawnPoint) { Gizmos.color = Color.cyan; Gizmos.DrawWireSphere(eggSpawnPoint.position, 0.2f); }
     }
 }
