@@ -13,6 +13,10 @@ public class BirdEnemyAI : MonoBehaviour
     public Transform eggSpawnPoint; 
     [SerializeField] private Animator animator;
 
+    [Header("Optimization")]
+    [Tooltip("If the player is further than this, the bird stops thinking to save performance.")]
+    public float maxActivityDistance = 30.0f;
+
     [Header("Flying Settings")]
     public float flyHeight = 4.0f;
     public float offScreenHeight = 15.0f; 
@@ -84,12 +88,25 @@ public class BirdEnemyAI : MonoBehaviour
     {
         if (player == null) return;
 
+        // --- OPTIMIZATION START ---
+        // Calculate distance to player
+        float dist = Vector2.Distance(transform.position, player.position);
+
+        // If too far away AND not currently in the middle of a critical attack (OffScreen)
+        // We skip OffScreenAttack check because we don't want it to freeze while high in the air invisible
+        if (dist > maxActivityDistance && currentState != BirdState.OffScreenAttack)
+        {
+            rb.linearVelocity = Vector2.zero; // Stop moving
+            return; // Skip the rest of the logic
+        }
+        // --- OPTIMIZATION END ---
+
         UpdateVisualsAndShadow();
 
         switch (currentState)
         {
             case BirdState.Grounded:
-                if (Vector2.Distance(transform.position, player.position) < 12f)
+                if (dist < 12f)
                 {
                     SwitchState(BirdState.TakingOff);
                 }
@@ -208,7 +225,6 @@ public class BirdEnemyAI : MonoBehaviour
         eggTimer -= Time.deltaTime;
         if (eggTimer <= 0)
         {
-            // Drop egg regardless of exact X alignment, targeting the player's current position
             DropEgg();
             eggTimer = timeBetweenEggs;
         }
@@ -261,10 +277,7 @@ public class BirdEnemyAI : MonoBehaviour
     {
         if (eggPrefab)
         {
-            // 1. Target: Where the Player IS right now (Ground)
             Vector2 targetLandPos = player.position;
-
-            // 2. Source: Where the Egg spawns visually (Bird's Tail)
             Vector2 releasePos = eggSpawnPoint.position;
 
             GameObject egg = Instantiate(eggPrefab, targetLandPos, Quaternion.identity);
@@ -272,7 +285,6 @@ public class BirdEnemyAI : MonoBehaviour
             BirdEgg eggScript = egg.GetComponent<BirdEgg>();
             if (eggScript != null)
             {
-                // Pass both points to the egg
                 eggScript.Initialize(targetLandPos, releasePos);
             }
         }
@@ -335,9 +347,13 @@ public class BirdEnemyAI : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
         foreach(var hit in hits)
         {
-            if(hit.CompareTag("Player"))
+            // FIX: Use GetComponent instead of SendMessage
+            PlayerLimbController playerController = hit.GetComponent<PlayerLimbController>();
+            if(playerController != null)
             {
-                hit.SendMessage("TakeDamage", impactDamage, SendMessageOptions.DontRequireReceiver);
+                // Calculate direction from bird to player
+                Vector2 dir = (hit.transform.position - transform.position).normalized;
+                playerController.TakeDamage(impactDamage, dir);
             }
         }
     }
@@ -347,6 +363,10 @@ public class BirdEnemyAI : MonoBehaviour
         Gizmos.color = Color.red;
         if(lockShadowToTarget) Gizmos.DrawWireSphere(diveTargetPos, damageRadius);
         
+        // Visualize the optimization radius in editor
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, maxActivityDistance);
+
         if(eggSpawnPoint)
         {
             Gizmos.color = Color.cyan;
