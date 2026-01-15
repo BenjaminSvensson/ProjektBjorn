@@ -422,16 +422,28 @@ MonoBehaviour:
   goreDrops:
   - name: Tarmar
     prefab: {fileID: 3073958071732642810, guid: 02f6c1c49f4bac04ebc22f861aa8e2c5, type: 3}
-    dropChance: 0.2
+    dropChance: 0.3
     maxAmount: 1
   - name: "K\xF6ttbit"
     prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
-    dropChance: 0.4
+    dropChance: 0.6
     maxAmount: 3
   - name: "K\xF6ttbit2"
     prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
-    dropChance: 0.5
+    dropChance: 0.8
     maxAmount: 2
+  - name: Ben
+    prefab: {fileID: 2324061009247522880, guid: 2d5c50b6cfa9a51429106b716e53431b, type: 3}
+    dropChance: 1
+    maxAmount: 1
+  - name: Ben
+    prefab: {fileID: 2324061009247522880, guid: 2d5c50b6cfa9a51429106b716e53431b, type: 3}
+    dropChance: 1
+    maxAmount: 1
+  - name: Coin
+    prefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
+    dropChance: 0.65
+    maxAmount: 4
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}

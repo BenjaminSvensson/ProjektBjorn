@@ -5051,7 +5051,7 @@ MonoBehaviour:
   - {fileID: 3293985558420901034, guid: 8a73db516bd2f2d48bb0277dfcc538e7, type: 3}
   - {fileID: 3293985558420901034, guid: dd7c38e5d094dd14eb8177e10c30412f, type: 3}
   enemySpawnList:
-  - name: Prototype
+  - name: Bunny
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
     cost: 6
     minDistanceReq: 2
@@ -5063,6 +5063,10 @@ MonoBehaviour:
     prefab: {fileID: 8447582695004223394, guid: 22733423fca786e4bac7110703f6ea8d, type: 3}
     cost: 6
     minDistanceReq: 2
+  - name: Bird
+    prefab: {fileID: 7443698164649891963, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
+    cost: 8
+    minDistanceReq: 3
   baseEnemyBudget: 2
   enemyBudgetPerDistance: 2
   environmentProps:
@@ -5919,67 +5923,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2b594c980b8a1a04596654b6f0b797f3, type: 3}
---- !u!1001 &4468245647930941609
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 3222285084776078669, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: coinPrefab
-      value: 
-      objectReference: {fileID: 1511573497}
-    - target: {fileID: 7443698164649891963, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_Name
-      value: BirdieBirdieBirdie
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8803895934440837617, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -5994,4 +5937,3 @@ SceneRoots:
   - {fileID: 1540737181}
   - {fileID: 1663123097}
   - {fileID: 1226538930}
-  - {fileID: 4468245647930941609}

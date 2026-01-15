@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: -3348382748757571320}
   - component: {fileID: 7988475972291983782}
   - component: {fileID: -5014865877352931029}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Speed pills_0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
