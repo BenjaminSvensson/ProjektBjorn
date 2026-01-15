@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5857223522536586545}
   - component: {fileID: 3267658976592659175}
+  - component: {fileID: 3795573638384909994}
   m_Layer: 0
   m_Name: EggVisual
   m_TagString: Untagged
@@ -81,16 +82,38 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -9151515681763293120, guid: 3f1d17f62bfd06744af3d54660ee15a4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 3f1d17f62bfd06744af3d54660ee15a4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1.04, y: 1.46}
+  m_Size: {x: 3.5, y: 3}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!95 &3795573638384909994
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6104624827522784153}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: dd1bf79cae7f20d478a5646313f4c6a9, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &9170114763650052084
 GameObject:
   m_ObjectHideFlags: 0
@@ -139,8 +162,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BirdEgg
   spriteVisual: {fileID: 5857223522536586545}
   shadowVisual: {fileID: 4083585662033820081}
+  eggAnimator: {fileID: 3795573638384909994}
+  fallStateName: Fall
+  crackStateName: Eggcrack
   fallSpeed: 12
   damage: 5
+  damageRadius: 0.5
+  persistDuration: 0.5
 --- !u!1001 &7197270834230954468
 PrefabInstance:
   m_ObjectHideFlags: 0

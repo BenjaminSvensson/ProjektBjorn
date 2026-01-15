@@ -1225,21 +1225,21 @@ MonoBehaviour:
   eggSpawnPoint: {fileID: 1314508599}
   animator: {fileID: 64534565}
   flyHeight: 15
-  offScreenHeight: 90
+  offScreenHeight: 120
   flySpeed: 6
   takeoffSpeed: 9
-  retreatSpeed: 6
+  retreatSpeed: 8
   trackingSpeed: 3
-  groundScale: 1
-  highAirScale: 0.6
-  timeOnScreen: 3
+  groundScale: 0.8
+  highAirScale: 1
+  timeOnScreen: 1.2
   offScreenDuration: 4
   shadowScaleGround: {x: 1, y: 0.5, z: 1}
   shadowScaleAir: {x: 0.5, y: 0.25, z: 1}
   shadowAlphaGround: 0.8
   shadowAlphaAir: 0.3
   eggPrefab: {fileID: 9170114763650052084, guid: f7294038f7fbe3b41b07394919174f9c, type: 3}
-  timeBetweenEggs: 1
+  timeBetweenEggs: 2
   diveTellDuration: 0.2
   diveSpeed: 14
   stuckDuration: 1.2

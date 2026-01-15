@@ -40,11 +40,8 @@ public class BirdEnemyAI : MonoBehaviour
     public float timeBetweenEggs = 0.8f;
 
     [Header("Combat - Dive Attack")]
-    [Tooltip("How long the shadow warns the player before the bird starts moving")]
     public float diveTellDuration = 1.0f; 
-    [Tooltip("Speed of the physical movement towards target")]
     public float diveSpeed = 20.0f; 
-    [Tooltip("How long the bird stays grounded after missing")]
     public float stuckDuration = 2.0f;
     public float damageRadius = 1.5f;
     public float impactDamage = 10f;
@@ -211,11 +208,9 @@ public class BirdEnemyAI : MonoBehaviour
         eggTimer -= Time.deltaTime;
         if (eggTimer <= 0)
         {
-            if (Mathf.Abs(transform.position.x - player.position.x) < 2.0f)
-            {
-                DropEgg();
-                eggTimer = timeBetweenEggs;
-            }
+            // Drop egg regardless of exact X alignment, targeting the player's current position
+            DropEgg();
+            eggTimer = timeBetweenEggs;
         }
 
         stateTimer -= Time.deltaTime;
@@ -227,50 +222,31 @@ public class BirdEnemyAI : MonoBehaviour
 
     IEnumerator ExecuteDiveSequence()
     {
-        // 1. SETUP & TELEGRAPH
-        // Stop any residual velocity
         rb.linearVelocity = Vector2.zero;
-
-        // Snapshot the player's position NOW (Target Destination)
         diveTargetPos = player.position;
-        
-        // Store where the bird is starting the dive from (High up in the air)
         Vector2 startPos = rb.position; 
         float startH = currentHeight;
 
-        // VISUALS: Lock shadow to the destination immediately to warn player
         lockShadowToTarget = true;
         shadowTargetPos = diveTargetPos;
 
-        // Wait for the "Tell" (Warning)
         yield return new WaitForSeconds(diveTellDuration);
 
-        // 2. THE DIVE MOVEMENT
         float t = 0;
-        
-        // Calculate how long the dive takes based on distance
         float dist = Vector2.Distance(startPos, diveTargetPos);
-        float duration = Mathf.Max(dist / diveSpeed, 0.2f); // Prevent divide by zero
+        float duration = Mathf.Max(dist / diveSpeed, 0.2f); 
 
         while (t < 1.0f)
         {
             t += Time.deltaTime / duration;
-            
-            // Linear Movement towards the target X/Y
             Vector2 nextPos = Vector2.Lerp(startPos, diveTargetPos, t);
             rb.MovePosition(nextPos);
-
-            // Gravity Simulation: Height drops faster as we get closer (Ease In Quad)
             currentHeight = Mathf.Lerp(startH, 0f, t * t);
-            
-            // Face the dive direction
             FaceDirection(diveTargetPos.x - startPos.x);
-
             yield return null;
         }
 
-        // 3. IMPACT
-        rb.position = diveTargetPos; // Snap to exact target
+        rb.position = diveTargetPos; 
         currentHeight = 0f;
         lockShadowToTarget = false;
         
@@ -285,13 +261,19 @@ public class BirdEnemyAI : MonoBehaviour
     {
         if (eggPrefab)
         {
-            Vector2 eggGroundPos = new Vector2(eggSpawnPoint.position.x, eggSpawnPoint.position.y - currentHeight);
-            GameObject egg = Instantiate(eggPrefab, eggGroundPos, Quaternion.identity);
+            // 1. Target: Where the Player IS right now (Ground)
+            Vector2 targetLandPos = player.position;
+
+            // 2. Source: Where the Egg spawns visually (Bird's Tail)
+            Vector2 releasePos = eggSpawnPoint.position;
+
+            GameObject egg = Instantiate(eggPrefab, targetLandPos, Quaternion.identity);
             
             BirdEgg eggScript = egg.GetComponent<BirdEgg>();
             if (eggScript != null)
             {
-                eggScript.Initialize(currentHeight, eggGroundPos);
+                // Pass both points to the egg
+                eggScript.Initialize(targetLandPos, releasePos);
             }
         }
     }
@@ -324,7 +306,6 @@ public class BirdEnemyAI : MonoBehaviour
         {
             if (lockShadowToTarget)
             {
-                // Shadow stays at target position
                 shadowSprite.position = shadowTargetPos;
                 shadowSprite.localScale = shadowScaleGround * 1.5f; 
                 Color c = shadowRenderer.color;
@@ -333,13 +314,11 @@ public class BirdEnemyAI : MonoBehaviour
             }
             else
             {
-                // Shadow follows bird
                 shadowSprite.position = transform.position; 
 
                 float ratio = Mathf.Clamp01(currentHeight / flyHeight);
                 float alpha = Mathf.Lerp(shadowAlphaGround, shadowAlphaAir, ratio);
                 
-                // If extremely high (off screen), fade shadow out
                 if (currentHeight > flyHeight * 2.0f) alpha = 0f;
 
                 shadowSprite.localScale = Vector3.Lerp(shadowScaleGround, shadowScaleAir, ratio);
