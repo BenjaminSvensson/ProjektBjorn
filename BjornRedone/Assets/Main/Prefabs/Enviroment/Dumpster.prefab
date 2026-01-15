@@ -617,7 +617,10 @@ MonoBehaviour:
     weight: 2.5
   - name: SpeedPill
     prefab: {fileID: 6850550609115750317, guid: 803e227a61f7b144aa1008edff19220c, type: 3}
-    weight: 3
+    weight: 1.5
+  - name: SpeedPill
+    prefab: {fileID: 6850550609115750317, guid: 803e227a61f7b144aa1008edff19220c, type: 3}
+    weight: 1.5
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
   - {fileID: 8300000, guid: ec9895c7b62ca884aa86e5e710bf243b, type: 3}
