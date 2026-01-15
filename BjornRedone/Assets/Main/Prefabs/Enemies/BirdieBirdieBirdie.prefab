@@ -502,7 +502,7 @@ MonoBehaviour:
   flapSound: {fileID: 8300000, guid: 5b6c8991d327d42459e121571a741abf, type: 3}
   diveSound: {fileID: 8300000, guid: 6f205f8f4be16064b9285b930e148991, type: 3}
   groundImpactSound: {fileID: 8300000, guid: ad875db219f80654288cbb0aa3d89b7e, type: 3}
-  eggDropSound: {fileID: 8300000, guid: 0effd904622c19641a610b80c44a897d, type: 3}
+  eggDropSound: {fileID: 8300000, guid: 3dfa6e146dd874a4ea4276c2e8b46cf6, type: 3}
   hitSound: {fileID: 8300000, guid: ea60473b98b3f3848bce01d2fa38544b, type: 3}
   deathSound: {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   maxHealth: 15

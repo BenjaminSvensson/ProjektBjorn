@@ -9,6 +9,7 @@ public class PlayerLimbController : MonoBehaviour
     [Header("Visuals")]
     [SerializeField] private Transform visualsHolder;
     [SerializeField] private float shakeDuration = 0.15f, shakeMagnitude = 0.1f;
+    [SerializeField] private float absolutemax = 150f;
 
     [Header("Visuals - Torso")]
     [SerializeField] private GameObject torsoDefaultVisual, torsoDamagedVisual;
@@ -32,6 +33,7 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private float maxVignetteAlpha = 0.8f;
     [SerializeField] private float minHeartbeatPitch = 1.0f;
     [SerializeField] private float maxHeartbeatPitch = 1.8f;
+    private Multipliers multiplier;
 
     [Header("UI")]
     [Tooltip("Reference to the DeathScreenUI script in the scene.")]
@@ -67,19 +69,20 @@ public class PlayerLimbController : MonoBehaviour
 
     void Start()
     {
-        playerMovement = GetComponent<PlayerMovement>(); 
-        rb = GetComponent<Rigidbody2D>(); 
+        multiplier = GetComponent<Multipliers>();
+        playerMovement = GetComponent<PlayerMovement>();
+        rb = GetComponent<Rigidbody2D>();
         audioSource = GetComponent<AudioSource>();
-        
+
         maxTorsoHealth = torsoHealth;
         if (visualsHolder) visualsHolderOriginalPos = visualsHolder.localPosition;
-        
-        if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
-        if(startingArm) { AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false); AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false); }
-        if(startingLeg) { AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false); AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false); }
-        
-        PickNextWeakLimb(); 
-        UpdateDamageVisuals(); 
+
+        if (startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
+        if (startingArm) { AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false); AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false); }
+        if (startingLeg) { AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false); AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false); }
+
+        PickNextWeakLimb();
+        UpdateDamageVisuals();
         UpdatePlayerStats();
 
         // Setup Heartbeat Loop
@@ -93,7 +96,7 @@ public class PlayerLimbController : MonoBehaviour
         {
             Debug.LogWarning("PlayerLimbController: Heartbeat AudioSource not assigned!");
         }
-        
+
         // Initialize Vignette
         if (vignetteImage != null)
         {
@@ -306,5 +309,36 @@ public class PlayerLimbController : MonoBehaviour
         yield return new WaitForSeconds(flashDuration);
         foreach (var r in currentRenderers) if (r) r.color = Color.white;
         flashCoroutine = null; 
+    }
+    public void IncreaseMaxHealth(float amount, bool healBySameAmount = true)
+    {
+        if (amount <= 0f) return;
+
+        // Increase max health
+        maxTorsoHealth += amount;
+
+        // Clamp max health FIRST
+        maxTorsoHealth = Mathf.Min(maxTorsoHealth, absolutemax);
+
+        // Optional heal
+        if (healBySameAmount)
+        {
+            torsoHealth += amount;
+        }
+
+        // Clamp health AFTER max is finalized
+        torsoHealth = Mathf.Clamp(torsoHealth, 0f, maxTorsoHealth);
+
+        UpdateDamageVisuals();
+    }
+
+    public void Heal(float amount)
+    {
+        if (torsoHealth <= 0) return; // can't heal if dead
+
+        torsoHealth += amount;
+        torsoHealth = Mathf.Clamp(torsoHealth, 0f, maxTorsoHealth);
+
+        UpdateDamageVisuals();
     }
 }
