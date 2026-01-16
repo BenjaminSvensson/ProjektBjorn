@@ -81,13 +81,17 @@ MonoBehaviour:
   player: {fileID: 0}
   attackSounds:
   - {fileID: 8300000, guid: 16a0a013396415947842af7192e5d24b, type: 3}
-  magicSounds: []
+  magicCastSounds:
+  - {fileID: 8300000, guid: 8d4cd84baab5d2a40b46ed0cc6108bc5, type: 3}
+  - {fileID: 8300000, guid: 76879a0da3890a64382c86be8903268e, type: 3}
+  magicImpactSounds: []
   generalSounds:
   - {fileID: 8300000, guid: 815ec02194a2b77459dd7499689213f7, type: 3}
   - {fileID: 8300000, guid: e568ee29107248e4698b71e9d5270e2c, type: 3}
   - {fileID: 8300000, guid: 400bfa105a8e44548a97fca473cac7c8, type: 3}
   footstepSounds:
-  - {fileID: 8300000, guid: 758a9f4a2d82e714c828893c88dfcddc, type: 3}
+  - {fileID: 8300000, guid: 9596b73dc9a7689458490bab0fc6301a, type: 3}
+  - {fileID: 8300000, guid: 46980f891d1b40a43b1fd8e90ebc35a5, type: 3}
   footstepShakeAmount: 0.03
   attackShakeAmount: 0.05
   weaponTag: Player
@@ -99,6 +103,15 @@ MonoBehaviour:
   meleeCooldown: 0.25
   magicRange: 8
   magicCooldown: 5
+  iciclePrefab: {fileID: 7408447239161014066, guid: 0f064fccfd641d14a80d820e29bf380a, type: 3}
+  icicleWarningPrefab: {fileID: 4471830438176176274, guid: f7669e243636fe646a54ac6e17b59f9c, type: 3}
+  icicleCount: 3
+  icicleRadius: 3
+  icicleSpawnHeight: 12
+  trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
+  trapWarningPrefab: {fileID: 4471830438176176274, guid: f7669e243636fe646a54ac6e17b59f9c, type: 3}
+  trapCount: 2
+  trapDelay: 1
   iceWallPrefab: {fileID: 6918201382545588722, guid: f3be6d716eb0f694198634722b00354d, type: 3}
   wallOffsetDistance: 3
   wallLifeTime: 12
@@ -311,7 +324,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: b7c4e0ed2e3278a47baee51809a6e995, type: 3}
   idleSounds: []
   spotSounds: []
-  attackSounds: []
+  attackSounds:
+  - {fileID: 8300000, guid: 8d4cd84baab5d2a40b46ed0cc6108bc5, type: 3}
+  - {fileID: 8300000, guid: 76879a0da3890a64382c86be8903268e, type: 3}
   fleeSounds: []
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}

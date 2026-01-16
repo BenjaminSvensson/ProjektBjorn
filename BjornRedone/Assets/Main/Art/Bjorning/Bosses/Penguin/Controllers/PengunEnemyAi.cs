@@ -12,8 +12,9 @@ public class PenguinEnemyAI : MonoBehaviour
 
     [Header("Audio Settings")]
     public AudioClip[] attackSounds;
-    public AudioClip[] magicSounds;
-    public AudioClip[] generalSounds; // Ambient squeaks/grunts
+    public AudioClip[] magicCastSounds; // Sound when casting starts
+    public AudioClip[] magicImpactSounds; // Sound when spell hits/spawns
+    public AudioClip[] generalSounds; 
     public AudioClip[] footstepSounds;
     
     [Header("Screen Shake Settings")]
@@ -35,11 +36,23 @@ public class PenguinEnemyAI : MonoBehaviour
     public float magicRange = 8f;
     public float magicCooldown = 5.0f;
 
-    [Header("Magic Prefabs")]
+    [Header("Magic 1: Icicles (50% Chance)")]
+    public GameObject iciclePrefab;
+    public GameObject icicleWarningPrefab; // Red circle on ground
+    public int icicleCount = 3;
+    public float icicleRadius = 3f; 
+    public float icicleSpawnHeight = 6f; 
+
+    [Header("Magic 2: Ice Traps (30% Chance)")]
+    public GameObject trapPrefab;
+    public GameObject trapWarningPrefab;
+    public int trapCount = 2;
+    public float trapDelay = 1.0f; 
+
+    [Header("Magic 3: Ice Wall (20% Chance)")]
     public GameObject iceWallPrefab;
     public float wallOffsetDistance = 2.0f;
     public float wallLifeTime = 5.0f;
-    // Add other magic prefabs here (icicles, traps) if needed
 
     // Internal
     private Rigidbody2D rb;
@@ -56,23 +69,19 @@ public class PenguinEnemyAI : MonoBehaviour
         limbController = GetComponent<EnemyLimbController>();
         audioSource = GetComponent<AudioSource>();
 
-        // Randomize ambient sound timer
         generalSoundTimer = Random.Range(2f, 5f);
 
         // --- AUTO-TARGETING ---
-        // 1. If slot is empty, look for PlayerMovement script
         if (player == null)
         {
             var playerScript = FindObjectOfType<PlayerMovement>(); 
             if (playerScript != null) player = playerScript.transform;
             else {
-                // Fallback to Tag
                 GameObject pTag = GameObject.FindGameObjectWithTag("Player");
                 if (pTag != null) player = pTag.transform;
             }
         }
         
-        // Safety checks
         rb.bodyType = RigidbodyType2D.Dynamic;
         rb.gravityScale = 0; 
         rb.freezeRotation = true;
@@ -126,7 +135,6 @@ public class PenguinEnemyAI : MonoBehaviour
         Vector2 dir = (player.position - transform.position).normalized;
         rb.linearVelocity = dir * speed;
 
-        // Face Direction
         if (dir.x > 0) transform.localScale = new Vector3(1, 1, 1);
         else transform.localScale = new Vector3(-1, 1, 1);
 
@@ -138,11 +146,9 @@ public class PenguinEnemyAI : MonoBehaviour
         if (animator) animator.SetBool("IsWalking", isWalking);
     }
 
-    // --- PUBLIC FUNCTIONS FOR ANIMATION EVENTS ---
-    // The "Bridge" script will call these.
+    // Called by Bridge Script
     public void PlayFootstepSound()
     {
-        // Only play if actually moving
         if (animator != null && animator.GetBool("IsWalking"))
         {
             PlayRandomSound(footstepSounds, 0.5f);
@@ -150,7 +156,7 @@ public class PenguinEnemyAI : MonoBehaviour
         }
     }
 
-    // --- ATTACKS ---
+    // --- COMBAT COROUTINES ---
 
     IEnumerator DoMeleeAttack()
     {
@@ -161,13 +167,11 @@ public class PenguinEnemyAI : MonoBehaviour
 
         PlayRandomSound(attackSounds, 1.0f);
         
-        yield return new WaitForSeconds(0.4f); // Wait for hit frame
+        yield return new WaitForSeconds(0.4f); 
         
-        // HIT CHECK
         if (player != null && Vector2.Distance(transform.position, player.position) <= meleeRange * 1.5f)
         {
             StartCoroutine(ShakeCamera(attackShakeAmount, 0.2f));
-            
             var pLimb = player.GetComponent<PlayerLimbController>();
             if (pLimb) pLimb.TakeDamage(10f + limbController.attackDamageBonus);
         }
@@ -183,26 +187,119 @@ public class PenguinEnemyAI : MonoBehaviour
         SetWalking(false);
         if(animator) animator.SetTrigger("Magic");
         
-        PlayRandomSound(magicSounds, 1.0f);
+        PlayRandomSound(magicCastSounds, 1.0f);
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.5f); // Casting time
         
-        // SPAWN ICE WALL (or other magic)
-        if (iceWallPrefab)
+        // --- CHOOSE SPELL (Weighted Random) ---
+        int roll = Random.Range(0, 100);
+        
+        if (roll < 50) // 0-49 (50% Chance)
         {
-            float direction = transform.localScale.x; // 1 or -1
-            Vector2 spawnPos = (Vector2)transform.position + (Vector2.right * direction * wallOffsetDistance);
-            
-            GameObject wall = Instantiate(iceWallPrefab, spawnPos, Quaternion.identity);
-            
-            // Handle Fading
-            IceWall wallScript = wall.GetComponent<IceWall>();
-            if (wallScript != null) wallScript.Activate(wallLifeTime);
-            else Destroy(wall, wallLifeTime);
+            yield return StartCoroutine(Magic_Icicles());
+        }
+        else if (roll < 80) // 50-79 (30% Chance)
+        {
+            yield return StartCoroutine(Magic_Traps());
+        }
+        else // 80-99 (20% Chance)
+        {
+            yield return StartCoroutine(Magic_IceWall());
         }
 
         magicTimer = magicCooldown;
         isBusy = false;
+    }
+
+    // --- SPELL LOGIC ---
+
+    IEnumerator Magic_Icicles()
+    {
+        for (int i = 0; i < icicleCount; i++)
+        {
+            if (player == null) break;
+
+            // Pick a spot near the player
+            Vector2 randomOffset = Random.insideUnitCircle * icicleRadius;
+            Vector2 groundPos = (Vector2)player.position + randomOffset;
+
+            // Spawn Warning Circle
+            if (icicleWarningPrefab) 
+            {
+                GameObject warn = Instantiate(icicleWarningPrefab, groundPos, Quaternion.identity);
+                Destroy(warn, 1.0f); // Destroy warning after 1 sec
+            }
+
+            // Schedule the Icicle to drop after slight delay
+            StartCoroutine(SpawnIcicleDelayed(groundPos, 0.8f));
+            
+            yield return new WaitForSeconds(0.2f); // Gap between icicles
+        }
+    }
+
+    IEnumerator SpawnIcicleDelayed(Vector2 targetPos, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (iciclePrefab)
+        {
+            // Spawn high up in the air
+            Vector2 spawnPos = targetPos + (Vector2.up * icicleSpawnHeight);
+            GameObject icicle = Instantiate(iciclePrefab, spawnPos, Quaternion.identity);
+            
+            // Tell the icicle where the "ground" is so it destroys itself on impact
+            FallingIcicle script = icicle.GetComponent<FallingIcicle>();
+            if (script) script.targetY = targetPos.y;
+
+            PlayRandomSound(magicImpactSounds, 0.8f);
+        }
+    }
+
+    IEnumerator Magic_Traps()
+    {
+        Vector2[] trapPositions = new Vector2[trapCount];
+
+        // 1. Show Warnings
+        for (int i = 0; i < trapCount; i++)
+        {
+            if (player == null) break;
+            Vector2 randomOffset = Random.insideUnitCircle * 4f; 
+            trapPositions[i] = (Vector2)player.position + randomOffset;
+            
+            if (trapWarningPrefab) 
+            {
+                GameObject warn = Instantiate(trapWarningPrefab, trapPositions[i], Quaternion.identity);
+                Destroy(warn, trapDelay);
+            }
+        }
+
+        // 2. Wait for arming time
+        yield return new WaitForSeconds(trapDelay);
+        
+        PlayRandomSound(magicImpactSounds, 0.8f);
+
+        // 3. Spawn Traps
+        for (int i = 0; i < trapCount; i++)
+        {
+            if (trapPrefab) Instantiate(trapPrefab, trapPositions[i], Quaternion.identity);
+        }
+    }
+
+    IEnumerator Magic_IceWall()
+    {
+        if (iceWallPrefab)
+        {
+            float direction = transform.localScale.x; 
+            Vector2 spawnPos = (Vector2)transform.position + (Vector2.right * direction * wallOffsetDistance);
+            
+            GameObject wall = Instantiate(iceWallPrefab, spawnPos, Quaternion.identity);
+            
+            IceWall wallScript = wall.GetComponent<IceWall>();
+            if (wallScript != null) wallScript.Activate(wallLifeTime);
+            else Destroy(wall, wallLifeTime);
+            
+            PlayRandomSound(magicImpactSounds, 1.0f);
+        }
+        yield return null;
     }
 
     // --- HELPERS ---
@@ -211,9 +308,8 @@ public class PenguinEnemyAI : MonoBehaviour
     {
         if (clips != null && clips.Length > 0 && audioSource)
         {
-            int randomIndex = Random.Range(0, clips.Length);
             audioSource.pitch = Random.Range(0.9f, 1.1f); 
-            audioSource.PlayOneShot(clips[randomIndex], volume);
+            audioSource.PlayOneShot(clips[Random.Range(0, clips.Length)], volume);
         }
     }
 
@@ -223,12 +319,10 @@ public class PenguinEnemyAI : MonoBehaviour
         if (mainCam != null)
         {
             Vector3 originalPos = mainCam.transform.position;
-            float elapsed = 0.0f;
+            float elapsed = 0f;
             while (elapsed < duration)
             {
-                float x = Random.Range(-1f, 1f) * intensity;
-                float y = Random.Range(-1f, 1f) * intensity;
-                mainCam.transform.position = new Vector3(originalPos.x + x, originalPos.y + y, originalPos.z);
+                mainCam.transform.position = originalPos + (Vector3)Random.insideUnitCircle * intensity;
                 elapsed += Time.deltaTime;
                 yield return null;
             }
