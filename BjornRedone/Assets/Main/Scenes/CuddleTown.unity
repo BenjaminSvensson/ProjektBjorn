@@ -6496,6 +6496,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: PenguinBoss
       objectReference: {fileID: 0}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: maxHealth
+      value: 550
+      objectReference: {fileID: 0}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: currentHealth
+      value: 550
+      objectReference: {fileID: 0}
     - target: {fileID: 5471481999054955537, guid: f1bb2661623217145bdb1b322219c466, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
