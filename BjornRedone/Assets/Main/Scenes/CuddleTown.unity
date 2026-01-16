@@ -1863,6 +1863,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &677579683 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 365244750877323419, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
+  m_PrefabInstance: {fileID: 2057541877}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &692321237
 GameObject:
   m_ObjectHideFlags: 0
@@ -5936,15 +5941,15 @@ MonoBehaviour:
   meleeDamage: 10
   meleeKnockbackForce: 15
   meleeCooldown: 0.25
-  meleeWindUpTime: 0
+  meleeWindUpTime: 0.5
   magicRange: 8
   magicCooldown: 5
   castTime: 1
-  iciclePrefab: {fileID: 0}
+  iciclePrefab: {fileID: 7408447239161014066, guid: 0f064fccfd641d14a80d820e29bf380a, type: 3}
   icicleCount: 3
   icicleRadius: 3
-  warningVisualPrefab: {fileID: 0}
-  trapPrefab: {fileID: 0}
+  warningVisualPrefab: {fileID: 677579683}
+  trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
   trapCount: 2
   trapDelay: 1
   iceWallPrefab: {fileID: 0}
