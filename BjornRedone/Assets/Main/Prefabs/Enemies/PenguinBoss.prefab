@@ -300,6 +300,10 @@ MonoBehaviour:
     prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
     dropChance: 0.66
     maxAmount: 9
+  - name: Coins
+    prefab: {fileID: 6604177083717084493, guid: f646bc5ff835d5e4cbdd122fff2e505b, type: 3}
+    dropChance: 1
+    maxAmount: 160
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}
