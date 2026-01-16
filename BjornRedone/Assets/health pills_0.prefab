@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4553677567569494656}
   - component: {fileID: -2062060344370004181}
   - component: {fileID: 5279336565155996276}
+  - component: {fileID: 6840275795691874814}
   m_Layer: 0
   m_Name: health pills_0
   m_TagString: Untagged
@@ -308,3 +309,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
+--- !u!114 &6840275795691874814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4892693659435004727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0abb4a070805c7b4696232c9ae625dd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::pickuptextscript
+  bonusText: Health

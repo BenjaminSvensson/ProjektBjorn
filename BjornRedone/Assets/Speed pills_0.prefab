@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: -3348382748757571320}
   - component: {fileID: 7988475972291983782}
   - component: {fileID: -5014865877352931029}
+  - component: {fileID: 589010196017852915}
   m_Layer: 7
   m_Name: Speed pills_0
   m_TagString: Untagged
@@ -31,7 +32,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6850550609115750317}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.06639166, y: -0, z: -0, w: 0.9977936}
+  m_LocalRotation: {x: -0.06639578, y: 0, z: 0, w: 0.9977934}
   m_LocalPosition: {x: -6.4888325, y: -1.568667, z: -0.000000015835228}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
@@ -308,3 +309,16 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &589010196017852915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6850550609115750317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0abb4a070805c7b4696232c9ae625dd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::pickuptextscript
+  bonusText: Speed

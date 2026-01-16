@@ -1003,7 +1003,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -2214,7 +2214,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -3555,7 +3555,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
@@ -5930,7 +5930,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
   animator: {fileID: 2097659501}
-  weaponTag: Weapon
+  weaponTag: Player
   damageFromWeapon: 10
   moveSpeed: 1
   stopDistance: 2.7
@@ -6051,8 +6051,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.6746143, y: 0.03379655}
-  m_Size: {x: 3.4484656, y: 4.7758107}
+  m_Offset: {x: -0.75963044, y: 0.30411994}
+  m_Size: {x: 1.8650508, y: 3.0954235}
   m_Direction: 0
 --- !u!82 &1911086739
 AudioSource:
@@ -6168,7 +6168,15 @@ MonoBehaviour:
   coinPrefab: {fileID: 0}
   minCoins: 1
   maxCoins: 3
-  goreDrops: []
+  goreDrops:
+  - name: "K\xF6ttbit2"
+    prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
+    dropChance: 0.8
+    maxAmount: 8
+  - name: "K\xF6ttbit1"
+    prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+    dropChance: 0.66
+    maxAmount: 9
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}
@@ -6188,13 +6196,14 @@ MonoBehaviour:
   damageAlertRadius: 10
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 512
   damageSounds: []
   idleSounds: []
   spotSounds: []
   attackSounds: []
   fleeSounds: []
-  deathSounds: []
+  deathSounds:
+  - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
   bloodSounds: []
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   moveSpeedBonus: 0

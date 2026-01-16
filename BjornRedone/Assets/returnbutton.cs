@@ -4,10 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.SceneManagement;
-
 public class returnbutton : MonoBehaviour
 {
     private Button button;

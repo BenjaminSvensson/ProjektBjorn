@@ -1,19 +1,10 @@
 fileFormatVersion: 2
-guid: 6e86e7978c5d62340bb9321105790822
+guid: f54770bedc1e30a4e89a0c64adac9c5e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -7860216314326252795
-    second: Speedup icon_0
-  - first:
-      213: -1269362569852961175
-    second: Speedup icon_1
-  - first:
-      213: -455967202492365119
-    second: Speedup icon_2
-  - first:
-      213: 7340909074220046851
-    second: Speedup icon_3
+      213: -3220182661243726119
+    second: "Stronk bj\xF6rn_0"
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -55,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -105,30 +96,17 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 4
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    ignorePlatformSupport: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Speedup icon_0
+      name: "Stronk bj\xF6rn_0"
       rect:
         serializedVersion: 2
-        x: 21
-        y: 21
-        width: 78
-        height: 82
+        x: 0
+        y: 0
+        width: 61
+        height: 54
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -137,74 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5038ad648e6eae290800000000000000
-      internalID: -7860216314326252795
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Speedup icon_1
-      rect:
-        serializedVersion: 2
-        x: 94
-        y: 48
-        width: 12
-        height: 6
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 96ebcb4d771526ee0800000000000000
-      internalID: -1269362569852961175
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Speedup icon_2
-      rect:
-        serializedVersion: 2
-        x: 98
-        y: 42
-        width: 13
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 1c6c632ce341ca9f0800000000000000
-      internalID: -455967202492365119
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Speedup icon_3
-      rect:
-        serializedVersion: 2
-        x: 98
-        y: 37
-        width: 9
-        height: 6
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 30ad351c8e520e560800000000000000
-      internalID: 7340909074220046851
+      spriteID: 9d612bc4eec9f43d0800000000000000
+      internalID: -3220182661243726119
       vertices: []
       indices: 
       edges: []
@@ -213,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -223,10 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Speedup icon_0: -7860216314326252795
-      Speedup icon_1: -1269362569852961175
-      Speedup icon_2: -455967202492365119
-      Speedup icon_3: 7340909074220046851
+      "Stronk bj\xF6rn_0": -3220182661243726119
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
