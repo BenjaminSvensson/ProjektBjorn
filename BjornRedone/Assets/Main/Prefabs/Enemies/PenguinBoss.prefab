@@ -102,13 +102,13 @@ MonoBehaviour:
   meleeRange: 2.7
   meleeCooldown: 0.25
   magicRange: 8
-  magicCooldown: 5
+  magicCooldown: 3.6
   iciclePrefab: {fileID: 7408447239161014066, guid: 0f064fccfd641d14a80d820e29bf380a, type: 3}
   icicleWarningPrefab: {fileID: 4471830438176176274, guid: f7669e243636fe646a54ac6e17b59f9c, type: 3}
-  icicleCount: 3
+  icicleCount: 4
   icicleRadius: 3
   icicleSpawnHeight: 9
-  trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
+  trapPrefab: {fileID: 4690931673826119617, guid: 646baa55bc859f747a6a6e2eceda3f62, type: 3}
   trapWarningPrefab: {fileID: 4471830438176176274, guid: f7669e243636fe646a54ac6e17b59f9c, type: 3}
   trapCount: 2
   trapDelay: 1
