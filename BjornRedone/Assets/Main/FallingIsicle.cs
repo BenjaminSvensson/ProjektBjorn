@@ -3,16 +3,27 @@ using UnityEngine;
 public class FallingIcicle : MonoBehaviour
 {
     public float damage = 15f;
-    public float targetY; // The Y position where it hits the floor
-    public GameObject shatterEffect; // Optional particle effect
+    public float targetY; 
+    public float fallSpeed = 10f; // Manually control fall speed if not using gravity
+    
+    private Rigidbody2D rb;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        // Failsafe: Destroy after 5 seconds no matter what
+        Destroy(gameObject, 5f); 
+    }
 
     void Update()
     {
-        // If we fall past the target Y, destroy
+        // 1. Manual Falling (More reliable than gravity for top-down)
+        transform.position += Vector3.down * fallSpeed * Time.deltaTime;
+
+        // 2. Hit Floor Logic
         if (transform.position.y <= targetY)
         {
-            if (shatterEffect) Instantiate(shatterEffect, transform.position, Quaternion.identity);
-            Destroy(gameObject);
+            Shatter();
         }
     }
 
@@ -20,9 +31,21 @@ public class FallingIcicle : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
+            // Try to damage player
             var limb = other.GetComponent<PlayerLimbController>();
             if (limb) limb.TakeDamage(damage);
-            Destroy(gameObject);
+
+            // Also check for standard movement script health?
+            // var health = other.GetComponent<PlayerHealth>();
+            // if (health) health.TakeDamage(damage);
+
+            Shatter();
         }
+    }
+
+    void Shatter()
+    {
+        // Add particle effect logic here if you have one
+        Destroy(gameObject);
     }
 }

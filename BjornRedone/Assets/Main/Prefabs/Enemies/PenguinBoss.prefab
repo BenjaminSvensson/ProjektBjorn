@@ -107,7 +107,7 @@ MonoBehaviour:
   icicleWarningPrefab: {fileID: 4471830438176176274, guid: f7669e243636fe646a54ac6e17b59f9c, type: 3}
   icicleCount: 3
   icicleRadius: 3
-  icicleSpawnHeight: 12
+  icicleSpawnHeight: 9
   trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
   trapWarningPrefab: {fileID: 4471830438176176274, guid: f7669e243636fe646a54ac6e17b59f9c, type: 3}
   trapCount: 2
