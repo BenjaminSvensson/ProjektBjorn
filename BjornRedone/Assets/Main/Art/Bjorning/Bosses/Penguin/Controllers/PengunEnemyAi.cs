@@ -8,7 +8,12 @@ public class PenguinEnemyAI : MonoBehaviour
 
     [Header("Components")]
     public Animator animator; 
+    public Collider2D mainCollider; 
     
+    [Header("Health Settings")]
+    public float maxHealth = 100f;
+    public GameObject deathEffect; 
+
     [Header("Core Settings")]
     public float moveSpeed = 3f;
     public float stopDistance = 0.5f; 
@@ -28,11 +33,11 @@ public class PenguinEnemyAI : MonoBehaviour
 
     [Header("Magic 1: Icicles (Sky Drop)")]
     public GameObject iciclePrefab;
-    public GameObject icicleWarningPrefab; // NEW: Drag your Warning Circle here
+    public GameObject icicleWarningPrefab;
     public int icicleCount = 3;
     public float icicleRadius = 3f; 
-    public float icicleSpawnHeight = 10f; // NEW: How high up they spawn
-    public float icicleWarningDuration = 1.0f; // NEW: How long the warning flashes before drop
+    public float icicleSpawnHeight = 10f; 
+    public float icicleWarningDuration = 1.0f; 
 
     [Header("Magic 2: Ice Traps")]
     public GameObject warningVisualPrefab; 
@@ -50,22 +55,35 @@ public class PenguinEnemyAI : MonoBehaviour
     public AudioClip[] magicCastSounds;
     public AudioClip[] magicImpactSounds; 
     public AudioClip[] trapSetSounds;
+    public AudioClip[] hurtSounds; 
+    public AudioClip deathSound;   
 
     // Internal
     private Transform player;
     private Rigidbody2D rb;
     private AudioSource audioSource;
+    private SpriteRenderer spriteRenderer; // NEW: Needed for color flash
     private State currentState = State.Idle;
+    
+    private float currentHealth;
     private Vector3 originalScale; 
     private float meleeTimer;
     private float magicTimer;
+    private int lastMagicType = 0; 
     private bool isBusy = false; 
 
     void Start()
     {
+        currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0; 
         audioSource = GetComponent<AudioSource>();
+
+        if (mainCollider == null) mainCollider = GetComponent<Collider2D>();
+
+        // Try to find the SpriteRenderer on this object or children (in case art is separate)
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
@@ -75,6 +93,57 @@ public class PenguinEnemyAI : MonoBehaviour
 
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p) player = p.transform;
+    }
+
+    // --- UPDATED DAMAGE SYSTEM ---
+    public void TakeDamage(float amount)
+    {
+        if (currentState == State.Dead) return;
+
+        currentHealth -= amount;
+        
+        PlayRandomSound(hurtSounds);
+        
+        // Trigger the Red Flash
+        StartCoroutine(FlashDamageEffect());
+        
+        // Optional: Trigger Hurt Animation
+        if(animator) animator.SetTrigger("Hurt"); 
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    IEnumerator FlashDamageEffect()
+    {
+        if (spriteRenderer != null)
+        {
+            Color originalColor = spriteRenderer.color; // Remember normal color
+            spriteRenderer.color = Color.red;           // Turn Red
+            
+            yield return new WaitForSeconds(0.1f);      // Wait 0.1 seconds
+            
+            spriteRenderer.color = originalColor;       // Return to normal
+        }
+    }
+    // -----------------------------
+
+    void Die()
+    {
+        currentState = State.Dead;
+        rb.linearVelocity = Vector2.zero;
+        isBusy = true;
+
+        if (deathSound && audioSource) audioSource.PlayOneShot(deathSound);
+        if (animator) animator.SetTrigger("Death"); 
+        
+        if (mainCollider) mainCollider.enabled = false; 
+        
+        if (deathEffect) Instantiate(deathEffect, transform.position, Quaternion.identity);
+
+        Destroy(gameObject, 5f);
     }
 
     void Update()
@@ -186,6 +255,13 @@ public class PenguinEnemyAI : MonoBehaviour
 
         int magicType = Random.Range(1, 4); 
 
+        if (magicType == 3 && lastMagicType == 3)
+        {
+            magicType = Random.Range(1, 3);
+        }
+
+        lastMagicType = magicType;
+
         yield return new WaitForSeconds(0.5f);
 
         switch (magicType)
@@ -208,7 +284,6 @@ public class PenguinEnemyAI : MonoBehaviour
         currentState = State.Chasing;
     }
 
-    // --- UPDATED ICICLE LOGIC ---
     IEnumerator Magic_Icicles()
     {
         for (int i = 0; i < icicleCount; i++)
@@ -216,36 +291,28 @@ public class PenguinEnemyAI : MonoBehaviour
             Vector2 randomOffset = Random.insideUnitCircle * icicleRadius;
             Vector2 groundPos = (Vector2)player.position + randomOffset;
 
-            // 1. Spawn Warning on Ground
             if (icicleWarningPrefab)
             {
                 Instantiate(icicleWarningPrefab, groundPos, Quaternion.identity);
             }
 
-            // 2. Schedule the Drop (We start a separate routine so the loop can continue quickly)
             StartCoroutine(SpawnIcicleWithDelay(groundPos, icicleWarningDuration));
-
-            // Small delay between next icicle warning appearing
             yield return new WaitForSeconds(0.2f); 
         }
     }
 
-    // New helper to handle the delay between warning and drop
     IEnumerator SpawnIcicleWithDelay(Vector2 groundPos, float delay)
     {
         yield return new WaitForSeconds(delay);
 
         if (iciclePrefab)
         {
-            // Spawn high in the sky
             Vector2 spawnPos = groundPos + (Vector2.up * icicleSpawnHeight);
             GameObject icicle = Instantiate(iciclePrefab, spawnPos, Quaternion.identity);
             
-            // Tell the icicle where the ground is so it stops correctly
             var script = icicle.GetComponent<FallingIcicle>();
             if (script) script.Setup(groundPos.y);
             
-            // Sound
             PlayRandomSound(magicImpactSounds);
         }
     }

@@ -5442,11 +5442,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 30
+  totalRooms: 15
   numberOfBossRooms: 1
-  minBossDistance: 20
+  minBossDistance: 10
   roomSize: {x: 20, y: 10}
-  maxGenerationAttempts: 250
+  maxGenerationAttempts: 300
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
   normalRoomRules:
   - roomPrefab: {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
@@ -5929,6 +5929,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
   animator: {fileID: 2097659501}
+  mainCollider: {fileID: 1911086738}
+  maxHealth: 5
+  deathEffect: {fileID: 0}
   moveSpeed: 1
   stopDistance: 2.7
   wakeUpDistance: 10
@@ -5950,9 +5953,9 @@ MonoBehaviour:
   trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
   trapCount: 2
   trapDelay: 1
-  iceWallPrefab: {fileID: 0}
-  wallOffsetDistance: 2
-  wallLifeTime: 5
+  iceWallPrefab: {fileID: 6918201382545588722, guid: f3be6d716eb0f694198634722b00354d, type: 3}
+  wallOffsetDistance: 3
+  wallLifeTime: 12
   meleeSounds:
   - {fileID: 8300000, guid: 16a0a013396415947842af7192e5d24b, type: 3}
   magicCastSounds:
@@ -5962,6 +5965,9 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d1b4dc9e297df6347800ff4c8080f54e, type: 3}
   magicImpactSounds: []
   trapSetSounds: []
+  hurtSounds:
+  - {fileID: 8300000, guid: b7c4e0ed2e3278a47baee51809a6e995, type: 3}
+  deathSound: {fileID: 0}
 --- !u!50 &1911086735
 Rigidbody2D:
   serializedVersion: 5
@@ -6671,7 +6677,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.69
+      value: 3.7
       objectReference: {fileID: 0}
     - target: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: m_LocalPosition.z
