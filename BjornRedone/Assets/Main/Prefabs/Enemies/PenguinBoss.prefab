@@ -78,42 +78,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd8e7ce1a217e634bbc5bff11c59379c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
-  animator: {fileID: 3434843709141612895}
+  player: {fileID: 0}
+  attackSounds: []
+  magicSounds: []
+  generalSounds: []
+  footstepSounds: []
+  footstepShakeAmount: 0.03
+  attackShakeAmount: 0.05
   weaponTag: Player
-  damageFromWeapon: 10
+  animator: {fileID: 3434843709141612895}
   moveSpeed: 1
   stopDistance: 2.7
   wakeUpDistance: 10
   meleeRange: 2.7
-  meleeDamage: 10
-  meleeKnockbackForce: 15
   meleeCooldown: 0.25
-  meleeWindUpTime: 0.5
   magicRange: 8
   magicCooldown: 5
-  castTime: 1
-  iciclePrefab: {fileID: 7408447239161014066, guid: 0f064fccfd641d14a80d820e29bf380a, type: 3}
-  icicleWarningPrefab: {fileID: 365244750877323419, guid: 4fe339098d98f5b4a87cdae9525ff082, type: 3}
-  icicleCount: 3
-  icicleRadius: 3
-  icicleSpawnHeight: 10
-  icicleWarningDuration: 1
-  warningVisualPrefab: {fileID: 365244750877323419, guid: 4fe339098d98f5b4a87cdae9525ff082, type: 3}
-  trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
-  trapCount: 2
-  trapDelay: 1
   iceWallPrefab: {fileID: 6918201382545588722, guid: f3be6d716eb0f694198634722b00354d, type: 3}
   wallOffsetDistance: 3
   wallLifeTime: 12
-  meleeSounds:
-  - {fileID: 8300000, guid: 16a0a013396415947842af7192e5d24b, type: 3}
-  magicCastSounds:
-  - {fileID: 8300000, guid: ce04d8f71f8f5a143a5c7109bfa026c9, type: 3}
-  - {fileID: 8300000, guid: ff010b7d541eb894a97503d41f675447, type: 3}
-  - {fileID: 8300000, guid: 1837deb43eae12c49ad64c9dd58f3006, type: 3}
-  - {fileID: 8300000, guid: d1b4dc9e297df6347800ff4c8080f54e, type: 3}
-  magicImpactSounds: []
-  trapSetSounds: []
 --- !u!210 &5827666412457745622
 SortingGroup:
   m_ObjectHideFlags: 0
@@ -285,8 +268,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 50
-  currentHealth: 50
+  maxHealth: 550
+  currentHealth: 550
   coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
   minCoins: 1
   maxCoins: 3
@@ -345,6 +328,7 @@ GameObject:
   - component: {fileID: 524971794480290969}
   - component: {fileID: 6038925348264610}
   - component: {fileID: 3434843709141612895}
+  - component: {fileID: 6747015999406325517}
   m_Layer: 0
   m_Name: BossPenguinVisual
   m_TagString: Player
@@ -448,3 +432,16 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &6747015999406325517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3250556421128093312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abd2aa4b422a4bd4d9f9781ee09599d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PenguinAnimationEvents
+  mainAI: {fileID: 7729352542853161402}

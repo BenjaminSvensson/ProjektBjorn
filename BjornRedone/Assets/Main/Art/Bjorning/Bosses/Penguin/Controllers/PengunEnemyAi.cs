@@ -3,7 +3,7 @@ using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(EnemyLimbController))]
-[RequireComponent(typeof(AudioSource))] // Added AudioSource
+[RequireComponent(typeof(AudioSource))]
 public class PenguinEnemyAI : MonoBehaviour
 {
     [Header("Targeting")]
@@ -13,7 +13,7 @@ public class PenguinEnemyAI : MonoBehaviour
     [Header("Audio Settings")]
     public AudioClip[] attackSounds;
     public AudioClip[] magicSounds;
-    public AudioClip[] generalSounds; // Ambient/Waddle sounds
+    public AudioClip[] generalSounds; // Ambient squeaks/grunts
     public AudioClip[] footstepSounds;
     
     [Header("Screen Shake Settings")]
@@ -35,6 +35,12 @@ public class PenguinEnemyAI : MonoBehaviour
     public float magicRange = 8f;
     public float magicCooldown = 5.0f;
 
+    [Header("Magic Prefabs")]
+    public GameObject iceWallPrefab;
+    public float wallOffsetDistance = 2.0f;
+    public float wallLifeTime = 5.0f;
+    // Add other magic prefabs here (icicles, traps) if needed
+
     // Internal
     private Rigidbody2D rb;
     private EnemyLimbController limbController;
@@ -42,8 +48,6 @@ public class PenguinEnemyAI : MonoBehaviour
     private float meleeTimer;
     private float magicTimer;
     private bool isBusy = false;
-
-    // General Sound Timer
     private float generalSoundTimer;
 
     void Start()
@@ -52,20 +56,23 @@ public class PenguinEnemyAI : MonoBehaviour
         limbController = GetComponent<EnemyLimbController>();
         audioSource = GetComponent<AudioSource>();
 
-        // Randomize start time for general sounds so multiple penguins don't speak at once
+        // Randomize ambient sound timer
         generalSoundTimer = Random.Range(2f, 5f);
 
         // --- AUTO-TARGETING ---
+        // 1. If slot is empty, look for PlayerMovement script
         if (player == null)
         {
             var playerScript = FindObjectOfType<PlayerMovement>(); 
             if (playerScript != null) player = playerScript.transform;
             else {
+                // Fallback to Tag
                 GameObject pTag = GameObject.FindGameObjectWithTag("Player");
                 if (pTag != null) player = pTag.transform;
             }
         }
-
+        
+        // Safety checks
         rb.bodyType = RigidbodyType2D.Dynamic;
         rb.gravityScale = 0; 
         rb.freezeRotation = true;
@@ -76,14 +83,13 @@ public class PenguinEnemyAI : MonoBehaviour
         if (player == null || limbController == null) return;
 
         // --- GENERAL SOUND LOGIC ---
-        // Only play if not attacking and close enough to be heard
         if (!isBusy && Vector2.Distance(transform.position, player.position) < 20f)
         {
             generalSoundTimer -= Time.deltaTime;
             if (generalSoundTimer <= 0)
             {
-                PlayRandomSound(generalSounds, 0.4f); // Lower volume for ambient
-                generalSoundTimer = Random.Range(3f, 7f); // Wait 3-7 seconds for next sound
+                PlayRandomSound(generalSounds, 0.4f);
+                generalSoundTimer = Random.Range(3f, 7f);
             }
         }
 
@@ -97,9 +103,9 @@ public class PenguinEnemyAI : MonoBehaviour
             return;
         }
 
-        // LOGIC
+        // --- AI LOGIC TREE ---
         if (dist > wakeUpDistance) {
-            // Idle
+            SetWalking(false);
         }
         else if (dist <= meleeRange && meleeTimer <= 0) {
             StartCoroutine(DoMeleeAttack());
@@ -120,42 +126,48 @@ public class PenguinEnemyAI : MonoBehaviour
         Vector2 dir = (player.position - transform.position).normalized;
         rb.linearVelocity = dir * speed;
 
+        // Face Direction
         if (dir.x > 0) transform.localScale = new Vector3(1, 1, 1);
         else transform.localScale = new Vector3(-1, 1, 1);
 
-        if(animator) animator.SetBool("IsWalking", true);
+        SetWalking(true);
     }
 
-    // --- ANIMATION EVENTS ---
-    // This function is called by the Animation Event on Frame 8 and 26
-    public void PlayFootstep()
+    void SetWalking(bool isWalking)
+    {
+        if (animator) animator.SetBool("IsWalking", isWalking);
+    }
+
+    // --- PUBLIC FUNCTIONS FOR ANIMATION EVENTS ---
+    // The "Bridge" script will call these.
+    public void PlayFootstepSound()
     {
         // Only play if actually moving
-        if (animator.GetBool("IsWalking"))
+        if (animator != null && animator.GetBool("IsWalking"))
         {
-            PlayRandomSound(footstepSounds, 0.6f);
+            PlayRandomSound(footstepSounds, 0.5f);
             StartCoroutine(ShakeCamera(footstepShakeAmount, 0.1f));
         }
     }
+
+    // --- ATTACKS ---
 
     IEnumerator DoMeleeAttack()
     {
         isBusy = true;
         rb.linearVelocity = Vector2.zero;
-        if(animator) {
-            animator.SetBool("IsWalking", false);
-            animator.SetTrigger("Attack");
-        }
+        SetWalking(false);
+        if(animator) animator.SetTrigger("Attack");
 
-        // Play Attack Sound
         PlayRandomSound(attackSounds, 1.0f);
         
-        yield return new WaitForSeconds(0.5f); 
+        yield return new WaitForSeconds(0.4f); // Wait for hit frame
         
-        StartCoroutine(ShakeCamera(attackShakeAmount, 0.15f)); // Big shake on hit
-
+        // HIT CHECK
         if (player != null && Vector2.Distance(transform.position, player.position) <= meleeRange * 1.5f)
         {
+            StartCoroutine(ShakeCamera(attackShakeAmount, 0.2f));
+            
             var pLimb = player.GetComponent<PlayerLimbController>();
             if (pLimb) pLimb.TakeDamage(10f + limbController.attackDamageBonus);
         }
@@ -168,16 +180,27 @@ public class PenguinEnemyAI : MonoBehaviour
     {
         isBusy = true;
         rb.linearVelocity = Vector2.zero;
-        if(animator) {
-            animator.SetBool("IsWalking", false);
-            animator.SetTrigger("Magic");
-        }
+        SetWalking(false);
+        if(animator) animator.SetTrigger("Magic");
         
-        // Play Magic Sound
         PlayRandomSound(magicSounds, 1.0f);
 
         yield return new WaitForSeconds(0.5f);
         
+        // SPAWN ICE WALL (or other magic)
+        if (iceWallPrefab)
+        {
+            float direction = transform.localScale.x; // 1 or -1
+            Vector2 spawnPos = (Vector2)transform.position + (Vector2.right * direction * wallOffsetDistance);
+            
+            GameObject wall = Instantiate(iceWallPrefab, spawnPos, Quaternion.identity);
+            
+            // Handle Fading
+            IceWall wallScript = wall.GetComponent<IceWall>();
+            if (wallScript != null) wallScript.Activate(wallLifeTime);
+            else Destroy(wall, wallLifeTime);
+        }
+
         magicTimer = magicCooldown;
         isBusy = false;
     }
@@ -189,13 +212,11 @@ public class PenguinEnemyAI : MonoBehaviour
         if (clips != null && clips.Length > 0 && audioSource)
         {
             int randomIndex = Random.Range(0, clips.Length);
-            // Randomize pitch slightly for variety
             audioSource.pitch = Random.Range(0.9f, 1.1f); 
             audioSource.PlayOneShot(clips[randomIndex], volume);
         }
     }
 
-    // Simple Camera Shake logic
     IEnumerator ShakeCamera(float intensity, float duration)
     {
         Camera mainCam = Camera.main;
@@ -203,19 +224,14 @@ public class PenguinEnemyAI : MonoBehaviour
         {
             Vector3 originalPos = mainCam.transform.position;
             float elapsed = 0.0f;
-
             while (elapsed < duration)
             {
                 float x = Random.Range(-1f, 1f) * intensity;
                 float y = Random.Range(-1f, 1f) * intensity;
-
-                // Keeps the Z position the same
                 mainCam.transform.position = new Vector3(originalPos.x + x, originalPos.y + y, originalPos.z);
-
                 elapsed += Time.deltaTime;
                 yield return null;
             }
-
             mainCam.transform.position = originalPos;
         }
     }

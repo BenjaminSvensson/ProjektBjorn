@@ -3621,6 +3621,17 @@ RectTransform:
   m_AnchoredPosition: {x: 156.1, y: 37.8}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1381110366 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+  m_PrefabInstance: {fileID: 7411262473669112533}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd8e7ce1a217e634bbc5bff11c59379c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
 --- !u!1 &1464535123
 GameObject:
   m_ObjectHideFlags: 0
@@ -6149,6 +6160,24 @@ RectTransform:
   m_AnchoredPosition: {x: -10.50006, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &2092473980 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3250556421128093312, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+  m_PrefabInstance: {fileID: 7411262473669112533}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2092473984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2092473980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abd2aa4b422a4bd4d9f9781ee09599d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PenguinAnimationEvents
+  mainAI: {fileID: 1381110366}
 --- !u!1 &2096289542
 GameObject:
   m_ObjectHideFlags: 0
@@ -6548,10 +6577,21 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 1970201048}
+    - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: attackShakeAmount
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: footstepShakeAmount
+      value: 0.03
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3250556421128093312, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2092473984}
   m_SourcePrefab: {fileID: 100100000, guid: f1bb2661623217145bdb1b322219c466, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
