@@ -1863,11 +1863,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &677579683 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 365244750877323419, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-  m_PrefabInstance: {fileID: 2057541877}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &692321237
 GameObject:
   m_ObjectHideFlags: 0
@@ -5946,9 +5941,12 @@ MonoBehaviour:
   magicCooldown: 5
   castTime: 1
   iciclePrefab: {fileID: 7408447239161014066, guid: 0f064fccfd641d14a80d820e29bf380a, type: 3}
+  icicleWarningPrefab: {fileID: 365244750877323419, guid: 4fe339098d98f5b4a87cdae9525ff082, type: 3}
   icicleCount: 3
   icicleRadius: 3
-  warningVisualPrefab: {fileID: 677579683}
+  icicleSpawnHeight: 10
+  icicleWarningDuration: 1
+  warningVisualPrefab: {fileID: 365244750877323419, guid: 4fe339098d98f5b4a87cdae9525ff082, type: 3}
   trapPrefab: {fileID: 4690931673826119617, guid: 555145b5ae0ac0045af736f9b1d9a542, type: 3}
   trapCount: 2
   trapDelay: 1
@@ -6050,8 +6048,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.79396033, y: 0.37990022}
-  m_Size: {x: 2.0879207, y: 3.6062202}
+  m_Offset: {x: -0.6746143, y: 0.03379655}
+  m_Size: {x: 3.4484656, y: 4.7758107}
   m_Direction: 0
 --- !u!82 &1911086739
 AudioSource:

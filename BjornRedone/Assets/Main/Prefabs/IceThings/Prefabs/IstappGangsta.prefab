@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 3439961050581070839}
   - component: {fileID: 1883165307533715904}
   - component: {fileID: 7965505995131220114}
+  - component: {fileID: 8907098550832708751}
   m_Layer: 0
   m_Name: IstappGangsta
   m_TagString: Untagged
@@ -143,7 +144,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -251,3 +252,22 @@ MonoBehaviour:
   destroyOnImpact: 0
   fadeOutTime: 0.5
   damageSound: {fileID: 0}
+--- !u!114 &8907098550832708751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7408447239161014066}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d4f7da62295d0f459bb351fa3f6457f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FallingIcicle
+  fallSpeed: 15
+  damage: 15
+  impactEffect: {fileID: 0}
+  impactSounds:
+  - {fileID: 8300000, guid: 4188d27db0bcc7b4eaf2aad308d3c577, type: 3}
+  - {fileID: 8300000, guid: 61497dc7cb226b545af257d76e566eda, type: 3}
+  - {fileID: 8300000, guid: 2c28ecb4a933aca4bbbf53c8fe125f5a, type: 3}
