@@ -414,8 +414,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 15
-  currentHealth: 15
+  maxHealth: 6
+  currentHealth: 6
   coinPrefab: {fileID: 0}
   minCoins: 1
   maxCoins: 3
