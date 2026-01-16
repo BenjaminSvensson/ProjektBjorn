@@ -17,6 +17,7 @@ public class PenguinEnemyAI : MonoBehaviour
     [Header("Melee Settings")]
     public float meleeRange = 1.5f;
     public float meleeDamage = 10f;
+    public float meleeKnockbackForce = 15f; // NEW: How hard to push the player
     public float meleeCooldown = 2.0f;
     public float meleeWindUpTime = 0.3f; 
 
@@ -42,10 +43,11 @@ public class PenguinEnemyAI : MonoBehaviour
     public float wallLifeTime = 5.0f;
 
     [Header("Audio")]
-    public AudioClip meleeSound;
-    public AudioClip magicCastSound;
-    public AudioClip magicImpactSound;
-    public AudioClip trapSetSound;
+    [Tooltip("Add multiple sounds here for variety")]
+    public AudioClip[] meleeSounds;
+    public AudioClip[] magicCastSounds;
+    public AudioClip[] magicImpactSounds; 
+    public AudioClip[] trapSetSounds;
 
     // Internal
     private Transform player;
@@ -53,7 +55,7 @@ public class PenguinEnemyAI : MonoBehaviour
     private AudioSource audioSource;
     private State currentState = State.Idle;
     
-    // NEW: Variable to remember how big you set him in the inspector
+    // Scale memory
     private Vector3 originalScale; 
 
     private float meleeTimer;
@@ -72,7 +74,6 @@ public class PenguinEnemyAI : MonoBehaviour
             if (animator == null) Debug.LogError("PENGUIN ERROR: No Animator assigned!");
         }
 
-        // FIX: Remember the exact size you set in the Inspector
         if (animator != null)
         {
             originalScale = animator.transform.localScale;
@@ -122,10 +123,8 @@ public class PenguinEnemyAI : MonoBehaviour
     {
         Vector2 dir = (player.position - transform.position).normalized;
         
-        // FIX: Apply direction to the ORIGINAL scale, not to "1"
         if (animator != null)
         {
-            // Calculate positive scale based on your original settings
             float absX = Mathf.Abs(originalScale.x);
             
             if (dir.x > 0) 
@@ -154,22 +153,43 @@ public class PenguinEnemyAI : MonoBehaviour
         rb.linearVelocity = Vector2.zero; 
         currentState = State.MeleeAttacking;
 
-        if(animator) animator.SetTrigger("Attack"); 
-        PlaySound(meleeSound);
+        // FIX: Reset the trigger first to prevent "double firing" bugs
+        if(animator) 
+        {
+            animator.ResetTrigger("Attack"); 
+            animator.SetTrigger("Attack");
+        }
+        
+        PlayRandomSound(meleeSounds);
 
+        // Wait for the windup (visuals catch up)
         yield return new WaitForSeconds(meleeWindUpTime);
 
+        // Check distance again to prevent hitting player from across the room if they dashed away
         float dist = Vector2.Distance(transform.position, player.position);
-        if (dist <= meleeRange * 1.2f) 
+        if (dist <= meleeRange * 1.5f) 
         {
+             Vector2 directionToPlayer = (player.position - transform.position).normalized;
+
+             // 1. Deal Damage
              var playerLimb = player.GetComponent<PlayerLimbController>();
-             if(playerLimb) playerLimb.TakeDamage(meleeDamage, (player.position - transform.position).normalized);
+             if(playerLimb) playerLimb.TakeDamage(meleeDamage, directionToPlayer);
+
+             // 2. Knockback
+             Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+             if (playerRb != null)
+             {
+                 playerRb.AddForce(directionToPlayer * meleeKnockbackForce, ForceMode2D.Impulse);
+             }
         }
 
+        // Wait a bit to let the animation finish visually
         yield return new WaitForSeconds(0.5f);
 
         meleeTimer = meleeCooldown;
         isBusy = false; 
+        
+        // FIX: Force logic back to chasing immediately so he doesn't stand frozen
         currentState = State.Chasing;
     }
 
@@ -180,7 +200,8 @@ public class PenguinEnemyAI : MonoBehaviour
         currentState = State.CastingMagic;
 
         if(animator) animator.SetTrigger("Magic"); 
-        PlaySound(magicCastSound);
+        
+        PlayRandomSound(magicCastSounds);
 
         int magicType = Random.Range(1, 4); 
 
@@ -236,7 +257,7 @@ public class PenguinEnemyAI : MonoBehaviour
             }
         }
 
-        PlaySound(trapSetSound);
+        PlayRandomSound(trapSetSounds);
 
         yield return new WaitForSeconds(trapDelay);
 
@@ -245,9 +266,10 @@ public class PenguinEnemyAI : MonoBehaviour
             if (trapPrefab)
             {
                 Instantiate(trapPrefab, trapPositions[i], Quaternion.identity);
-                PlaySound(magicImpactSound);
             }
         }
+        
+        PlayRandomSound(magicImpactSounds);
     }
 
     IEnumerator Magic_IceWall()
@@ -260,7 +282,8 @@ public class PenguinEnemyAI : MonoBehaviour
 
             GameObject wall = Instantiate(iceWallPrefab, spawnPos, Quaternion.identity);
             Destroy(wall, wallLifeTime);
-            PlaySound(magicImpactSound);
+            
+            PlayRandomSound(magicImpactSounds);
         }
         yield return null;
     }
@@ -273,9 +296,18 @@ public class PenguinEnemyAI : MonoBehaviour
         else animator.SetBool("IsWalking", false);
     }
 
-    void PlaySound(AudioClip clip)
+    void PlayRandomSound(AudioClip[] clips)
     {
-        if (clip && audioSource) audioSource.PlayOneShot(clip);
+        if (clips != null && clips.Length > 0 && audioSource)
+        {
+            int randomIndex = Random.Range(0, clips.Length);
+            AudioClip clip = clips[randomIndex];
+            if (clip != null)
+            {
+                audioSource.pitch = Random.Range(0.9f, 1.1f);
+                audioSource.PlayOneShot(clip);
+            }
+        }
     }
 
     void OnDrawGizmos()
