@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 2656029399121978934}
   m_Layer: 9
   m_Name: PenguinBoss
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -286,8 +286,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
   maxHealth: 50
-  currentHealth: 0
-  coinPrefab: {fileID: 0}
+  currentHealth: 50
+  coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
   minCoins: 1
   maxCoins: 3
   goreDrops:
@@ -319,14 +319,16 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 512
-  damageSounds: []
+  damageSounds:
+  - {fileID: 8300000, guid: b7c4e0ed2e3278a47baee51809a6e995, type: 3}
   idleSounds: []
   spotSounds: []
   attackSounds: []
   fleeSounds: []
   deathSounds:
   - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
-  bloodSounds: []
+  bloodSounds:
+  - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
   moveSpeedBonus: 0
   attackDamageBonus: 0
