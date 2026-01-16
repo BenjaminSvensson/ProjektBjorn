@@ -6371,6 +6371,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: PenguinBoss
       objectReference: {fileID: 0}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: coinPrefab
+      value: 
+      objectReference: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: currentHealth
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: bloodSounds.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: damageSounds.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: 'bloodSounds.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
+    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: 'damageSounds.Array.data[0]'
+      value: 
+      objectReference: {fileID: 8300000, guid: b7c4e0ed2e3278a47baee51809a6e995, type: 3}
     - target: {fileID: 5471481999054955537, guid: f1bb2661623217145bdb1b322219c466, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
