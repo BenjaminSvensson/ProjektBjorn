@@ -242,8 +242,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FallingIcicle
   damage: 15
-  targetY: 0
   fallSpeed: 23
+  onHitEffects:
+  - {fileID: 1970289116382454247, guid: 0433e85751698a14e955d8ef72b01549, type: 3}
+  - {fileID: 1970289116382454247, guid: 0433e85751698a14e955d8ef72b01549, type: 3}
+  - {fileID: 1970289116382454247, guid: 0433e85751698a14e955d8ef72b01549, type: 3}
+  - {fileID: 8797457997770041737, guid: b5cabe7e661ccdf429c1453af1986c05, type: 3}
+  targetY: 0
 --- !u!210 &3062038797061077194
 SortingGroup:
   m_ObjectHideFlags: 0

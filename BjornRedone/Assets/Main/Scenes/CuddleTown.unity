@@ -6541,6 +6541,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1970201048}
     - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: trapPrefab
+      value: 
+      objectReference: {fileID: 4690931673826119617, guid: 646baa55bc859f747a6a6e2eceda3f62, type: 3}
+    - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
+      propertyPath: magicCooldown
+      value: 3.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
       propertyPath: magicImpactSounds.Array.size
       value: 3
       objectReference: {fileID: 0}
