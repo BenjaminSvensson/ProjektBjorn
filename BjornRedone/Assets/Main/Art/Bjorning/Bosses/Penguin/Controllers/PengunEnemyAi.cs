@@ -5,8 +5,9 @@ using System.Collections;
 [RequireComponent(typeof(EnemyLimbController))]
 public class PenguinEnemyAI : MonoBehaviour
 {
-    [Header("Targeting (Drag Player Here!)")]
-    public Transform player; // <--- This is now Public!
+    [Header("Targeting")]
+    [Tooltip("You can leave this empty! The script will auto-find the PlayerMovement script.")]
+    public Transform player; 
 
     [Header("Setup")]
     public string weaponTag = "Weapon";
@@ -35,26 +36,32 @@ public class PenguinEnemyAI : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         limbController = GetComponent<EnemyLimbController>();
         
-        // --- HYBRID TARGETING SYSTEM ---
+        // --- AUTO-TARGETING LOGIC ---
         
-        // 1. Check if you manually dragged the player in
-        if (player != null)
+        // 1. If the slot is empty, find the unique PlayerMovement script
+        if (player == null)
         {
-            // Do nothing, we already have the player!
-        }
-        // 2. If slot is empty, try to find it automatically (Backup plan)
-        else 
-        {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
-            if (p != null) player = p.transform;
+            // This is the most reliable way to find the real player
+            var playerScript = FindObjectOfType<PlayerMovement>(); 
+            
+            if (playerScript != null) 
+            {
+                player = playerScript.transform;
+            }
+            else 
+            {
+                // Fallback: If PlayerMovement isn't found, try the Tag
+                GameObject pTag = GameObject.FindGameObjectWithTag("Player");
+                if (pTag != null) player = pTag.transform;
+            }
         }
 
-        // 3. Final Check
+        // 2. Final Error Check
         if (player == null) {
-            Debug.LogError("Penguin has NO TARGET. Please drag Player into the inspector slot!");
+            Debug.LogError("CRITICAL: Penguin could not find the Player! (No PlayerMovement script and no 'Player' tag found).");
         }
         else if (player == transform) {
-            Debug.LogError("Penguin is targeting ITSELF! Unassign the player slot in the inspector.");
+            Debug.LogError("Penguin is targeting ITSELF! Check your scripts.");
             player = null;
         }
 
@@ -65,6 +72,7 @@ public class PenguinEnemyAI : MonoBehaviour
 
     void Update()
     {
+        // If we still have no player, just wait.
         if (player == null || limbController == null) return;
 
         float dist = Vector2.Distance(transform.position, player.position);
@@ -77,9 +85,9 @@ public class PenguinEnemyAI : MonoBehaviour
             return;
         }
 
-        // LOGIC TREE
+        // LOGIC
         if (dist > wakeUpDistance) {
-            // Sleep
+            // Idle / Sleep
         }
         else if (dist <= meleeRange && meleeTimer <= 0) {
             StartCoroutine(DoMeleeAttack());
@@ -100,6 +108,7 @@ public class PenguinEnemyAI : MonoBehaviour
         Vector2 dir = (player.position - transform.position).normalized;
         rb.linearVelocity = dir * speed;
 
+        // Face Direction
         if (dir.x > 0) transform.localScale = new Vector3(1, 1, 1);
         else transform.localScale = new Vector3(-1, 1, 1);
 
@@ -118,16 +127,20 @@ public class PenguinEnemyAI : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f); 
         
-        // SIMPLE DAMAGE CHECK
+        // HIT PLAYER
         if (player != null && Vector2.Distance(transform.position, player.position) <= meleeRange * 1.5f)
         {
-            // Try to find the Player's Limb Controller script
+            // Look for PlayerLimbController first
             var pLimb = player.GetComponent<PlayerLimbController>();
             if (pLimb) 
             {
                 pLimb.TakeDamage(10f + limbController.attackDamageBonus);
             }
-            // Fallback: If player has no limb script, check for basic health script?
+            else
+            {
+                // Fallback: Look for the same PlayerMovement script we found earlier?
+                // Or just apply force if you have a different health system
+            }
         }
 
         meleeTimer = meleeCooldown;
@@ -143,16 +156,10 @@ public class PenguinEnemyAI : MonoBehaviour
             animator.SetTrigger("Magic");
         }
         yield return new WaitForSeconds(0.5f);
+        
+        // Insert magic spawning code here (Icicles, Walls, etc.)
+        
         magicTimer = magicCooldown;
         isBusy = false;
-    }
-
-    // --- VISUALIZES THE ATTACK RANGE IN SCENE VIEW ---
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, meleeRange);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(transform.position, magicRange);
     }
 }
