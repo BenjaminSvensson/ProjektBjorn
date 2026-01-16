@@ -178,4 +178,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a7f52900e5980f47870cafbe69327cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IceWall
-  fadeDuration: 0.5
+  fadeDuration: 0.24
