@@ -3621,17 +3621,6 @@ RectTransform:
   m_AnchoredPosition: {x: 156.1, y: 37.8}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1381110366 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-  m_PrefabInstance: {fileID: 7411262473669112533}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd8e7ce1a217e634bbc5bff11c59379c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
 --- !u!1 &1464535123
 GameObject:
   m_ObjectHideFlags: 0
@@ -5234,7 +5223,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 6dfa8e40838deb34090b456abb21436c, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.4
+  m_Volume: 0.3
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -5578,9 +5567,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 15
+  totalRooms: 25
   numberOfBossRooms: 1
-  minBossDistance: 10
+  minBossDistance: 15
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 300
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
@@ -5622,21 +5611,21 @@ MonoBehaviour:
   enemySpawnList:
   - name: Bunny
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
-    cost: 6
+    cost: 7
     minDistanceReq: 2
   - name: Dog
     prefab: {fileID: 8447582695004223394, guid: c6d08eb7ad69dfb4fb038600c260ced9, type: 3}
-    cost: 3
+    cost: 5
     minDistanceReq: 2
   - name: Hedgehog
     prefab: {fileID: 8447582695004223394, guid: 22733423fca786e4bac7110703f6ea8d, type: 3}
-    cost: 8
+    cost: 9
     minDistanceReq: 2
   - name: Bird
     prefab: {fileID: 7443698164649891963, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
-    cost: 10
+    cost: 12
     minDistanceReq: 3
-  baseEnemyBudget: 2
+  baseEnemyBudget: 5
   enemyBudgetPerDistance: 2
   environmentProps:
   - prefab: {fileID: 7915102392887708610, guid: 8c4452de4dfd70346a334c909e57774c, type: 3}
@@ -6160,24 +6149,6 @@ RectTransform:
   m_AnchoredPosition: {x: -10.50006, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &2092473980 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3250556421128093312, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-  m_PrefabInstance: {fileID: 7411262473669112533}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &2092473984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2092473980}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: abd2aa4b422a4bd4d9f9781ee09599d1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PenguinAnimationEvents
-  mainAI: {fileID: 1381110366}
 --- !u!1 &2096289542
 GameObject:
   m_ObjectHideFlags: 0
@@ -6525,14 +6496,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: PenguinBoss
       objectReference: {fileID: 0}
-    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-      propertyPath: maxHealth
-      value: 550
-      objectReference: {fileID: 0}
-    - target: {fileID: 2656029399121978934, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-      propertyPath: currentHealth
-      value: 550
-      objectReference: {fileID: 0}
     - target: {fileID: 5471481999054955537, guid: f1bb2661623217145bdb1b322219c466, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -6577,21 +6540,10 @@ PrefabInstance:
       propertyPath: player
       value: 
       objectReference: {fileID: 1970201048}
-    - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-      propertyPath: attackShakeAmount
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 7729352542853161402, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-      propertyPath: footstepShakeAmount
-      value: 0.03
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3250556421128093312, guid: f1bb2661623217145bdb1b322219c466, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2092473984}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f1bb2661623217145bdb1b322219c466, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

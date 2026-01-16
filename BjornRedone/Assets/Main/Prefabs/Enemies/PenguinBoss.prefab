@@ -79,10 +79,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
   player: {fileID: 0}
-  attackSounds: []
+  attackSounds:
+  - {fileID: 8300000, guid: 16a0a013396415947842af7192e5d24b, type: 3}
   magicSounds: []
-  generalSounds: []
-  footstepSounds: []
+  generalSounds:
+  - {fileID: 8300000, guid: 815ec02194a2b77459dd7499689213f7, type: 3}
+  - {fileID: 8300000, guid: e568ee29107248e4698b71e9d5270e2c, type: 3}
+  - {fileID: 8300000, guid: 400bfa105a8e44548a97fca473cac7c8, type: 3}
+  footstepSounds:
+  - {fileID: 8300000, guid: 758a9f4a2d82e714c828893c88dfcddc, type: 3}
   footstepShakeAmount: 0.03
   attackShakeAmount: 0.05
   weaponTag: Player
