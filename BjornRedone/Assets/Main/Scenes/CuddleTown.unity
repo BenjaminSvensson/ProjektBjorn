@@ -2407,7 +2407,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -2684,8 +2684,8 @@ GameObject:
   - component: {fileID: 1172561462}
   - component: {fileID: 1172561461}
   - component: {fileID: 1172561460}
-  - component: {fileID: 1172561464}
   - component: {fileID: 1172561465}
+  - component: {fileID: 1172561466}
   m_Layer: 0
   m_Name: MainCamera
   m_TagString: MainCamera
@@ -2811,23 +2811,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1172561464
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1172561458}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 043d60adbab5a994b93cdbc7df597a28, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SimpleCameraFollow
-  playerTransform: {fileID: 1970201048}
-  smoothTime: 0.1
-  mouseInfluence: 0.3
-  maxPeekDistance: 4
-  maxMouseInputDistance: 3
 --- !u!114 &1172561465
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2848,6 +2831,27 @@ MonoBehaviour:
   clampToRoom: 1
   autoFitToRoom: 1
   zoomScale: 0.9
+--- !u!114 &1172561466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1172561458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b04d67e9fe62f534692e551a6ac9f566, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
+  playerTransform: {fileID: 1970201048}
+  smoothTime: 0.15
+  mouseInfluence: 0.15
+  maxPeekDistance: 2
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 8192
+  wallScanDistance: {x: 25, y: 15}
+  roomBuffer: 0.5
 --- !u!1 &1226538926
 GameObject:
   m_ObjectHideFlags: 0
