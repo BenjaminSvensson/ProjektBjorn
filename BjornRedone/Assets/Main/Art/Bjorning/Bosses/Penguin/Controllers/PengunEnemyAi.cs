@@ -2,13 +2,11 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
-// Removed RequireComponent(typeof(Animator)) so you don't get forced errors on the parent
 public class PenguinEnemyAI : MonoBehaviour
 {
     private enum State { Idle, Chasing, CastingMagic, MeleeAttacking, Dead }
 
     [Header("Components")]
-    // DRAG YOUR VISUAL/CHILD OBJECT HERE
     public Animator animator; 
     
     [Header("Core Settings")]
@@ -55,6 +53,9 @@ public class PenguinEnemyAI : MonoBehaviour
     private AudioSource audioSource;
     private State currentState = State.Idle;
     
+    // NEW: Variable to remember how big you set him in the inspector
+    private Vector3 originalScale; 
+
     private float meleeTimer;
     private float magicTimer;
     private bool isBusy = false; 
@@ -65,11 +66,16 @@ public class PenguinEnemyAI : MonoBehaviour
         rb.gravityScale = 0; 
         audioSource = GetComponent<AudioSource>();
 
-        // IF you forgot to drag the animator in the inspector, try to find it on children
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
-            if (animator == null) Debug.LogError("PENGUIN ERROR: No Animator assigned! Drag the Visual object into the 'Animator' slot.");
+            if (animator == null) Debug.LogError("PENGUIN ERROR: No Animator assigned!");
+        }
+
+        // FIX: Remember the exact size you set in the Inspector
+        if (animator != null)
+        {
+            originalScale = animator.transform.localScale;
         }
 
         GameObject p = GameObject.FindGameObjectWithTag("Player");
@@ -80,7 +86,6 @@ public class PenguinEnemyAI : MonoBehaviour
     {
         if (player == null || currentState == State.Dead) return;
 
-        // Timers
         if (meleeTimer > 0) meleeTimer -= Time.deltaTime;
         if (magicTimer > 0) magicTimer -= Time.deltaTime;
 
@@ -92,21 +97,18 @@ public class PenguinEnemyAI : MonoBehaviour
             return;
         }
 
-        // Idle Check
         if (distToPlayer > wakeUpDistance)
         {
             SetAnimation("Idle");
             return;
         }
 
-        // Melee Attack Check 
         if (distToPlayer <= meleeRange && meleeTimer <= 0)
         {
             StartCoroutine(ExecuteMeleeAttack());
             return;
         }
 
-        // Magic Attack Check
         if (distToPlayer <= magicRange && magicTimer <= 0)
         {
             StartCoroutine(ExecuteMagicSequence());
@@ -116,17 +118,20 @@ public class PenguinEnemyAI : MonoBehaviour
         MoveTowardsPlayer();
     }
 
-    // --- MOVEMENT ---
-
     void MoveTowardsPlayer()
     {
         Vector2 dir = (player.position - transform.position).normalized;
         
-        // Flip Sprite: We now flip the ANIMATOR object (Visuals), not the root
+        // FIX: Apply direction to the ORIGINAL scale, not to "1"
         if (animator != null)
         {
-            if (dir.x > 0) animator.transform.localScale = new Vector3(1, 1, 1); 
-            else if (dir.x < 0) animator.transform.localScale = new Vector3(-1, 1, 1);
+            // Calculate positive scale based on your original settings
+            float absX = Mathf.Abs(originalScale.x);
+            
+            if (dir.x > 0) 
+                animator.transform.localScale = new Vector3(absX, originalScale.y, originalScale.z); 
+            else if (dir.x < 0) 
+                animator.transform.localScale = new Vector3(-absX, originalScale.y, originalScale.z);
         }
 
         float dist = Vector2.Distance(transform.position, player.position);
@@ -142,8 +147,6 @@ public class PenguinEnemyAI : MonoBehaviour
             SetAnimation("Idle");
         }
     }
-
-    // --- MELEE LOGIC ---
 
     IEnumerator ExecuteMeleeAttack()
     {
@@ -169,8 +172,6 @@ public class PenguinEnemyAI : MonoBehaviour
         isBusy = false; 
         currentState = State.Chasing;
     }
-
-    // --- MAGIC LOGIC ---
 
     IEnumerator ExecuteMagicSequence()
     {
@@ -253,8 +254,7 @@ public class PenguinEnemyAI : MonoBehaviour
     {
         if (iceWallPrefab)
         {
-            // Use the Animator's scale to determine direction (since we flip the visual now)
-            float direction = animator != null ? animator.transform.localScale.x : 1f;
+            float direction = animator != null ? Mathf.Sign(animator.transform.localScale.x) : 1f;
             
             Vector2 spawnPos = (Vector2)transform.position + (Vector2.right * direction * wallOffsetDistance);
 
@@ -264,8 +264,6 @@ public class PenguinEnemyAI : MonoBehaviour
         }
         yield return null;
     }
-
-    // --- HELPER FUNCTIONS ---
 
     void SetAnimation(string stateName)
     {
@@ -284,10 +282,8 @@ public class PenguinEnemyAI : MonoBehaviour
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, meleeRange);
-        
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, magicRange);
-
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, wakeUpDistance);
     }
