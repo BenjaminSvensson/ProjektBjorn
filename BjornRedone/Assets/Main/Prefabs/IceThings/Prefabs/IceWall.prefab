@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: -56050947078731122}
   - component: {fileID: 854551621571647736}
   - component: {fileID: 1596482611714355862}
+  - component: {fileID: -1488628048034693290}
   m_Layer: 10
   m_Name: IceWall
   m_TagString: Untagged
@@ -165,3 +166,16 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 3.98, y: 0.046255544}
   m_EdgeRadius: 0
+--- !u!114 &-1488628048034693290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6918201382545588722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3a7f52900e5980f47870cafbe69327cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IceWall
+  fadeDuration: 0.5
