@@ -2,17 +2,17 @@ using UnityEngine;
 using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(EnemyLimbController))] // Forces the Limb Controller to exist
 public class PenguinEnemyAI : MonoBehaviour
 {
     private enum State { Idle, Chasing, CastingMagic, MeleeAttacking, Dead }
 
     [Header("Components")]
     public Animator animator; 
-    public Collider2D mainCollider; 
     
-    [Header("Health Settings")]
-    public float maxHealth = 100f;
-    public GameObject deathEffect; 
+    [Header("Damage Detection")]
+    public string weaponTag = "Weapon"; // Must match your Project Settings > Tags
+    public float damageFromWeapon = 10f; // How much damage to pass to the Limb Controller
 
     [Header("Core Settings")]
     public float moveSpeed = 3f;
@@ -31,7 +31,7 @@ public class PenguinEnemyAI : MonoBehaviour
     public float magicCooldown = 5.0f;
     public float castTime = 1.0f; 
 
-    [Header("Magic 1: Icicles (Sky Drop)")]
+    [Header("Magic 1: Icicles")]
     public GameObject iciclePrefab;
     public GameObject icicleWarningPrefab;
     public int icicleCount = 3;
@@ -39,7 +39,7 @@ public class PenguinEnemyAI : MonoBehaviour
     public float icicleSpawnHeight = 10f; 
     public float icicleWarningDuration = 1.0f; 
 
-    [Header("Magic 2: Ice Traps")]
+    [Header("Magic 2: Traps")]
     public GameObject warningVisualPrefab; 
     public GameObject trapPrefab;
     public int trapCount = 2;
@@ -50,22 +50,20 @@ public class PenguinEnemyAI : MonoBehaviour
     public float wallOffsetDistance = 2.0f; 
     public float wallLifeTime = 5.0f;
 
-    [Header("Audio")]
+    [Header("Audio (Attacks Only)")]
     public AudioClip[] meleeSounds;
     public AudioClip[] magicCastSounds;
     public AudioClip[] magicImpactSounds; 
     public AudioClip[] trapSetSounds;
-    public AudioClip[] hurtSounds; 
-    public AudioClip deathSound;   
+    // Note: Hurt/Death sounds are now handled by EnemyLimbController!
 
     // Internal
     private Transform player;
     private Rigidbody2D rb;
     private AudioSource audioSource;
-    private SpriteRenderer spriteRenderer; // NEW: Needed for color flash
+    private EnemyLimbController limbController; // REF TO LIMB CONTROLLER
     private State currentState = State.Idle;
     
-    private float currentHealth;
     private Vector3 originalScale; 
     private float meleeTimer;
     private float magicTimer;
@@ -74,16 +72,10 @@ public class PenguinEnemyAI : MonoBehaviour
 
     void Start()
     {
-        currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0; 
         audioSource = GetComponent<AudioSource>();
-
-        if (mainCollider == null) mainCollider = GetComponent<Collider2D>();
-
-        // Try to find the SpriteRenderer on this object or children (in case art is separate)
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer == null) spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        limbController = GetComponent<EnemyLimbController>(); // Get the controller
 
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
@@ -95,60 +87,42 @@ public class PenguinEnemyAI : MonoBehaviour
         if (p) player = p.transform;
     }
 
-    // --- UPDATED DAMAGE SYSTEM ---
-    public void TakeDamage(float amount)
+    // --- COLLISION LOGIC ---
+
+    void OnTriggerEnter2D(Collider2D other)
     {
-        if (currentState == State.Dead) return;
+        // Safety check: if LimbController says we are dead, stop everything
+        if (limbController == null) return;
 
-        currentHealth -= amount;
-        
-        PlayRandomSound(hurtSounds);
-        
-        // Trigger the Red Flash
-        StartCoroutine(FlashDamageEffect());
-        
-        // Optional: Trigger Hurt Animation
-        if(animator) animator.SetTrigger("Hurt"); 
-
-        if (currentHealth <= 0)
+        // 1. DAMAGE THE PLAYER (Contact Damage)
+        if (other.CompareTag("Player"))
         {
-            Die();
+            var playerLimb = other.GetComponent<PlayerLimbController>();
+            if(playerLimb) 
+            {
+                Vector2 dir = (other.transform.position - transform.position).normalized;
+                playerLimb.TakeDamage(10f, dir); 
+            }
+        }
+
+        // 2. DETECT WEAPON HIT
+        if (other.CompareTag(weaponTag)) 
+        {
+            // Calculate direction for blood splatter
+            Vector2 hitDirection = (transform.position - other.transform.position).normalized;
+            
+            // Tell the LimbController to take damage
+            // It will handle Health, Gore, Limbs falling off, and Death automatically
+            limbController.TakeDamage(damageFromWeapon, hitDirection);
         }
     }
 
-    IEnumerator FlashDamageEffect()
-    {
-        if (spriteRenderer != null)
-        {
-            Color originalColor = spriteRenderer.color; // Remember normal color
-            spriteRenderer.color = Color.red;           // Turn Red
-            
-            yield return new WaitForSeconds(0.1f);      // Wait 0.1 seconds
-            
-            spriteRenderer.color = originalColor;       // Return to normal
-        }
-    }
-    // -----------------------------
-
-    void Die()
-    {
-        currentState = State.Dead;
-        rb.linearVelocity = Vector2.zero;
-        isBusy = true;
-
-        if (deathSound && audioSource) audioSource.PlayOneShot(deathSound);
-        if (animator) animator.SetTrigger("Death"); 
-        
-        if (mainCollider) mainCollider.enabled = false; 
-        
-        if (deathEffect) Instantiate(deathEffect, transform.position, Quaternion.identity);
-
-        Destroy(gameObject, 5f);
-    }
+    // --- AI LOOP ---
 
     void Update()
     {
-        if (player == null || currentState == State.Dead) return;
+        // If limbController is missing (object destroyed) or player is gone, stop.
+        if (limbController == null || player == null) return;
 
         if (meleeTimer > 0) meleeTimer -= Time.deltaTime;
         if (magicTimer > 0) magicTimer -= Time.deltaTime;
@@ -184,6 +158,11 @@ public class PenguinEnemyAI : MonoBehaviour
 
     void MoveTowardsPlayer()
     {
+        // Check LimbController for movement speed bonuses (e.g., if legs are missing)
+        float currentSpeed = moveSpeed + limbController.moveSpeedBonus;
+        // Ensure speed doesn't go negative if legs are gone
+        currentSpeed = Mathf.Max(0.5f, currentSpeed); 
+
         Vector2 dir = (player.position - transform.position).normalized;
         
         if (animator != null)
@@ -199,7 +178,7 @@ public class PenguinEnemyAI : MonoBehaviour
         
         if (dist > stopDistance)
         {
-            rb.linearVelocity = dir * moveSpeed;
+            rb.linearVelocity = dir * currentSpeed;
             SetAnimation("Walk");
         }
         else
@@ -208,6 +187,8 @@ public class PenguinEnemyAI : MonoBehaviour
             SetAnimation("Idle");
         }
     }
+
+    // --- ACTIONS ---
 
     IEnumerator ExecuteMeleeAttack()
     {
@@ -229,8 +210,12 @@ public class PenguinEnemyAI : MonoBehaviour
         if (dist <= meleeRange * 1.5f) 
         {
              Vector2 directionToPlayer = (player.position - transform.position).normalized;
+             
+             // Optional: Add LimbController damage bonus (if strong arms are attached)
+             float totalDamage = meleeDamage + limbController.attackDamageBonus;
+
              var playerLimb = player.GetComponent<PlayerLimbController>();
-             if(playerLimb) playerLimb.TakeDamage(meleeDamage, directionToPlayer);
+             if(playerLimb) playerLimb.TakeDamage(totalDamage, directionToPlayer);
 
              Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
              if (playerRb != null)
@@ -250,31 +235,19 @@ public class PenguinEnemyAI : MonoBehaviour
         currentState = State.CastingMagic;
 
         if(animator) animator.SetTrigger("Magic"); 
-        
         PlayRandomSound(magicCastSounds);
 
         int magicType = Random.Range(1, 4); 
-
-        if (magicType == 3 && lastMagicType == 3)
-        {
-            magicType = Random.Range(1, 3);
-        }
-
+        if (magicType == 3 && lastMagicType == 3) magicType = Random.Range(1, 3);
         lastMagicType = magicType;
 
         yield return new WaitForSeconds(0.5f);
 
         switch (magicType)
         {
-            case 1:
-                yield return StartCoroutine(Magic_Icicles());
-                break;
-            case 2:
-                yield return StartCoroutine(Magic_Traps());
-                break;
-            case 3:
-                yield return StartCoroutine(Magic_IceWall());
-                break;
+            case 1: yield return StartCoroutine(Magic_Icicles()); break;
+            case 2: yield return StartCoroutine(Magic_Traps()); break;
+            case 3: yield return StartCoroutine(Magic_IceWall()); break;
         }
 
         yield return new WaitForSeconds(castTime);
@@ -284,6 +257,8 @@ public class PenguinEnemyAI : MonoBehaviour
         currentState = State.Chasing;
     }
 
+    // --- SPELL HELPERS ---
+
     IEnumerator Magic_Icicles()
     {
         for (int i = 0; i < icicleCount; i++)
@@ -291,11 +266,8 @@ public class PenguinEnemyAI : MonoBehaviour
             Vector2 randomOffset = Random.insideUnitCircle * icicleRadius;
             Vector2 groundPos = (Vector2)player.position + randomOffset;
 
-            if (icicleWarningPrefab)
-            {
-                Instantiate(icicleWarningPrefab, groundPos, Quaternion.identity);
-            }
-
+            if (icicleWarningPrefab) Instantiate(icicleWarningPrefab, groundPos, Quaternion.identity);
+            
             StartCoroutine(SpawnIcicleWithDelay(groundPos, icicleWarningDuration));
             yield return new WaitForSeconds(0.2f); 
         }
@@ -304,7 +276,6 @@ public class PenguinEnemyAI : MonoBehaviour
     IEnumerator SpawnIcicleWithDelay(Vector2 groundPos, float delay)
     {
         yield return new WaitForSeconds(delay);
-
         if (iciclePrefab)
         {
             Vector2 spawnPos = groundPos + (Vector2.up * icicleSpawnHeight);
@@ -325,24 +296,16 @@ public class PenguinEnemyAI : MonoBehaviour
         {
             Vector2 randomOffset = Random.insideUnitCircle * 4f; 
             trapPositions[i] = (Vector2)player.position + randomOffset;
-
-            if (warningVisualPrefab)
-            {
-                GameObject warning = Instantiate(warningVisualPrefab, trapPositions[i], Quaternion.identity);
-                Destroy(warning, trapDelay); 
-            }
+            if (warningVisualPrefab) Destroy(Instantiate(warningVisualPrefab, trapPositions[i], Quaternion.identity), trapDelay);
         }
 
         PlayRandomSound(trapSetSounds);
-
         yield return new WaitForSeconds(trapDelay);
 
         for (int i = 0; i < trapCount; i++)
         {
-            if (trapPrefab)
-                Instantiate(trapPrefab, trapPositions[i], Quaternion.identity);
+            if (trapPrefab) Instantiate(trapPrefab, trapPositions[i], Quaternion.identity);
         }
-        
         PlayRandomSound(magicImpactSounds);
     }
 
@@ -352,9 +315,7 @@ public class PenguinEnemyAI : MonoBehaviour
         {
             float direction = animator != null ? Mathf.Sign(animator.transform.localScale.x) : 1f;
             Vector2 spawnPos = (Vector2)transform.position + (Vector2.right * direction * wallOffsetDistance);
-
-            GameObject wall = Instantiate(iceWallPrefab, spawnPos, Quaternion.identity);
-            Destroy(wall, wallLifeTime);
+            Destroy(Instantiate(iceWallPrefab, spawnPos, Quaternion.identity), wallLifeTime);
             PlayRandomSound(magicImpactSounds);
         }
         yield return null;

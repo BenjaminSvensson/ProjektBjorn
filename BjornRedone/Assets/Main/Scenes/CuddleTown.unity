@@ -5893,7 +5893,8 @@ GameObject:
   - component: {fileID: 1911086736}
   - component: {fileID: 1911086738}
   - component: {fileID: 1911086739}
-  m_Layer: 0
+  - component: {fileID: 1911086740}
+  m_Layer: 9
   m_Name: PenguinBoss
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5929,9 +5930,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PenguinEnemyAI
   animator: {fileID: 2097659501}
-  mainCollider: {fileID: 1911086738}
-  maxHealth: 5
-  deathEffect: {fileID: 0}
+  weaponTag: Weapon
+  damageFromWeapon: 10
   moveSpeed: 1
   stopDistance: 2.7
   wakeUpDistance: 10
@@ -5965,9 +5965,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d1b4dc9e297df6347800ff4c8080f54e, type: 3}
   magicImpactSounds: []
   trapSetSounds: []
-  hurtSounds:
-  - {fileID: 8300000, guid: b7c4e0ed2e3278a47baee51809a6e995, type: 3}
-  deathSound: {fileID: 0}
 --- !u!50 &1911086735
 Rigidbody2D:
   serializedVersion: 5
@@ -6154,6 +6151,56 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1911086740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1911086731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
+  maxHealth: 50
+  currentHealth: 0
+  coinPrefab: {fileID: 0}
+  minCoins: 1
+  maxCoins: 3
+  goreDrops: []
+  startingHead: {fileID: 0}
+  startingLeftArm: {fileID: 0}
+  startingRightArm: {fileID: 0}
+  startingLeftLeg: {fileID: 0}
+  startingRightLeg: {fileID: 0}
+  visualsHolder: {fileID: 0}
+  headSlot: {fileID: 0}
+  leftArmSlot: {fileID: 0}
+  rightArmSlot: {fileID: 0}
+  leftLegSlot: {fileID: 0}
+  rightLegSlot: {fileID: 0}
+  torsoDefaultVisual: {fileID: 0}
+  torsoDamagedVisual: {fileID: 0}
+  damageVisualThreshold: 0.25
+  limbDropChance: 0.4
+  maintainLimbChance: 0.3
+  damageAlertRadius: 10
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  damageSounds: []
+  idleSounds: []
+  spotSounds: []
+  attackSounds: []
+  fleeSounds: []
+  deathSounds: []
+  bloodSounds: []
+  damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
+  moveSpeedBonus: 0
+  attackDamageBonus: 0
+  hasLegs: 0
+  hasArms: 0
 --- !u!4 &1970201048 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3961033659035643117, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
@@ -6300,88 +6347,6 @@ RectTransform:
   m_AnchoredPosition: {x: -10.50006, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1001 &2057541877
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2097659499}
-    m_Modifications:
-    - target: {fileID: 365244750877323419, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_Name
-      value: Shadow
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 4.8792
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 2.3180165
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 2.0408163
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.6810204
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -3.2761226
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8071527557358092223, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_Color.a
-      value: 0.10980392
-      objectReference: {fileID: 0}
-    - target: {fileID: 8071527557358092223, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-      propertyPath: m_SortingOrder
-      value: -1
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
---- !u!4 &2057541878 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6578096830129303637, guid: fc99b1a9c7031604081bd0ce9c1cc523, type: 3}
-  m_PrefabInstance: {fileID: 2057541877}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2096289542
 GameObject:
   m_ObjectHideFlags: 0
@@ -6470,7 +6435,7 @@ GameObject:
   - component: {fileID: 2097659501}
   m_Layer: 0
   m_Name: BossPenguinVisual
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6487,8 +6452,7 @@ Transform:
   m_LocalPosition: {x: 0, y: -0.04, z: 0}
   m_LocalScale: {x: 0.49, y: 0.49, z: 0.49}
   m_ConstrainProportionsScale: 1
-  m_Children:
-  - {fileID: 2057541878}
+  m_Children: []
   m_Father: {fileID: 1911086732}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &2097659500
