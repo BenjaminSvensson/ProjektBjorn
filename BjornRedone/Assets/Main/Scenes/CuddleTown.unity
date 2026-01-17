@@ -1972,7 +1972,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: 42.6, y: 65}
+  m_AnchoredPosition: {x: 42.600098, y: 65}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &694417456
@@ -4178,7 +4178,7 @@ GameObject:
   - component: {fileID: 1527646824}
   - component: {fileID: 1527646825}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: AreaText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4256,8 +4256,8 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_fontStyle: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -4289,7 +4289,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: -125.776024, w: 0}
+  m_margin: {x: -354.60318, y: 0, z: -469.77762, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -5728,11 +5728,6 @@ MonoBehaviour:
     allowRandomFlip: 1
     minScale: 0.9
     maxScale: 1.1
-  - prefab: {fileID: 4473191403052262082, guid: 4cc5350cafc03de4faf696f92a63fe72, type: 3}
-    spawnChance: 0.2
-    allowRandomFlip: 1
-    minScale: 0.95
-    maxScale: 1.2
   - prefab: {fileID: 1768368281478687168, guid: 43037da5e15ac85428ab75150a83fd08, type: 3}
     spawnChance: 0.005
     allowRandomFlip: 1
@@ -5743,7 +5738,12 @@ MonoBehaviour:
     allowRandomFlip: 1
     minScale: 0.95
     maxScale: 1.2
-  propSpawnAttemptsPerUnit: 0.1
+  - prefab: {fileID: 4392306095255289943, guid: 62c5d608cfbe383478bbdd9d25f21c73, type: 3}
+    spawnChance: 0.8
+    allowRandomFlip: 1
+    minScale: 0.88
+    maxScale: 1
+  propSpawnAttemptsPerUnit: 0.15
   spawnPropsInBossRooms: 0
   preventPropSpawningInRooms:
   - {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
@@ -5924,7 +5924,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Demo Objective : Kill PenguinBoss'
+  m_text: 'Alpha Objective : Kill PenguinBoss'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -84,7 +84,10 @@ MonoBehaviour:
   magicCastSounds:
   - {fileID: 8300000, guid: 8d4cd84baab5d2a40b46ed0cc6108bc5, type: 3}
   - {fileID: 8300000, guid: 76879a0da3890a64382c86be8903268e, type: 3}
-  magicImpactSounds: []
+  magicImpactSounds:
+  - {fileID: 8300000, guid: 4188d27db0bcc7b4eaf2aad308d3c577, type: 3}
+  - {fileID: 8300000, guid: 61497dc7cb226b545af257d76e566eda, type: 3}
+  - {fileID: 8300000, guid: 2c28ecb4a933aca4bbbf53c8fe125f5a, type: 3}
   generalSounds:
   - {fileID: 8300000, guid: 815ec02194a2b77459dd7499689213f7, type: 3}
   - {fileID: 8300000, guid: e568ee29107248e4698b71e9d5270e2c, type: 3}
@@ -333,7 +336,11 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 76879a0da3890a64382c86be8903268e, type: 3}
   fleeSounds: []
   deathSounds:
-  - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
+  - {fileID: 8300000, guid: 14f76c1e9850db64c8921eb46956cb59, type: 3}
+  - {fileID: 8300000, guid: 43cd073e63a45324ba113a7a2e7b256a, type: 3}
+  - {fileID: 8300000, guid: c4de131d51f1ea8488095157a2542966, type: 3}
+  - {fileID: 8300000, guid: 38338baeb5350314fa5c3d574fa42111, type: 3}
+  - {fileID: 8300000, guid: 4a52537ec073a3047b94319f9086a762, type: 3}
   bloodSounds:
   - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}

@@ -106,6 +106,8 @@ GameObject:
   - component: {fileID: 9016434722160410207}
   - component: {fileID: 5362146104199962970}
   - component: {fileID: 3833182325458313083}
+  - component: {fileID: -7734290333790511788}
+  - component: {fileID: -828871879427501455}
   m_Layer: 5
   m_Name: RGB flower
   m_TagString: Untagged
@@ -205,6 +207,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab696bb18e6f6c14db64ab5dd27f69bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!210 &-7734290333790511788
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4392306095255289943}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
+--- !u!114 &-828871879427501455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4392306095255289943}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
 --- !u!1 &5925358167932063345
 GameObject:
   m_ObjectHideFlags: 0

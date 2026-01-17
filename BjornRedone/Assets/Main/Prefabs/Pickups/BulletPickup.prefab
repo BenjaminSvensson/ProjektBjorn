@@ -105,6 +105,7 @@ GameObject:
   - component: {fileID: 5410631626818445946}
   - component: {fileID: 6914901643177023933}
   - component: {fileID: 2510207181648711227}
+  - component: {fileID: 5564683215833456412}
   m_Layer: 0
   m_Name: BulletPickup
   m_TagString: Untagged
@@ -187,7 +188,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BulletPickup
   ammoAmount: 32
-  pickupSound: {fileID: 8300000, guid: 2bb216c992b988745a460098ea18a328, type: 3}
+  pickupSound: {fileID: 8300000, guid: 1ba23df44d14c4940958e8b03d3306ea, type: 3}
   groundFriction: 3
   magnetRadius: 2
   magnetSpeed: 5
@@ -243,3 +244,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
+--- !u!114 &5564683215833456412
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8413724525430478086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0abb4a070805c7b4696232c9ae625dd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::pickuptextscript
+  bonusText: Ammo

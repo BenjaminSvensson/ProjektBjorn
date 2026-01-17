@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 6350868521023316748}
   - component: {fileID: 6443836219559415128}
   m_Layer: 0
-  m_Name: Hacke hackspett flying up .0001_0
+  m_Name: BirdVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -414,8 +414,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 6
-  currentHealth: 6
+  maxHealth: 9
+  currentHealth: 9
   coinPrefab: {fileID: 0}
   minCoins: 1
   maxCoins: 3
@@ -444,10 +444,10 @@ MonoBehaviour:
     prefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
     dropChance: 0.65
     maxAmount: 4
-  - name: Coin
-    prefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
+  - name: Feather
+    prefab: {fileID: 4581056051781266002, guid: 0689ac7191407dc438b48b5476e2f102, type: 3}
     dropChance: 0.65
-    maxAmount: 4
+    maxAmount: 6
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}

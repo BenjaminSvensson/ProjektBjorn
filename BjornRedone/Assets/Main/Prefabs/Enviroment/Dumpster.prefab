@@ -624,6 +624,9 @@ MonoBehaviour:
   - name: StrengthPill
     prefab: {fileID: 3148592478491308468, guid: b33a4c930fd903f4aa08e017f11c1235, type: 3}
     weight: 1.5
+  - name: Medkit
+    prefab: {fileID: 3186368320638843462, guid: 6de65ccdc83701d45b75fc16dc9f0429, type: 3}
+    weight: 0.5
   hitSounds:
   - {fileID: 8300000, guid: 53a6f250eaff5aa41b990634f7f85601, type: 3}
   - {fileID: 8300000, guid: ec9895c7b62ca884aa86e5e710bf243b, type: 3}

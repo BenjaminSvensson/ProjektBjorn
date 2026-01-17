@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6245620089189112465}
   - component: {fileID: 7681048681913723290}
   - component: {fileID: -688455306413466086}
+  - component: {fileID: -1309779716591991811}
   m_Layer: 7
   m_Name: Str pills_0
   m_TagString: Untagged
@@ -137,7 +138,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   pickupSound: {fileID: 6245620089189112465}
-  addstrength: 0.5
+  addstrength: 0.25
   magnetRadius: 2
   magnetSpeed: 5
 --- !u!61 &6797538391765642703
@@ -198,7 +199,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 2e7ed188716ad8f44a1683ef913d5ffd, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -308,3 +309,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71d5c676010741947adf75fd7cfe8101, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicYSorter
+--- !u!114 &-1309779716591991811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3148592478491308468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0abb4a070805c7b4696232c9ae625dd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::pickuptextscript
+  bonusText: Strength
