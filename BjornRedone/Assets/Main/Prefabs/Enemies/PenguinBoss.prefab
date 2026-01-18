@@ -97,7 +97,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 46980f891d1b40a43b1fd8e90ebc35a5, type: 3}
   footstepShakeAmount: 0.03
   attackShakeAmount: 0.05
-  weaponTag: Player
+  weaponTag: Weapon
   animator: {fileID: 3434843709141612895}
   moveSpeed: 1
   stopDistance: 2.7
@@ -289,24 +289,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47b3ab0f34c38954cb90cddb28b83332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyLimbController
-  maxHealth: 450
-  currentHealth: 450
+  maxHealth: 300
+  currentHealth: 300
   coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
   minCoins: 1
   maxCoins: 3
   goreDrops:
   - name: "K\xF6ttbit2"
     prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
-    dropChance: 0.8
-    maxAmount: 8
+    dropChance: 1
+    maxAmount: 9
   - name: "K\xF6ttbit1"
     prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
-    dropChance: 0.66
-    maxAmount: 9
+    dropChance: 1
+    maxAmount: 12
   - name: Coins
     prefab: {fileID: 6604177083717084493, guid: f646bc5ff835d5e4cbdd122fff2e505b, type: 3}
     dropChance: 1
     maxAmount: 160
+  - name: Feather
+    prefab: {fileID: 4581056051781266002, guid: 0689ac7191407dc438b48b5476e2f102, type: 3}
+    dropChance: 1
+    maxAmount: 12
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}

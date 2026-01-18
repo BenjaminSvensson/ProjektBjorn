@@ -6,6 +6,7 @@ TagManager:
   tags:
   - LimbPickup
   - Enemy
+  - Weapon
   layers:
   - Default
   - TransparentFX
