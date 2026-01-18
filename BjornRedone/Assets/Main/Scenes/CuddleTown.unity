@@ -2286,12 +2286,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 773978907}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.44334, y: 0.66465, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!111 &773978909
 Animation:
@@ -2541,7 +2541,7 @@ GameObject:
   - component: {fileID: 1042314714}
   - component: {fileID: 1042314713}
   m_Layer: 5
-  m_Name: Canvas (1)
+  m_Name: MapShadow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2623,7 +2623,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1784075646}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -3108,7 +3108,7 @@ GameObject:
   - component: {fileID: 1226538928}
   - component: {fileID: 1226538927}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: MapUi
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3191,7 +3191,7 @@ RectTransform:
   m_Children:
   - {fileID: 519462094}
   - {fileID: 1552319597}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -5140,11 +5140,11 @@ Transform:
   m_GameObject: {fileID: 1663123093}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0.44334, y: 0.66465, z: -10}
   m_LocalScale: {x: 0.85, y: 0.85, z: 0.85}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1663123098
 MonoBehaviour:
@@ -5538,7 +5538,7 @@ GameObject:
   - component: {fileID: 1793629682}
   - component: {fileID: 1793629686}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: MainUi
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5807,6 +5807,11 @@ Transform:
   - {fileID: 1196422044}
   - {fileID: 1764500461}
   - {fileID: 2024001508}
+  - {fileID: 1663123097}
+  - {fileID: 773978908}
+  - {fileID: 1042314716}
+  - {fileID: 1226538930}
+  - {fileID: 2062496214}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1818502934
@@ -6408,7 +6413,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1285737406}
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1818502933}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -6766,8 +6771,3 @@ SceneRoots:
   - {fileID: 1172561463}
   - {fileID: 599385936}
   - {fileID: 1793629685}
-  - {fileID: 773978908}
-  - {fileID: 1663123097}
-  - {fileID: 1226538930}
-  - {fileID: 1042314716}
-  - {fileID: 2062496214}
