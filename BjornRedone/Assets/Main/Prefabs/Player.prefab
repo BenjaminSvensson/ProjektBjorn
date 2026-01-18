@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 6162117553466222711}
   - component: {fileID: 4918424121784847989}
   - component: {fileID: 6718153777287289449}
+  - component: {fileID: 7935865070987100904}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -109,8 +110,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Size: {x: 1, y: 1.8}
+  m_Offset: {x: 0, y: -0.06227465}
+  m_Size: {x: 0.99999976, y: 1.1903645}
   m_Direction: 0
 --- !u!114 &5153551983711765627
 MonoBehaviour:
@@ -127,6 +128,7 @@ MonoBehaviour:
   visualsHolder: {fileID: 5425194095047343687}
   shakeDuration: 0.1
   shakeMagnitude: 0.08
+  absolutemax: 150
   torsoDefaultVisual: {fileID: 6239451176271893484}
   torsoDamagedVisual: {fileID: 9113659401795910571}
   damageVisualThreshold: 0.4
@@ -136,7 +138,7 @@ MonoBehaviour:
   limbAttachSound: {fileID: 8300000, guid: 2bb216c992b988745a460098ea18a328, type: 3}
   heartbeatSource: {fileID: 8910397746129684702}
   vignetteImage: {fileID: 0}
-  lowHealthThreshold: 0.4
+  lowHealthThreshold: 0.5
   maxVignetteAlpha: 0.8
   minHeartbeatPitch: 1
   maxHeartbeatPitch: 1.8
@@ -152,7 +154,7 @@ MonoBehaviour:
   rightLegSlot: {fileID: 7365595451241947834}
   baseMoveSpeed: 5
   baseAttackDamage: 1
-  torsoHealth: 50
+  torsoHealth: 65
   startingHead: {fileID: 11400000, guid: 0af1cd97961f64841aadc75c0adc4662, type: 2}
   startingArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
   startingLeg: {fileID: 11400000, guid: 823d4ad74e94f3245934ef33017e32ca, type: 2}
@@ -507,6 +509,23 @@ MonoBehaviour:
   leftHandGripOffset: {x: 0.1, y: -0.9, z: 0}
   secondaryGripOffset: {x: 0, y: -0.8, z: 0}
   reloadSlideDistance: 0.4
+--- !u!114 &7935865070987100904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1377067640258601991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b887d689a2dae14393d9e65cf276232, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Multipliers
+  speed: 1
+  maxspeedmultiplier: 5
+  strength: 1
+  maxstreangthmultiplier: 10
+  health: 1
 --- !u!1 &2024181884404903021
 GameObject:
   m_ObjectHideFlags: 0
