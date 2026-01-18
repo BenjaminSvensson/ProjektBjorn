@@ -449,7 +449,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageSource
   damageAmount: 10
-  playerTag: Enemy
+  playerTag: Player
   isTickDamage: 0
   tickRate: 1
   isBeartrap: 0
