@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2373fd5f62d1f574b84d4a1cce24dffd, type: 3}
-  m_Name: SpeedPills
+  m_Name: Knife
   m_EditorClassIdentifier: Assembly-CSharp::ShopItemData
-  itemName: SpeedPills
-  icon: {fileID: 1279202056728788466, guid: 3aded6b8666588743b561e86c22c87e2, type: 3}
+  itemName: Knife
+  icon: {fileID: 761100573506273824, guid: 9488b92c06cd21d41a6f63f2d1bee979, type: 3}
   price: 25
-  itemPrefab: {fileID: 6850550609115750317, guid: 803e227a61f7b144aa1008edff19220c, type: 3}
+  itemPrefab: {fileID: 8406546666599770303, guid: fa80e43f415257648a82c89b3bb399c3, type: 3}

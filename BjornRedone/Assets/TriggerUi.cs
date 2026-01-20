@@ -2,23 +2,20 @@ using UnityEngine;
 
 public class TriggerUi : MonoBehaviour
 {
-    [Header("Setup")]
-    [Tooltip("Drag the 'DealerUi' object here, even if it is disabled.")]
-    public DealerShopManager shopManager; 
-
+    // No public variable needed anymore!
+    
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // 1. Check for Player
         if (other.CompareTag("Player"))
         {
-            // 2. Check if we assigned the shop in the inspector
-            if (shopManager != null)
+            // Use the Singleton Instance to find the shop automatically
+            if (DealerShopManager.Instance != null)
             {
-                shopManager.OpenShop(this.gameObject);
+                DealerShopManager.Instance.OpenShop(this.gameObject);
             }
             else
             {
-                Debug.LogError("Shop Manager is not assigned on " + gameObject.name);
+                Debug.LogError("Could not find DealerShopManager! Make sure DealerUi is in the scene and ENABLED.");
             }
         }
     }

@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2373fd5f62d1f574b84d4a1cce24dffd, type: 3}
-  m_Name: SpeedPills
+  m_Name: AK47
   m_EditorClassIdentifier: Assembly-CSharp::ShopItemData
-  itemName: SpeedPills
-  icon: {fileID: 1279202056728788466, guid: 3aded6b8666588743b561e86c22c87e2, type: 3}
-  price: 25
-  itemPrefab: {fileID: 6850550609115750317, guid: 803e227a61f7b144aa1008edff19220c, type: 3}
+  itemName: AK47
+  icon: {fileID: 1490390596225347881, guid: 9dac1d6679bc3f043a2547bd90a67864, type: 3}
+  price: 90
+  itemPrefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}

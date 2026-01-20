@@ -5,19 +5,40 @@ using System.Collections.Generic;
 
 public class DealerShopManager : MonoBehaviour
 {
+    // --- SINGLETON SETUP START ---
+    public static DealerShopManager Instance { get; private set; }
+
+    private void Awake()
+    {
+        // If there is already a manager, destroy this new one (safety check)
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+
+        // AUTOMATICALLY HIDE UI ON START
+        // This keeps your game clean, but allows the script to exist.
+        // Make sure the main GameObject is ENABLED in the Inspector!
+        gameObject.SetActive(false); // We hide it instantly here
+        
+        // Setup Exit Button
+        if (exitButton != null)
+        {
+            exitButton.onClick.RemoveAllListeners();
+            exitButton.onClick.AddListener(CloseShopAndFinish);
+        }
+    }
+    // --- SINGLETON SETUP END ---
+
     [Header("Shop Configuration")]
     public List<ShopItemData> allPossibleItems;
     
     [Header("UI Assignments")]
-    [Tooltip("The actual clickable Buttons")]
     public Button[] uiSlots; 
-    
-    [Tooltip("The Image component where the sword/potion icon should appear")]
-    public Image[] itemIcons; // <--- NEW: Drag your Icon Images here
-
-    [Tooltip("The Text component for the price")]
+    public Image[] itemIcons; 
     public TextMeshProUGUI[] priceTexts; 
-
     public Button exitButton;
 
     // Internal State
@@ -26,17 +47,9 @@ public class DealerShopManager : MonoBehaviour
     private List<ShopItemData> currentItemsInShop = new List<ShopItemData>();
     private List<ShopItemData> purchasedItems = new List<ShopItemData>();
 
-    private void Awake()
-    {
-        if (exitButton != null)
-        {
-            exitButton.onClick.RemoveAllListeners();
-            exitButton.onClick.AddListener(CloseShopAndFinish);
-        }
-    }
-
     public void OpenShop(GameObject dealer)
     {
+        // Show the UI
         gameObject.SetActive(true);
 
         if (playerWallet == null)
@@ -50,6 +63,10 @@ public class DealerShopManager : MonoBehaviour
         UpdateUI();
     }
 
+    // ... (The rest of your script: GenerateRandomItems, UpdateUI, TryBuyItem, CloseShopAndFinish)
+    // ... PASTE THE REST OF THE FUNCTIONS HERE FROM THE PREVIOUS SCRIPT ...
+    
+    // For completeness, here are the functions so you don't lose them:
     private void GenerateRandomItems()
     {
         for (int i = 0; i < uiSlots.Length; i++)
@@ -67,8 +84,6 @@ public class DealerShopManager : MonoBehaviour
         for (int i = 0; i < uiSlots.Length; i++)
         {
             if (uiSlots[i] == null) continue;
-
-            // Hide everything initially to be safe
             uiSlots[i].gameObject.SetActive(false); 
 
             if (i < currentItemsInShop.Count)
@@ -76,28 +91,21 @@ public class DealerShopManager : MonoBehaviour
                 int index = i;
                 ShopItemData item = currentItemsInShop[i];
                 
-                // 1. UPDATE ICON (Explicitly using the assigned array)
                 if (i < itemIcons.Length && itemIcons[i] != null)
                 {
                     itemIcons[i].sprite = item.icon;
-                    // Fix transparent icons:
+                    itemIcons[i].preserveAspect = true; 
                     Color c = itemIcons[i].color;
                     itemIcons[i].color = new Color(c.r, c.g, c.b, 1f); 
                 }
 
-                // 2. UPDATE PRICE
                 if (i < priceTexts.Length && priceTexts[i] != null)
-                {
                     priceTexts[i].text = item.price.ToString();
-                }
 
-                // 3. SETUP BUTTON
                 Button slotBtn = uiSlots[i];
                 slotBtn.interactable = true;
                 slotBtn.onClick.RemoveAllListeners();
                 slotBtn.onClick.AddListener(() => TryBuyItem(index));
-                
-                // Show the button now that it's ready
                 slotBtn.gameObject.SetActive(true);
             }
         }
@@ -112,13 +120,10 @@ public class DealerShopManager : MonoBehaviour
         {
             playerWallet.AddCoins(-item.price);
             purchasedItems.Add(item);
-            
             uiSlots[index].interactable = false;
 
             if (index < priceTexts.Length && priceTexts[index] != null)
-            {
                 priceTexts[index].text = "Sold";
-            }
 
             if (purchasedItems.Count == currentItemsInShop.Count)
                 CloseShopAndFinish();

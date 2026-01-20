@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2373fd5f62d1f574b84d4a1cce24dffd, type: 3}
-  m_Name: SpeedPills
+  m_Name: DamagePills
   m_EditorClassIdentifier: Assembly-CSharp::ShopItemData
-  itemName: SpeedPills
-  icon: {fileID: 1279202056728788466, guid: 3aded6b8666588743b561e86c22c87e2, type: 3}
-  price: 25
-  itemPrefab: {fileID: 6850550609115750317, guid: 803e227a61f7b144aa1008edff19220c, type: 3}
+  itemName: DamagePills
+  icon: {fileID: -3353665548848886367, guid: 290b27bac7cf4834dbbe5c527b226398, type: 3}
+  price: 30
+  itemPrefab: {fileID: 3148592478491308468, guid: b33a4c930fd903f4aa08e017f11c1235, type: 3}
