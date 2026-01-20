@@ -574,7 +574,7 @@ GameObject:
   - component: {fileID: 241086860}
   - component: {fileID: 241086859}
   m_Layer: 5
-  m_Name: Canvas
+  m_Name: ShopUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7193,9 +7193,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b2b1da145a76bb4cbe74b0d6d3376a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelGenerator
-  totalRooms: 25
+  totalRooms: 20
   numberOfBossRooms: 1
-  minBossDistance: 15
+  minBossDistance: 10
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 300
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
@@ -7295,7 +7295,7 @@ MonoBehaviour:
     minScale: 0.88
     maxScale: 1
   - prefab: {fileID: 3014315822431992875, guid: 58c5e4d2d90bb794b8d35e129c6d648f, type: 3}
-    spawnChance: 0.1
+    spawnChance: 0.2
     allowRandomFlip: 1
     minScale: 1
     maxScale: 1

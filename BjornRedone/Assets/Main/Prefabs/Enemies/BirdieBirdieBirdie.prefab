@@ -507,6 +507,7 @@ MonoBehaviour:
   shadowSprite: {fileID: 1579307954596696991}
   eggSpawnPoint: {fileID: 3058464208078927508}
   animator: {fileID: 6443836219559415128}
+  shopUiName: Shop UI
   flapSound: {fileID: 8300000, guid: 5b6c8991d327d42459e121571a741abf, type: 3}
   diveSound: {fileID: 8300000, guid: 6f205f8f4be16064b9285b930e148991, type: 3}
   groundImpactSound: {fileID: 8300000, guid: ad875db219f80654288cbb0aa3d89b7e, type: 3}
@@ -516,14 +517,14 @@ MonoBehaviour:
   maxHealth: 15
   contactDamage: 3
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
-  maxActivityDistance: 10
+  maxActivityDistance: 15
   wakeUpDistance: 15
   flyHeight: 15
   offScreenHeight: 110
   flySpeed: 8
   takeoffSpeed: 60
   retreatSpeed: 9
-  trackingSpeed: 3
+  trackingSpeed: 0.5
   groundScale: 0.8
   highAirScale: 1
   timeOnScreen: 1.2

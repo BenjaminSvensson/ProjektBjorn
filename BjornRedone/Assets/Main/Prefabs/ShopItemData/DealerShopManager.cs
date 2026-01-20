@@ -12,6 +12,8 @@ public class DealerShopManager : MonoBehaviour
     public List<ShopItemData> allPossibleItems; 
 
     [Header("UI Assignments")]
+    // Drag the child object containing all visuals (Background, Buttons) here
+    public GameObject shopContentParent; 
     public Button[] uiSlots; 
     public Image[] itemIcons; 
     public TextMeshProUGUI[] priceTexts; 
@@ -29,7 +31,6 @@ public class DealerShopManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton Setup
         if (Instance != null && Instance != this) 
         { 
             Destroy(gameObject); 
@@ -45,9 +46,7 @@ public class DealerShopManager : MonoBehaviour
         
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
 
-        // IMPORTANT: We disable the WHOLE GameObject here.
-        // This ensures enemies see it as "inactive" and can move.
-        // Because we do this at the end of Awake, the Instance is already set safely.
+        // Disable the Manager at start so Enemies don't freeze
         gameObject.SetActive(false);
     }
 
@@ -71,8 +70,11 @@ public class DealerShopManager : MonoBehaviour
     // --- STEP 2: OPEN SHOP ---
     public void OpenShop(DealerTrigger dealer)
     {
-        // 1. Enable the GameObject (Enemies will see this and FREEZE)
+        // 1. Enable the Main Manager (Freezes Enemies)
         gameObject.SetActive(true);
+
+        // 2. Enable the Visuals Child (Shows UI)
+        if (shopContentParent != null) shopContentParent.SetActive(true);
         
         currentDealer = dealer;
 
@@ -176,8 +178,7 @@ public class DealerShopManager : MonoBehaviour
             }
         }
         
-        // IMPORTANT: Disable the GameObject.
-        // Enemies will now see "activeInHierarchy == false" and UNFREEZE.
+        // Disable the Main Manager (Unfreezes Enemies)
         gameObject.SetActive(false);
     }
     
