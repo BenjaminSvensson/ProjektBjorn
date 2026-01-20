@@ -438,8 +438,8 @@ MonoBehaviour:
     maxAmount: 1
   - name: Coin
     prefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
-    dropChance: 0.65
-    maxAmount: 4
+    dropChance: 0.85
+    maxAmount: 12
   - name: Feather
     prefab: {fileID: 4581056051781266002, guid: 0689ac7191407dc438b48b5476e2f102, type: 3}
     dropChance: 0.65

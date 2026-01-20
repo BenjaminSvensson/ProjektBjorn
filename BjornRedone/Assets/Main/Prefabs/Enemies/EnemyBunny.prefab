@@ -432,8 +432,8 @@ MonoBehaviour:
   maxHealth: 20
   currentHealth: 20
   coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
-  minCoins: 2
-  maxCoins: 4
+  minCoins: 6
+  maxCoins: 12
   goreDrops:
   - name: Tarmar
     prefab: {fileID: 3073958071732642810, guid: 02f6c1c49f4bac04ebc22f861aa8e2c5, type: 3}
