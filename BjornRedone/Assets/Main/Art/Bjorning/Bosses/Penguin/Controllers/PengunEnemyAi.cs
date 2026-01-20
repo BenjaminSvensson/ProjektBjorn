@@ -12,8 +12,8 @@ public class PenguinEnemyAI : MonoBehaviour
 
     [Header("Audio Settings")]
     public AudioClip[] attackSounds;
-    public AudioClip[] magicCastSounds; // Sound when casting starts
-    public AudioClip[] magicImpactSounds; // Sound when spell hits/spawns
+    public AudioClip[] magicCastSounds;
+    public AudioClip[] magicImpactSounds;
     public AudioClip[] generalSounds; 
     public AudioClip[] footstepSounds;
     
@@ -24,6 +24,8 @@ public class PenguinEnemyAI : MonoBehaviour
     [Header("Setup")]
     public string weaponTag = "Weapon";
     public Animator animator;
+    // NEW: Name of your shop object
+    public string shopUiName = "Shop UI"; 
 
     [Header("Movement")]
     public float moveSpeed = 3f;
@@ -38,7 +40,7 @@ public class PenguinEnemyAI : MonoBehaviour
 
     [Header("Magic 1: Icicles (50% Chance)")]
     public GameObject iciclePrefab;
-    public GameObject icicleWarningPrefab; // Red circle on ground
+    public GameObject icicleWarningPrefab;
     public int icicleCount = 3;
     public float icicleRadius = 3f; 
     public float icicleSpawnHeight = 6f; 
@@ -62,12 +64,16 @@ public class PenguinEnemyAI : MonoBehaviour
     private float magicTimer;
     private bool isBusy = false;
     private float generalSoundTimer;
+    private GameObject shopRef; // NEW: Reference to the shop
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         limbController = GetComponent<EnemyLimbController>();
         audioSource = GetComponent<AudioSource>();
+
+        // NEW: Find the shop once at start
+        shopRef = GameObject.Find(shopUiName);
 
         generalSoundTimer = Random.Range(2f, 5f);
 
@@ -89,6 +95,20 @@ public class PenguinEnemyAI : MonoBehaviour
 
     void Update()
     {
+        // --- NEW: SHOP CHECK ---
+        // If the Shop exists and is Active, freeze everything and do nothing
+        if (shopRef != null && shopRef.activeInHierarchy)
+        {
+            rb.linearVelocity = Vector2.zero; // Stop sliding
+            if (animator) animator.speed = 0; // Freeze animation
+            return; // Stop code here
+        }
+        else
+        {
+            if (animator) animator.speed = 1; // Resume animation
+        }
+        // -----------------------
+
         if (player == null || limbController == null) return;
 
         // --- GENERAL SOUND LOGIC ---

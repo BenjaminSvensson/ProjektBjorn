@@ -14,6 +14,8 @@ public class BirdEnemyAI : MonoBehaviour
     public Transform shadowSprite;
     public Transform eggSpawnPoint; 
     [SerializeField] private Animator animator;
+    // NEW: Name of your shop object
+    public string shopUiName = "Shop UI"; 
 
     [Header("Audio Profile")]
     public AudioClip flapSound;
@@ -37,7 +39,7 @@ public class BirdEnemyAI : MonoBehaviour
     [Header("Optimization")]
     public float maxActivityDistance = 30.0f;
     [Tooltip("How close the player must be for the bird to fly up")]
-    public float wakeUpDistance = 15.0f; // Increased slightly
+    public float wakeUpDistance = 15.0f; 
 
     [Header("Flying Settings")]
     public float flyHeight = 4.0f;
@@ -78,6 +80,7 @@ public class BirdEnemyAI : MonoBehaviour
     private Transform player;
     private SpriteRenderer shadowRenderer;
     private Camera mainCam;
+    private GameObject shopRef; // NEW: Reference to Shop
 
     private float currentHeight = 0f;
     private float stateTimer;
@@ -93,7 +96,9 @@ public class BirdEnemyAI : MonoBehaviour
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
         
-        // FIX: Ensure gravity doesn't pull the bird down if it's a top-down game
+        // NEW: Find shop
+        shopRef = GameObject.Find(shopUiName);
+
         rb.gravityScale = 0f; 
         
         mainAudioSource = GetComponent<AudioSource>();
@@ -116,7 +121,6 @@ public class BirdEnemyAI : MonoBehaviour
             childRenderers = spriteHolder.GetComponentsInChildren<SpriteRenderer>();
         }
 
-        // --- CRITICAL FIX: FIND PLAYER ---
         GameObject p = GameObject.FindGameObjectWithTag("Player");
         if (p) 
         {
@@ -124,7 +128,7 @@ public class BirdEnemyAI : MonoBehaviour
         }
         else
         {
-            Debug.LogError("BIRD AI ERROR: Could not find object with tag 'Player'! The bird will not move.");
+            Debug.LogError("BIRD AI ERROR: Could not find object with tag 'Player'!");
         }
 
         mainCam = Camera.main;
@@ -135,13 +139,25 @@ public class BirdEnemyAI : MonoBehaviour
 
     void Update()
     {
-        // Safety check
+        // --- NEW: SHOP CHECK ---
+        if (shopRef != null && shopRef.activeInHierarchy)
+        {
+            rb.linearVelocity = Vector2.zero; // Stop physics
+            if (animator) animator.speed = 0; // Freeze animation
+            if (wingAudioSource.isPlaying) wingAudioSource.Stop(); // Silence wings
+            return;
+        }
+        else
+        {
+            if (animator) animator.speed = 1; // Resume animation
+        }
+        // -----------------------
+
         if (player == null) return;
         if (currentState == BirdState.Dead) return;
 
         float dist = Vector2.Distance(transform.position, player.position);
         
-        // If too far away, do nothing (idle)
         if (dist > maxActivityDistance && currentState != BirdState.OffScreenAttack)
         {
             rb.linearVelocity = Vector2.zero;
@@ -154,7 +170,6 @@ public class BirdEnemyAI : MonoBehaviour
         switch (currentState)
         {
             case BirdState.Grounded:
-                // FIX: Used wakeUpDistance variable
                 if (dist < wakeUpDistance) SwitchState(BirdState.TakingOff);
                 break;
             case BirdState.TakingOff:
@@ -183,10 +198,6 @@ public class BirdEnemyAI : MonoBehaviour
 
    void UpdateWingSoundState()
     {
-        // 1. CHASE = Flapping
-        // 2. RETREAT = Flapping
-        // 3. EVERYTHING ELSE (TakingOff, Attack, Dive, Stuck) = SILENT
-        
         bool shouldFlap = (currentState == BirdState.Chasing || 
                            currentState == BirdState.Retreating);
 
@@ -199,7 +210,6 @@ public class BirdEnemyAI : MonoBehaviour
         }
         else
         {
-            // Aggressively stop the sound if we aren't explicitly flying around
             if (wingAudioSource.isPlaying)
             {
                 wingAudioSource.Stop();
@@ -372,9 +382,8 @@ public class BirdEnemyAI : MonoBehaviour
         if (stateTimer <= 0) SwitchState(BirdState.Diving);
     }
 
-IEnumerator ExecuteDiveSequence()
+    IEnumerator ExecuteDiveSequence()
     {
-        // FORCE STOP: Silence the wings immediately when the dive begins
         if (wingAudioSource.isPlaying) wingAudioSource.Stop();
 
         rb.linearVelocity = Vector2.zero;
@@ -385,20 +394,19 @@ IEnumerator ExecuteDiveSequence()
         lockShadowToTarget = true;
         shadowTargetPos = diveTargetPos;
 
-        // Play the specific "Scream" or "Dive" sound here
-        // Make sure 'diveSound' in the Inspector is NOT the flapping clip!
         PlayOneShot(diveSound, 1f); 
 
-        // Wait for the "Tell" (Animation warning)
         yield return new WaitForSeconds(diveTellDuration);
 
         float t = 0;
         float dist = Vector2.Distance(startPos, diveTargetPos);
         float duration = Mathf.Max(dist / diveSpeed, 0.2f); 
 
-        // The Physical Dive
         while (t < 1.0f)
         {
+            // NEW: Add check inside Loop to freeze if shop opens mid-dive
+            if (shopRef != null && shopRef.activeInHierarchy) { yield return null; continue; }
+
             t += Time.deltaTime / duration;
             Vector2 nextPos = Vector2.Lerp(startPos, diveTargetPos, t);
             rb.MovePosition(nextPos);
@@ -411,7 +419,6 @@ IEnumerator ExecuteDiveSequence()
         currentHeight = 0f;
         lockShadowToTarget = false;
         
-        // Impact
         PlayOneShot(groundImpactSound, 1.0f);
         CheckImpactDamage();
 
@@ -497,15 +504,12 @@ IEnumerator ExecuteDiveSequence()
 
     void OnDrawGizmos()
     {
-        // Draw the Attack Range (Red)
         Gizmos.color = Color.red;
         if(lockShadowToTarget) Gizmos.DrawWireSphere(diveTargetPos, damageRadius);
 
-        // Draw the "Wake Up" Range (Green) - Use this to check distance!
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, wakeUpDistance);
         
-        // Draw Max Active Distance (Yellow)
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, maxActivityDistance);
 
