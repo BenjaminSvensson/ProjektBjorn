@@ -293,16 +293,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de77b05cbcbba51429fbe52759052c5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BirdEgg
-  crackSoundSource: {fileID: 3079329451123778691}
+  crackSoundSource: {fileID: 6284836408776694369}
   spriteVisual: {fileID: 5857223522536586545}
   shadowVisual: {fileID: 4083585662033820081}
   eggAnimator: {fileID: 3795573638384909994}
   fallStateName: Fall
-  crackStateName: Eggcrack
+  crackStateName: Crack
   fallSpeed: 12
   damage: 5
   damageRadius: 0.5
-  persistDuration: 0.5
+  persistDuration: 0.6
 --- !u!82 &6284836408776694369
 AudioSource:
   m_ObjectHideFlags: 0
@@ -434,8 +434,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.027364641, y: 0}
-  m_Radius: 0.28499126
+  m_Offset: {x: 0.027364641, y: -0.052977223}
+  m_Radius: 0.23201405
 --- !u!114 &3683215246132793224
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -449,7 +449,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageSource
   damageAmount: 10
-  playerTag: Player
+  playerTag: Enemy
   isTickDamage: 0
   tickRate: 1
   isBeartrap: 0

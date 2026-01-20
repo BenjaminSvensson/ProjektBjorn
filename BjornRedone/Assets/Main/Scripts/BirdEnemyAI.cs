@@ -14,7 +14,6 @@ public class BirdEnemyAI : MonoBehaviour
     public Transform shadowSprite;
     public Transform eggSpawnPoint; 
     [SerializeField] private Animator animator;
-    // NEW: Name of your shop object
     public string shopUiName = "Shop UI"; 
 
     [Header("Audio Profile")]
@@ -38,7 +37,6 @@ public class BirdEnemyAI : MonoBehaviour
 
     [Header("Optimization")]
     public float maxActivityDistance = 30.0f;
-    [Tooltip("How close the player must be for the bird to fly up")]
     public float wakeUpDistance = 15.0f; 
 
     [Header("Flying Settings")]
@@ -80,7 +78,7 @@ public class BirdEnemyAI : MonoBehaviour
     private Transform player;
     private SpriteRenderer shadowRenderer;
     private Camera mainCam;
-    private GameObject shopRef; // NEW: Reference to Shop
+    private GameObject shopRef; 
 
     private float currentHeight = 0f;
     private float stateTimer;
@@ -96,7 +94,6 @@ public class BirdEnemyAI : MonoBehaviour
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
         
-        // NEW: Find shop
         shopRef = GameObject.Find(shopUiName);
 
         rb.gravityScale = 0f; 
@@ -122,14 +119,7 @@ public class BirdEnemyAI : MonoBehaviour
         }
 
         GameObject p = GameObject.FindGameObjectWithTag("Player");
-        if (p) 
-        {
-            player = p.transform;
-        }
-        else
-        {
-            Debug.LogError("BIRD AI ERROR: Could not find object with tag 'Player'!");
-        }
+        if (p) player = p.transform;
 
         mainCam = Camera.main;
         if(spriteHolder) spriteHolder.localScale = new Vector3(groundScale, groundScale, 1);
@@ -139,19 +129,17 @@ public class BirdEnemyAI : MonoBehaviour
 
     void Update()
     {
-        // --- NEW: SHOP CHECK ---
         if (shopRef != null && shopRef.activeInHierarchy)
         {
-            rb.linearVelocity = Vector2.zero; // Stop physics
-            if (animator) animator.speed = 0; // Freeze animation
-            if (wingAudioSource.isPlaying) wingAudioSource.Stop(); // Silence wings
+            rb.linearVelocity = Vector2.zero; 
+            if (animator) animator.speed = 0; 
+            if (wingAudioSource.isPlaying) wingAudioSource.Stop();
             return;
         }
         else
         {
-            if (animator) animator.speed = 1; // Resume animation
+            if (animator) animator.speed = 1; 
         }
-        // -----------------------
 
         if (player == null) return;
         if (currentState == BirdState.Dead) return;
@@ -194,27 +182,11 @@ public class BirdEnemyAI : MonoBehaviour
         }
     }
 
-    // --- AUDIO HELPERS ---
-
-   void UpdateWingSoundState()
+    void UpdateWingSoundState()
     {
-        bool shouldFlap = (currentState == BirdState.Chasing || 
-                           currentState == BirdState.Retreating);
-
-        if (shouldFlap)
-        {
-            if (!wingAudioSource.isPlaying && flapSound != null)
-            {
-                wingAudioSource.Play();
-            }
-        }
-        else
-        {
-            if (wingAudioSource.isPlaying)
-            {
-                wingAudioSource.Stop();
-            }
-        }
+        bool shouldFlap = (currentState == BirdState.Chasing || currentState == BirdState.Retreating);
+        if (shouldFlap && !wingAudioSource.isPlaying && flapSound != null) wingAudioSource.Play();
+        else if (!shouldFlap && wingAudioSource.isPlaying) wingAudioSource.Stop();
     }
 
     void PlayOneShot(AudioClip clip, float volume = 1.0f)
@@ -226,28 +198,18 @@ public class BirdEnemyAI : MonoBehaviour
         }
     }
 
-    // --- DAMAGE LOGIC ---
-
     public void TakeDamage(float damageAmount)
     {
         if (currentState == BirdState.Dead) return;
-
         currentHealth -= damageAmount;
-        
         PlayOneShot(hitSound, 1f); 
-
         if (animator) animator.SetTrigger("Hit");
-
         if (gameObject.activeInHierarchy)
         {
             if (flashCoroutine != null) StopCoroutine(flashCoroutine);
             flashCoroutine = StartCoroutine(FlashDamageEffect());
         }
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
+        if (currentHealth <= 0) Die();
     }
 
     private IEnumerator FlashDamageEffect()
@@ -256,9 +218,7 @@ public class BirdEnemyAI : MonoBehaviour
         {
             foreach (var sr in childRenderers) if (sr) sr.color = damageFlashColor;
         }
-
         yield return new WaitForSeconds(0.15f);
-
         if (childRenderers != null)
         {
             foreach (var sr in childRenderers) if (sr) sr.color = Color.white;
@@ -269,28 +229,19 @@ public class BirdEnemyAI : MonoBehaviour
     {
         PlayOneShot(deathSound, 1f);
         wingAudioSource.Stop();
-
         currentState = BirdState.Dead;
         rb.linearVelocity = Vector2.zero;
         StopAllCoroutines();
-
-        if (childRenderers != null)
-        {
-            foreach (var sr in childRenderers) if(sr) sr.color = Color.white;
-        }
-
+        if (childRenderers != null) foreach (var sr in childRenderers) if(sr) sr.color = Color.white;
         if (animator) animator.Play("Die");
-        
         if (shadowSprite) shadowSprite.gameObject.SetActive(false);
         GetComponent<Collider2D>().enabled = false;
-
         Destroy(gameObject, 2.0f);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (currentState == BirdState.Dead) return;
-
         if (collision.CompareTag("Player"))
         {
             PlayerLimbController playerController = collision.GetComponent<PlayerLimbController>();
@@ -302,15 +253,11 @@ public class BirdEnemyAI : MonoBehaviour
         }
     }
 
-    // --- STATE LOGIC ---
-
     void SwitchState(BirdState newState)
     {
         if (currentState == BirdState.Dead) return;
-
         currentState = newState;
         stateTimer = 0;
-
         UpdateWingSoundState();
 
         switch (currentState)
@@ -349,7 +296,6 @@ public class BirdEnemyAI : MonoBehaviour
         Vector2 dir = (targetPos - rb.position).normalized;
         rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, dir * trackingSpeed, Time.deltaTime * 2f);
         FaceDirection(dir.x);
-
         stateTimer -= Time.deltaTime;
         if (stateTimer <= 0) SwitchState(BirdState.Retreating);
     }
@@ -358,7 +304,6 @@ public class BirdEnemyAI : MonoBehaviour
     {
         rb.linearVelocity = retreatDirection * retreatSpeed;
         currentHeight = Mathf.MoveTowards(currentHeight, offScreenHeight, Time.deltaTime * 5f);
-
         Vector3 viewportPos = mainCam.WorldToViewportPoint(transform.position);
         if (viewportPos.y > 1.2f) SwitchState(BirdState.OffScreenAttack);
     }
@@ -368,7 +313,6 @@ public class BirdEnemyAI : MonoBehaviour
         Vector2 targetPos = new Vector2(player.position.x, rb.position.y);
         Vector2 newPos = Vector2.MoveTowards(rb.position, targetPos, flySpeed * 2f * Time.deltaTime);
         rb.MovePosition(newPos);
-
         FaceDirection(player.position.x - rb.position.x);
 
         eggTimer -= Time.deltaTime;
@@ -385,17 +329,14 @@ public class BirdEnemyAI : MonoBehaviour
     IEnumerator ExecuteDiveSequence()
     {
         if (wingAudioSource.isPlaying) wingAudioSource.Stop();
-
         rb.linearVelocity = Vector2.zero;
         diveTargetPos = player.position;
         Vector2 startPos = rb.position; 
         float startH = currentHeight;
-
         lockShadowToTarget = true;
         shadowTargetPos = diveTargetPos;
 
         PlayOneShot(diveSound, 1f); 
-
         yield return new WaitForSeconds(diveTellDuration);
 
         float t = 0;
@@ -404,9 +345,7 @@ public class BirdEnemyAI : MonoBehaviour
 
         while (t < 1.0f)
         {
-            // NEW: Add check inside Loop to freeze if shop opens mid-dive
             if (shopRef != null && shopRef.activeInHierarchy) { yield return null; continue; }
-
             t += Time.deltaTime / duration;
             Vector2 nextPos = Vector2.Lerp(startPos, diveTargetPos, t);
             rb.MovePosition(nextPos);
@@ -421,25 +360,31 @@ public class BirdEnemyAI : MonoBehaviour
         
         PlayOneShot(groundImpactSound, 1.0f);
         CheckImpactDamage();
-
         SwitchState(BirdState.Stuck);
     }
 
+    // --- REVERTED & CLEANED ---
     void DropEgg()
     {
         if (eggPrefab)
         {
             PlayOneShot(eggDropSound, 0.7f); 
 
-            Vector2 targetLandPos = player.position;
-            Vector2 releasePos = eggSpawnPoint.position;
+            Vector2 targetLandPos = player.position; // Where it should land
+            Vector2 releasePos = eggSpawnPoint.position; // Where the bird is now
+
+            // Spawn at the TARGET (Ground) position
             GameObject egg = Instantiate(eggPrefab, targetLandPos, Quaternion.identity);
+            
             BirdEgg eggScript = egg.GetComponent<BirdEgg>();
-            if (eggScript != null) eggScript.Initialize(targetLandPos, releasePos);
+            if (eggScript != null) 
+            {
+                // Tell the egg where the bird was, so it can "fake fall" from there
+                eggScript.Initialize(targetLandPos, releasePos);
+            }
         }
     }
-
-    // --- VISUAL & HELPER METHODS ---
+    // --------------------------
 
     void FaceDirection(float xDir)
     {
@@ -506,13 +451,10 @@ public class BirdEnemyAI : MonoBehaviour
     {
         Gizmos.color = Color.red;
         if(lockShadowToTarget) Gizmos.DrawWireSphere(diveTargetPos, damageRadius);
-
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, wakeUpDistance);
-        
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, maxActivityDistance);
-
         if(eggSpawnPoint) { Gizmos.color = Color.cyan; Gizmos.DrawWireSphere(eggSpawnPoint.position, 0.2f); }
     }
 }
