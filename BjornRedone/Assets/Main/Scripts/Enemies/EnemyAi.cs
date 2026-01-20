@@ -141,6 +141,23 @@ public class EnemyAI : MonoBehaviour
 
     void FixedUpdate()
     {
+        // --- NEW: SHOP CHECK ---
+        // If the shop manager exists AND the shop UI is currently open
+        if (DealerShopManager.Instance != null && DealerShopManager.Instance.gameObject.activeSelf)
+        {
+            rb.linearVelocity = Vector2.zero; // Stop moving
+            
+            // Force Idle animation so they don't look like they are running in place
+            if (anim != null) 
+            {
+                anim.enabled = true; // Ensure it's on so we can set state
+                anim.SetState(EnemyAnimationController.State.Idle);
+            }
+            
+            return; // STOP HERE. Do not execute any AI logic below.
+        }
+        // -----------------------
+
         if (player == null) return;
 
         // Optimization: Use sqrMagnitude to avoid expensive Sqrt operations
