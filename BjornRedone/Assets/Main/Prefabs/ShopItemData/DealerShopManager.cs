@@ -5,12 +5,11 @@ using System.Collections.Generic;
 
 public class DealerShopManager : MonoBehaviour
 {
-    // --- SINGLETON SETUP START ---
+    // --- SINGLETON SETUP ---
     public static DealerShopManager Instance { get; private set; }
 
     private void Awake()
     {
-        // If there is already a manager, destroy this new one (safety check)
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -18,19 +17,15 @@ public class DealerShopManager : MonoBehaviour
         }
         Instance = this;
 
-        // AUTOMATICALLY HIDE UI ON START
-        // This keeps your game clean, but allows the script to exist.
-        // Make sure the main GameObject is ENABLED in the Inspector!
-        gameObject.SetActive(false); // We hide it instantly here
+        // Hide UI on start
+        gameObject.SetActive(false); 
         
-        // Setup Exit Button
         if (exitButton != null)
         {
             exitButton.onClick.RemoveAllListeners();
             exitButton.onClick.AddListener(CloseShopAndFinish);
         }
     }
-    // --- SINGLETON SETUP END ---
 
     [Header("Shop Configuration")]
     public List<ShopItemData> allPossibleItems;
@@ -49,7 +44,6 @@ public class DealerShopManager : MonoBehaviour
 
     public void OpenShop(GameObject dealer)
     {
-        // Show the UI
         gameObject.SetActive(true);
 
         if (playerWallet == null)
@@ -63,10 +57,6 @@ public class DealerShopManager : MonoBehaviour
         UpdateUI();
     }
 
-    // ... (The rest of your script: GenerateRandomItems, UpdateUI, TryBuyItem, CloseShopAndFinish)
-    // ... PASTE THE REST OF THE FUNCTIONS HERE FROM THE PREVIOUS SCRIPT ...
-    
-    // For completeness, here are the functions so you don't lose them:
     private void GenerateRandomItems()
     {
         for (int i = 0; i < uiSlots.Length; i++)
@@ -91,6 +81,7 @@ public class DealerShopManager : MonoBehaviour
                 int index = i;
                 ShopItemData item = currentItemsInShop[i];
                 
+                // Icon Setup
                 if (i < itemIcons.Length && itemIcons[i] != null)
                 {
                     itemIcons[i].sprite = item.icon;
@@ -99,9 +90,11 @@ public class DealerShopManager : MonoBehaviour
                     itemIcons[i].color = new Color(c.r, c.g, c.b, 1f); 
                 }
 
+                // Price Setup
                 if (i < priceTexts.Length && priceTexts[i] != null)
                     priceTexts[i].text = item.price.ToString();
 
+                // Button Setup
                 Button slotBtn = uiSlots[i];
                 slotBtn.interactable = true;
                 slotBtn.onClick.RemoveAllListeners();
@@ -120,18 +113,23 @@ public class DealerShopManager : MonoBehaviour
         {
             playerWallet.AddCoins(-item.price);
             purchasedItems.Add(item);
+            
             uiSlots[index].interactable = false;
 
             if (index < priceTexts.Length && priceTexts[index] != null)
                 priceTexts[index].text = "Sold";
 
+            // If we bought the LAST item, close and destroy automatically
             if (purchasedItems.Count == currentItemsInShop.Count)
+            {
                 CloseShopAndFinish();
+            }
         }
     }
 
     public void CloseShopAndFinish()
     {
+        // 1. Spawn everything we bought
         if (currentDealerObject != null)
         {
             foreach (var item in purchasedItems)
@@ -139,8 +137,23 @@ public class DealerShopManager : MonoBehaviour
                 if (item.itemPrefab != null)
                     Instantiate(item.itemPrefab, currentDealerObject.transform.position, Quaternion.identity);
             }
-            Destroy(currentDealerObject);
+
+            // 2. CHECK: Did we buy everything?
+            bool allSold = (purchasedItems.Count >= currentItemsInShop.Count);
+
+            if (allSold)
+            {
+                // We cleared the shop -> Destroy the dealer
+                Destroy(currentDealerObject);
+            }
+            else
+            {
+                // We left some items behind -> Dealer stays alive
+                Debug.Log("Exiting shop. Dealer stays because items remain.");
+            }
         }
+        
+        // 3. Close the UI
         gameObject.SetActive(false);
     }
 }
