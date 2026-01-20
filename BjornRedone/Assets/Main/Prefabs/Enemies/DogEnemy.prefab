@@ -736,7 +736,7 @@ MonoBehaviour:
   - name: "K\xF6ttbit"
     prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
     dropChance: 1
-    maxAmount: 1
+    maxAmount: 3
   startingHead: {fileID: 11400000, guid: 3318dea2cd4b3bd4dac60d6689471c69, type: 2}
   startingLeftArm: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}
   startingRightArm: {fileID: 11400000, guid: 52c68e1132cdb344d9bbdec51978f9e8, type: 2}

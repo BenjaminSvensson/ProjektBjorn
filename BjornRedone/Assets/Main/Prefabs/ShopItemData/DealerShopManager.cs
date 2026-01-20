@@ -9,7 +9,7 @@ public class DealerShopManager : MonoBehaviour
     public static DealerShopManager Instance { get; private set; }
 
     [Header("Global Shop Database")]
-    public List<ShopItemData> allPossibleItems; // The pool of all items in the game
+    public List<ShopItemData> allPossibleItems; 
 
     [Header("UI Assignments")]
     public Button[] uiSlots; 
@@ -21,31 +21,37 @@ public class DealerShopManager : MonoBehaviour
     public AudioSource audioSource;
     public AudioClip successSound;
     public AudioClip failSound;
-    [Tooltip("How violently the button shakes")]
     public float shakeMagnitude = 10f;
 
     // Internal State
-    private DealerTrigger currentDealer; // The specific Dealer script we are talking to
+    private DealerTrigger currentDealer; 
     private PlayerWallet playerWallet;      
 
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        // Singleton Setup
+        if (Instance != null && Instance != this) 
+        { 
+            Destroy(gameObject); 
+            return; 
+        }
         Instance = this;
 
-        gameObject.SetActive(false); 
-        
         if (exitButton != null)
         {
             exitButton.onClick.RemoveAllListeners();
             exitButton.onClick.AddListener(CloseShopAndFinish);
         }
         
-        // Ensure we have an audio source
         if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
+
+        // IMPORTANT: We disable the WHOLE GameObject here.
+        // This ensures enemies see it as "inactive" and can move.
+        // Because we do this at the end of Awake, the Instance is already set safely.
+        gameObject.SetActive(false);
     }
 
-    // --- STEP 1: GENERATION (Called by DealerTrigger only once) ---
+    // --- STEP 1: GENERATION ---
     public void GenerateStockForDealer(DealerTrigger dealer)
     {
         dealer.myInventory.Clear();
@@ -57,15 +63,17 @@ public class DealerShopManager : MonoBehaviour
             {
                 ShopItemData randomItem = allPossibleItems[Random.Range(0, allPossibleItems.Count)];
                 dealer.myInventory.Add(randomItem);
-                dealer.isSold.Add(false); // Mark as NOT sold initially
+                dealer.isSold.Add(false); 
             }
         }
     }
 
-    // --- STEP 2: OPEN SHOP (Uses the Dealer's saved data) ---
+    // --- STEP 2: OPEN SHOP ---
     public void OpenShop(DealerTrigger dealer)
     {
+        // 1. Enable the GameObject (Enemies will see this and FREEZE)
         gameObject.SetActive(true);
+        
         currentDealer = dealer;
 
         if (playerWallet == null) playerWallet = FindObjectOfType<PlayerWallet>();
@@ -75,34 +83,27 @@ public class DealerShopManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        // Loop through the DEALER'S inventory, not a local list
         for (int i = 0; i < uiSlots.Length; i++)
         {
             if (uiSlots[i] == null) continue;
-            uiSlots[i].gameObject.SetActive(false); // Reset
+            uiSlots[i].gameObject.SetActive(false); 
 
-            // Check if this slot exists in the dealer's memory
             if (i < currentDealer.myInventory.Count)
             {
                 int index = i;
                 ShopItemData item = currentDealer.myInventory[i];
                 bool isItemSold = currentDealer.isSold[i];
 
-                // Icon Setup
                 if (i < itemIcons.Length && itemIcons[i] != null)
                 {
                     itemIcons[i].sprite = item.icon;
                     itemIcons[i].preserveAspect = true; 
-                    
-                    // If sold, dim the icon
                     itemIcons[i].color = isItemSold ? Color.gray : Color.white; 
                 }
 
-                // Price Setup
                 if (i < priceTexts.Length && priceTexts[i] != null)
                     priceTexts[i].text = isItemSold ? "Sold" : item.price.ToString();
 
-                // Button Setup
                 Button slotBtn = uiSlots[i];
                 slotBtn.onClick.RemoveAllListeners();
                 
@@ -121,37 +122,27 @@ public class DealerShopManager : MonoBehaviour
         }
     }
 
-   public void TryBuyItem(int index, GameObject buttonObj)
+    public void TryBuyItem(int index, GameObject buttonObj)
     {
         if (playerWallet == null) return;
+        
         ShopItemData item = currentDealer.myInventory[index];
 
         if (playerWallet.GetCoins() >= item.price)
         {
-            // 1. Pay
             playerWallet.AddCoins(-item.price);
-            
-            // 2. Mark Sold
             currentDealer.isSold[index] = true; 
 
-            // 3. Play Sound
             if (successSound) audioSource.PlayOneShot(successSound);
 
-            // 4. SPAWN ITEM IMMEDIATELY (Prevents logic errors with persistence)
-            if (item.itemPrefab != null)
-            {
-                Instantiate(item.itemPrefab, currentDealer.transform.position, Quaternion.identity);
-            }
-
-            // 5. Refresh UI
             UpdateUI(); 
             CheckIfAllSold();
         }
         else
         {
-            // FAIL
             if (failSound) audioSource.PlayOneShot(failSound);
             StartCoroutine(ShakeButton(buttonObj));
+            Debug.Log("Cannot afford!");
         }
     }
 
@@ -173,21 +164,6 @@ public class DealerShopManager : MonoBehaviour
     {
         if (currentDealer != null)
         {
-            // 1. Spawn items for everything that is marked as SOLD but wasn't collected yet?
-            // Since we persist state now, we need to decide: Do items spawn immediately on buy? Or only on exit?
-            // Assuming "Spawn on Exit" logic:
-            // We need to be careful not to spawn items twice if the player comes back.
-            // A simple fix for this script: Just spawn the items immediately when bought (easiest), 
-            // OR store a "pendingSpawn" list in the DealerTrigger too.
-            
-            // To keep it simple and bug-free: I will SPAWN items immediately inside TryBuyItem? 
-            // No, you asked for Spawn on Exit. 
-            // We will iterate through inventory, spawn anything that IS sold, 
-            // AND we need to make sure we don't spawn it twice.
-            // *For now, to fulfill your prompt effectively, I will spawn items immediately upon purchase.*
-            // *It creates the best feedback loop.*
-            
-            // 2. Check if Dealer should die
             bool allSold = true;
             foreach (bool sold in currentDealer.isSold)
             {
@@ -199,10 +175,12 @@ public class DealerShopManager : MonoBehaviour
                 Destroy(currentDealer.gameObject);
             }
         }
+        
+        // IMPORTANT: Disable the GameObject.
+        // Enemies will now see "activeInHierarchy == false" and UNFREEZE.
         gameObject.SetActive(false);
     }
     
-    // --- VISUAL FX: SHAKE ---
     private IEnumerator ShakeButton(GameObject btn)
     {
         RectTransform rt = btn.GetComponent<RectTransform>();
@@ -221,6 +199,6 @@ public class DealerShopManager : MonoBehaviour
             yield return null;
         }
 
-        rt.anchoredPosition = originalPos; // Reset
+        rt.anchoredPosition = originalPos; 
     }
 }

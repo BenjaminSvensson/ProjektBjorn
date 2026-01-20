@@ -857,7 +857,7 @@ MonoBehaviour:
   - name: "K\xF6ttbit"
     prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
     dropChance: 1
-    maxAmount: 1
+    maxAmount: 2
   - name: "K\xF6ttbit2"
     prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
     dropChance: 0.4
@@ -865,7 +865,7 @@ MonoBehaviour:
   - name: "K\xF6ttbit2"
     prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
     dropChance: 1
-    maxAmount: 1
+    maxAmount: 4
   startingHead: {fileID: 11400000, guid: 89af93c1ba131e7419b438f6e3acbc61, type: 2}
   startingLeftArm: {fileID: 11400000, guid: b08bb1dd2006f014da7d0c9052a79866, type: 2}
   startingRightArm: {fileID: 11400000, guid: b08bb1dd2006f014da7d0c9052a79866, type: 2}
