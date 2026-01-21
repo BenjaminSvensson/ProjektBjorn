@@ -57,14 +57,9 @@ public class PlayerAttackController : MonoBehaviour
 
     void OnEnable() 
     { 
-        // Standard Actions
         playerControls.Player.Attack.performed += HandleAttack; 
         playerControls.Player.Attack.canceled += HandleAttack; 
-        
-        // Kick Action
-        // NOTE: If you get a red error here, click 'Save Asset' in your Input Actions window!
         playerControls.Player.Kick.performed += HandleKick;
-
         playerControls.Player.Enable(); 
     }
 
@@ -72,10 +67,7 @@ public class PlayerAttackController : MonoBehaviour
     { 
         playerControls.Player.Attack.performed -= HandleAttack; 
         playerControls.Player.Attack.canceled -= HandleAttack; 
-        
-        // Unsubscribe Kick
         playerControls.Player.Kick.performed -= HandleKick;
-
         playerControls.Player.Disable(); 
     }
 
@@ -87,7 +79,6 @@ public class PlayerAttackController : MonoBehaviour
 
     private void HandleKick(InputAction.CallbackContext context)
     {
-        // Kick Logic: Cooldown check and Execution
         if (kickCooldownTimer <= 0 && globalCooldownTimer <= 0)
         {
             StartCoroutine(PerformKick());
@@ -113,15 +104,37 @@ public class PlayerAttackController : MonoBehaviour
 
     private IEnumerator PerformKick()
     {
+        // --- 1. Smart Leg Selection (Take Over Logic) ---
+        Transform leftLegSlot = limbController.GetLeftLegSlot();
+        Transform rightLegSlot = limbController.GetRightLegSlot();
+
+        bool hasLeft = leftLegSlot != null;
+        bool hasRight = rightLegSlot != null;
+
+        if (!hasLeft && !hasRight) yield break;
+
+        bool useLeftLeg;
+        if (hasLeft && hasRight)
+        {
+            useLeftLeg = Random.value > 0.5f;
+        }
+        else
+        {
+            useLeftLeg = hasLeft; 
+        }
+
+        // --- 2. Cooldowns & Locking ---
         kickCooldownTimer = kickCooldown;
         globalCooldownTimer = 0.2f; 
-
         if (playerMovement != null) playerMovement.SetMovementLocked(true);
 
+        // --- 3. Accurate Mouse Aiming ---
         if (cam == null) cam = Camera.main;
-        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
-        
-        bool useLeftLeg = Random.value > 0.5f; 
+        Vector3 mouseScreenPos = Mouse.current.position.ReadValue();
+        mouseScreenPos.z = cam.nearClipPlane + 10f; 
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
+
+        // --- 4. Animation ---
         animController.TriggerKick(useLeftLeg, kickDuration, mouseWorldPos, kickReach);
 
         if (actionAudioSource != null && kickSounds != null && kickSounds.Length > 0)
@@ -130,9 +143,10 @@ public class PlayerAttackController : MonoBehaviour
             actionAudioSource.PlayOneShot(kickSounds[Random.Range(0, kickSounds.Length)]);
         }
 
-        Vector2 kickOrigin = transform.position;
-        if (useLeftLeg && limbController.GetLeftLegSlot() != null) kickOrigin = limbController.GetLeftLegSlot().position;
-        else if (!useLeftLeg && limbController.GetRightLegSlot() != null) kickOrigin = limbController.GetRightLegSlot().position;
+        // --- 5. Calculate Hitbox ---
+        Vector2 kickOrigin = transform.position; 
+        if (useLeftLeg && leftLegSlot != null) kickOrigin = leftLegSlot.position;
+        else if (!useLeftLeg && rightLegSlot != null) kickOrigin = rightLegSlot.position;
 
         Vector2 dir = (mouseWorldPos - (Vector2)transform.position).normalized;
         Vector2 hitPos = kickOrigin + (dir * kickReach);
@@ -141,6 +155,9 @@ public class PlayerAttackController : MonoBehaviour
         float totalKnockback = kickKnockback * ((multiplier != null) ? multiplier.strength : 1f);
 
         CheckHit(hitPos, kickRadius, totalDamage, totalKnockback, dir, null);
+
+        // Debug Draw (Line only, Sphere removed to fix error)
+        Debug.DrawLine(kickOrigin, hitPos, Color.red, 1.0f);
 
         yield return new WaitForSeconds(kickDuration);
 
@@ -205,7 +222,10 @@ public class PlayerAttackController : MonoBehaviour
 
         if (RoomCamera.Instance != null && weapon.screenShakeAmount > 0) RoomCamera.Instance.Shake(0.1f, weapon.screenShakeAmount);
 
-        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        Vector3 mouseScreenPos = Mouse.current.position.ReadValue();
+        mouseScreenPos.z = cam.nearClipPlane + 10f;
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
+
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
         Vector2 aimDir = (mouseWorldPos - fireOrigin).normalized;
 
@@ -316,7 +336,9 @@ public class PlayerAttackController : MonoBehaviour
             actionAudioSource.PlayOneShot(soundPool[Random.Range(0, soundPool.Length)], armData.punchVolume);
         }
 
-        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        Vector3 mouseScreenPos = Mouse.current.position.ReadValue();
+        mouseScreenPos.z = cam.nearClipPlane + 10f;
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
 
         if (weapon != null && hasWeaponBonus && weapon.attackStyle == MeleeAttackStyle.Swing)
         {

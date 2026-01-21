@@ -8350,12 +8350,24 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: kickReach
+      value: 1.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: kickRadius
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickCooldown
       value: 0.8
       objectReference: {fileID: 0}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickDuration
-      value: 0.15
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: kickKnockback
+      value: 22
       objectReference: {fileID: 0}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickSounds.Array.size
