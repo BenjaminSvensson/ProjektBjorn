@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem; 
+using System.Collections; 
 
 public class PlayerAttackController : MonoBehaviour
 {
@@ -7,12 +8,22 @@ public class PlayerAttackController : MonoBehaviour
     [SerializeField] private PlayerLimbController limbController;
     [SerializeField] private PlayerAnimationController animController;
     [SerializeField] private WeaponSystem weaponSystem; 
+    [SerializeField] private PlayerMovement playerMovement;
 
     [Header("Attack Settings")]
     [SerializeField] private LayerMask hittableLayers;
     [SerializeField] private float minPunchDelay = 0.15f;
     [SerializeField] private float baseProjectileKnockback = 5f; 
     
+    [Header("Kick Settings")]
+    [SerializeField] private float kickDamage = 10f;
+    [SerializeField] private float kickReach = 1.2f;
+    [SerializeField] private float kickRadius = 0.5f;
+    [SerializeField] private float kickKnockback = 8f;
+    [SerializeField] private float kickDuration = 0.4f;
+    [SerializeField] private float kickCooldown = 1.0f;
+    [SerializeField] private AudioClip[] kickSounds;
+
     [Header("Audio")]
     [SerializeField] private AudioSource actionAudioSource;
 
@@ -24,6 +35,7 @@ public class PlayerAttackController : MonoBehaviour
     private float leftArmCooldownTimer = 0f;
     private float rightArmCooldownTimer = 0f;
     private float globalCooldownTimer = 0f; 
+    private float kickCooldownTimer = 0f; 
     
     private float clickSoundCooldownTimer = 0f;
     private Multipliers multiplier;
@@ -40,17 +52,45 @@ public class PlayerAttackController : MonoBehaviour
         if (animController == null) animController = GetComponent<PlayerAnimationController>();
         if (weaponSystem == null) weaponSystem = GetComponent<WeaponSystem>();
         if (multiplier == null)  multiplier = GetComponent<Multipliers>();
+        if (playerMovement == null) playerMovement = GetComponent<PlayerMovement>();
     }
 
-    void OnEnable() { playerControls.Player.Attack.performed += HandleAttack; playerControls.Player.Attack.canceled += HandleAttack; playerControls.Player.Enable(); }
-    void OnDisable() { playerControls.Player.Attack.performed -= HandleAttack; playerControls.Player.Attack.canceled -= HandleAttack; playerControls.Player.Disable(); }
+    void OnEnable() 
+    { 
+        // Standard Actions
+        playerControls.Player.Attack.performed += HandleAttack; 
+        playerControls.Player.Attack.canceled += HandleAttack; 
+        
+        // Kick Action
+        // NOTE: If you get a red error here, click 'Save Asset' in your Input Actions window!
+        playerControls.Player.Kick.performed += HandleKick;
+
+        playerControls.Player.Enable(); 
+    }
+
+    void OnDisable() 
+    { 
+        playerControls.Player.Attack.performed -= HandleAttack; 
+        playerControls.Player.Attack.canceled -= HandleAttack; 
+        
+        // Unsubscribe Kick
+        playerControls.Player.Kick.performed -= HandleKick;
+
+        playerControls.Player.Disable(); 
+    }
 
     private void HandleAttack(InputAction.CallbackContext callbackContext)
     {
         isAttackHeld = callbackContext.performed;
-        if (callbackContext.performed)
+        if (callbackContext.performed) hasFiredSincePress = false;
+    }
+
+    private void HandleKick(InputAction.CallbackContext context)
+    {
+        // Kick Logic: Cooldown check and Execution
+        if (kickCooldownTimer <= 0 && globalCooldownTimer <= 0)
         {
-            hasFiredSincePress = false;
+            StartCoroutine(PerformKick());
         }
     }
 
@@ -60,6 +100,7 @@ public class PlayerAttackController : MonoBehaviour
         if (rightArmCooldownTimer > 0) rightArmCooldownTimer -= Time.deltaTime;
         if (globalCooldownTimer > 0) globalCooldownTimer -= Time.deltaTime;
         if (clickSoundCooldownTimer > 0) clickSoundCooldownTimer -= Time.deltaTime;
+        if (kickCooldownTimer > 0) kickCooldownTimer -= Time.deltaTime; 
 
         if (isAttackHeld)
         {
@@ -68,6 +109,42 @@ public class PlayerAttackController : MonoBehaviour
                 HandleCombatInput();
             }
         }
+    }
+
+    private IEnumerator PerformKick()
+    {
+        kickCooldownTimer = kickCooldown;
+        globalCooldownTimer = 0.2f; 
+
+        if (playerMovement != null) playerMovement.SetMovementLocked(true);
+
+        if (cam == null) cam = Camera.main;
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        
+        bool useLeftLeg = Random.value > 0.5f; 
+        animController.TriggerKick(useLeftLeg, kickDuration, mouseWorldPos, kickReach);
+
+        if (actionAudioSource != null && kickSounds != null && kickSounds.Length > 0)
+        {
+            actionAudioSource.pitch = Random.Range(0.8f, 1.0f); 
+            actionAudioSource.PlayOneShot(kickSounds[Random.Range(0, kickSounds.Length)]);
+        }
+
+        Vector2 kickOrigin = transform.position;
+        if (useLeftLeg && limbController.GetLeftLegSlot() != null) kickOrigin = limbController.GetLeftLegSlot().position;
+        else if (!useLeftLeg && limbController.GetRightLegSlot() != null) kickOrigin = limbController.GetRightLegSlot().position;
+
+        Vector2 dir = (mouseWorldPos - (Vector2)transform.position).normalized;
+        Vector2 hitPos = kickOrigin + (dir * kickReach);
+
+        float totalDamage = kickDamage * ((multiplier != null) ? multiplier.strength : 1f);
+        float totalKnockback = kickKnockback * ((multiplier != null) ? multiplier.strength : 1f);
+
+        CheckHit(hitPos, kickRadius, totalDamage, totalKnockback, dir, null);
+
+        yield return new WaitForSeconds(kickDuration);
+
+        if (playerMovement != null) playerMovement.SetMovementLocked(false);
     }
 
     private void HandleCombatInput()
@@ -87,36 +164,22 @@ public class PlayerAttackController : MonoBehaviour
     private void HandleRangedInput(WeaponData weapon)
     {
         if (!weapon.allowHoldToFire && hasFiredSincePress) return;
-
         if (weaponSystem.GetCurrentWeaponCooldown() > 0) return;
-
-        if (weaponSystem.IsReloading())
-        {
-            TryPlayEmptySound(weapon);
-            return;
-        }
+        if (weaponSystem.IsReloading()) { TryPlayEmptySound(weapon); return; }
 
         int currentAmmo = weaponSystem.GetCurrentClipAmmo();
         if (currentAmmo <= 0)
         {
-            if (weaponSystem.GetTotalReserveAmmo() > 0)
-            {
-                weaponSystem.StartReload();
-            }
-            else
-            {
-                TryPlayEmptySound(weapon);
-            }
+            if (weaponSystem.GetTotalReserveAmmo() > 0) weaponSystem.StartReload();
+            else TryPlayEmptySound(weapon);
             return;
         }
-
         FireRangedWeapon(weapon);
     }
 
     private void TryPlayEmptySound(WeaponData weapon)
     {
         if (!weapon.allowHoldToFire && hasFiredSincePress) return;
-
         if (clickSoundCooldownTimer <= 0 && weapon.emptyClickSound != null)
         {
             if (actionAudioSource != null)
@@ -132,77 +195,51 @@ public class PlayerAttackController : MonoBehaviour
     private void FireRangedWeapon(WeaponData weapon)
     {
         if (weapon.projectilePrefab == null) return;
-        
         int availableAmmo = weaponSystem.GetCurrentClipAmmo();
-        int projectilesToFire = weapon.projectilesPerShot;
-
-        if (projectilesToFire > availableAmmo)
-        {
-            projectilesToFire = availableAmmo;
-        }
-
+        int projectilesToFire = Mathf.Min(weapon.projectilesPerShot, availableAmmo);
         if (projectilesToFire <= 0) return;
 
         weaponSystem.ConsumeAmmo(projectilesToFire);
-        
-        float cooldown = Mathf.Max(weapon.fireRate, 0.1f);
-        weaponSystem.SetCurrentWeaponCooldown(cooldown);
-
+        weaponSystem.SetCurrentWeaponCooldown(Mathf.Max(weapon.fireRate, 0.1f));
         hasFiredSincePress = true;
 
-        if (RoomCamera.Instance != null && weapon.screenShakeAmount > 0)
-        {
-            RoomCamera.Instance.Shake(0.1f, weapon.screenShakeAmount);
-        }
+        if (RoomCamera.Instance != null && weapon.screenShakeAmount > 0) RoomCamera.Instance.Shake(0.1f, weapon.screenShakeAmount);
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
         Vector2 aimDir = (mouseWorldPos - fireOrigin).normalized;
 
-        float finalKnockback = baseProjectileKnockback;
-        if (weapon != null) finalKnockback *= weapon.knockbackMultiplier;
+        float finalKnockback = baseProjectileKnockback * weapon.knockbackMultiplier;
 
         for (int i = 0; i < projectilesToFire; i++)
         {
             float currentSpread = Random.Range(-weapon.spread / 2f, weapon.spread / 2f);
             Vector2 finalDir = Quaternion.Euler(0, 0, currentSpread) * aimDir;
-
             GameObject projObj = Instantiate(weapon.projectilePrefab, fireOrigin, Quaternion.identity);
             Projectile projScript = projObj.GetComponent<Projectile>();
-            
-            if (projScript != null)
-            {
-                projScript.Initialize(finalDir, weapon.projectileSpeed, weapon.projectileDamage, finalKnockback, false);
-            }
+            if (projScript != null) projScript.Initialize(finalDir, weapon.projectileSpeed, weapon.projectileDamage, finalKnockback, false);
         }
 
         if (actionAudioSource != null && weapon.shootSounds != null && weapon.shootSounds.Length > 0)
         {
-            AudioClip clip = weapon.shootSounds[Random.Range(0, weapon.shootSounds.Length)];
-            if (clip != null)
-            {
-                actionAudioSource.pitch = Random.Range(0.9f, 1.1f);
-                actionAudioSource.PlayOneShot(clip);
-            }
+            actionAudioSource.pitch = Random.Range(0.9f, 1.1f);
+            actionAudioSource.PlayOneShot(weapon.shootSounds[Random.Range(0, weapon.shootSounds.Length)]);
         }
     }
 
     private void TryMeleeAttack(WeaponData meleeWeapon)
     {
         if (globalCooldownTimer > 0) return;
-
         if (meleeWeapon != null && weaponSystem != null && weaponSystem.GetCurrentWeaponCooldown() > 0) return;
 
         LimbData leftData = limbController.GetArmData(true);
         LimbData rightData = limbController.GetArmData(false);
-        
         bool leftReady = leftData != null && leftArmCooldownTimer <= 0;
         bool rightReady = rightData != null && rightArmCooldownTimer <= 0;
 
         if (!leftReady && !rightReady) return;
 
-        float speedMult = 1.0f;
-        if (meleeWeapon != null) speedMult = meleeWeapon.attackSpeedMultiplier;
+        float speedMult = meleeWeapon != null ? meleeWeapon.attackSpeedMultiplier : 1.0f;
 
         if (meleeWeapon != null && leftData != null && rightData != null)
         {
@@ -211,16 +248,12 @@ public class PlayerAttackController : MonoBehaviour
                 bool isRightMain = weaponSystem.IsHoldingWithRightHand();
                 Transform mainArm = isRightMain ? limbController.GetRightArmSlot() : limbController.GetLeftArmSlot();
                 LimbData mainData = isRightMain ? rightData : leftData;
-                float totalDamage = limbController.baseAttackDamage
-                  + mainData.attackDamageBonus
-                  + meleeWeapon.meleeDamageBonus;
-
+                float totalDamage = limbController.baseAttackDamage + mainData.attackDamageBonus + meleeWeapon.meleeDamageBonus;
 
                 ExecuteMelee(mainArm, mainData, !isRightMain, meleeWeapon, speedMult, true, totalDamage);
 
                 float fullCooldown = mainData.attackCooldown / Mathf.Max(0.1f, speedMult);
                 weaponSystem.SetCurrentWeaponCooldown(fullCooldown);
-                
                 leftArmCooldownTimer = fullCooldown;
                 rightArmCooldownTimer = fullCooldown;
                 globalCooldownTimer = minPunchDelay;
@@ -228,10 +261,7 @@ public class PlayerAttackController : MonoBehaviour
         }
         else
         {
-            bool fireLeft = false;
-            if (leftReady && rightReady) fireLeft = isNextPunchLeft;
-            else if (leftReady) fireLeft = true;
-            else if (rightReady) fireLeft = false;
+            bool fireLeft = (leftReady && rightReady) ? isNextPunchLeft : leftReady;
 
             if (fireLeft)
             {
@@ -249,94 +279,62 @@ public class PlayerAttackController : MonoBehaviour
     private void ExecuteMelee(Transform armTransform, LimbData armData, bool isLeftArm, WeaponData weapon, float speedMult, bool playAudio, float? damageOverride = null)
     {
         if (cam == null || Mouse.current == null) return;
-
-        // --- Get strength multiplier ---
-        
         float strengthMult = (multiplier != null) ? multiplier.strength : 1f;
-
-        // --- Base damage and knockback ---
         float damage = damageOverride.HasValue ? damageOverride.Value : (limbController.baseAttackDamage + armData.attackDamageBonus);
         float knockback = armData.knockbackForce;
         AudioClip[] soundPool = armData.punchSounds;
 
-        // --- Weapon bonus check ---
         bool hasWeaponBonus = false;
         if (weapon != null && weaponSystem != null)
         {
-            if (!damageOverride.HasValue)
+            bool isHoldingWithRight = weaponSystem.IsHoldingWithRightHand();
+            if (damageOverride.HasValue || (isLeftArm && !isHoldingWithRight) || (!isLeftArm && isHoldingWithRight))
             {
-                bool isHoldingWithRight = weaponSystem.IsHoldingWithRightHand();
-                if ((isLeftArm && !isHoldingWithRight) || (!isLeftArm && isHoldingWithRight))
-                {
-                    damage += weapon.meleeDamageBonus;
-                    knockback *= weapon.knockbackMultiplier;
-                    hasWeaponBonus = true;
-                }
-            }
-            else
-            {
+                if (!damageOverride.HasValue) damage += weapon.meleeDamageBonus;
                 knockback *= weapon.knockbackMultiplier;
                 hasWeaponBonus = true;
             }
-
-            if (weapon.meleeImpactSounds != null && weapon.meleeImpactSounds.Length > 0)
-                soundPool = weapon.meleeImpactSounds;
+            if (weapon.meleeImpactSounds != null && weapon.meleeImpactSounds.Length > 0) soundPool = weapon.meleeImpactSounds;
         }
 
-        // --- Apply strength multiplier to all attacks ---
         damage *= strengthMult;
         knockback *= strengthMult;
-
-        // --- Calculate durations ---
         float calculatedDuration = armData.punchDuration / Mathf.Max(0.1f, speedMult);
         float calculatedCooldown = armData.attackCooldown / Mathf.Max(0.1f, speedMult);
 
-        // --- Set cooldowns ---
         if (!damageOverride.HasValue)
         {
-            if (weapon != null)
-                weaponSystem.SetCurrentWeaponCooldown(calculatedCooldown);
-
+            if (weapon != null) weaponSystem.SetCurrentWeaponCooldown(calculatedCooldown);
             if (isLeftArm) leftArmCooldownTimer = calculatedCooldown;
             else rightArmCooldownTimer = calculatedCooldown;
-
             globalCooldownTimer = minPunchDelay;
         }
 
-        // --- Play punch/swing audio ---
         if (playAudio && actionAudioSource != null && soundPool != null && soundPool.Length > 0)
         {
-            AudioClip clip = soundPool[Random.Range(0, soundPool.Length)];
-            if (clip != null)
-            {
-                actionAudioSource.pitch = armData.punchPitch * Random.Range(0.9f, 1.1f);
-                actionAudioSource.PlayOneShot(clip, armData.punchVolume);
-            }
+            actionAudioSource.pitch = armData.punchPitch * Random.Range(0.9f, 1.1f);
+            actionAudioSource.PlayOneShot(soundPool[Random.Range(0, soundPool.Length)], armData.punchVolume);
         }
 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
 
-        // --- Swing attack ---
         if (weapon != null && hasWeaponBonus && weapon.attackStyle == MeleeAttackStyle.Swing)
         {
             float swingDirection = (mouseWorldPos.x < transform.position.x) ? 1f : -1f;
             float finalArc = Mathf.Abs(weapon.swingArc) * swingDirection;
-
             animController.TriggerSwing(armTransform, calculatedDuration, mouseWorldPos, finalArc);
             StartCoroutine(DelayedSwingHit(armTransform, mouseWorldPos, damage, knockback, armData, weapon.swingArc, calculatedDuration * 0.5f));
         }
-        else // --- Punch attack ---
+        else
         {
             Vector2 punchDirection = (mouseWorldPos - (Vector2)armTransform.position).normalized;
             Vector2 hitPosition = (Vector2)armTransform.position + (punchDirection * armData.attackReach);
-
             animController.TriggerPunch(armTransform, calculatedDuration, hitPosition);
             CheckHit(hitPosition, armData.impactSize, damage, knockback, punchDirection, armData);
         }
     }
 
-
-    private System.Collections.IEnumerator DelayedSwingHit(Transform arm, Vector2 targetPos, float dmg, float kb, LimbData data, float arc, float delay)
+    private IEnumerator DelayedSwingHit(Transform arm, Vector2 targetPos, float dmg, float kb, LimbData data, float arc, float delay)
     {
         yield return new WaitForSeconds(delay);
         Vector2 dirToTarget = (targetPos - (Vector2)arm.position).normalized;
@@ -347,15 +345,13 @@ public class PlayerAttackController : MonoBehaviour
     private void CheckHit(Vector2 pos, float radius, float damage, float knockback, Vector2 dir, LimbData data)
     {
         int hitCount = Physics2D.OverlapCircleNonAlloc(pos, radius, hitBuffer, hittableLayers);
-        
-        bool brokeWeapon = false; // Flag to ensure we only break once per swing
+        bool brokeWeapon = false; 
 
         for (int i = 0; i < hitCount; i++)
         {
             Collider2D hit = hitBuffer[i];
             bool validHit = false;
             
-            // 1. CHECK FOR ZOMBIES
             if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
             {
                 enemy.TakeDamage(damage, dir);
@@ -366,11 +362,9 @@ public class PlayerAttackController : MonoBehaviour
                 }
                 validHit = true;
             }
-            // 2. CHECK FOR BIRDS (NEW!)
             else if (hit.TryGetComponent<BirdEnemyAI>(out BirdEnemyAI bird))
             {
                 bird.TakeDamage(damage);
-                // Apply knockback to bird
                 if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D birdRb))
                 {
                     birdRb.linearVelocity = Vector2.zero;
@@ -378,13 +372,11 @@ public class PlayerAttackController : MonoBehaviour
                 }
                 validHit = true;
             }
-            // 3. CHECK FOR LOOT CONTAINERS
             else if (hit.TryGetComponent<LootContainer>(out LootContainer container))
             {
                 container.TakeDamage(damage, dir);
                 validHit = true;
             }
-            // 4. CHECK FOR GENERIC PHYSICS OBJECTS
             else if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
             {
                 if (rb.bodyType == RigidbodyType2D.Dynamic && !hit.CompareTag("Player"))
@@ -394,8 +386,7 @@ public class PlayerAttackController : MonoBehaviour
                 }
             }
 
-            // --- Breakable Weapon Logic ---
-            if (validHit && !brokeWeapon)
+            if (validHit && !brokeWeapon && data != null)
             {
                 WeaponData w = weaponSystem.GetActiveWeapon();
                 if (w != null && w.breaksOnMeleeHit)

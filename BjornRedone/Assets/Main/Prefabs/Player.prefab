@@ -154,7 +154,7 @@ MonoBehaviour:
   rightLegSlot: {fileID: 7365595451241947834}
   baseMoveSpeed: 5
   baseAttackDamage: 1
-  torsoHealth: 65
+  torsoHealth: 70
   startingHead: {fileID: 11400000, guid: 0af1cd97961f64841aadc75c0adc4662, type: 2}
   startingArm: {fileID: 11400000, guid: 365195c8e2fd10f4aa045d9670a9fc1e, type: 2}
   startingLeg: {fileID: 11400000, guid: 823d4ad74e94f3245934ef33017e32ca, type: 2}
