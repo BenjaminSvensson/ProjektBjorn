@@ -65,7 +65,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &7729352542853161402
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -99,6 +99,7 @@ MonoBehaviour:
   attackShakeAmount: 0.05
   weaponTag: Weapon
   animator: {fileID: 3434843709141612895}
+  shopUiName: Shop UI
   moveSpeed: 1
   stopDistance: 2.7
   wakeUpDistance: 10
