@@ -80,10 +80,14 @@ public class PlayerAnimationController : MonoBehaviour
     private void AimSlot(Transform slot, Vector3 originalLocalPos, Vector2 targetWorldPos)
     {
         if (slot == null) return;
+        // InverseTransformPoint automatically accounts for flipped parent scale
         Vector2 localTargetPos = visualsHolder.InverseTransformPoint(targetWorldPos);
         Vector2 offset = Vector2.ClampMagnitude(localTargetPos - (Vector2)originalLocalPos, armReachDistance);
         slot.localPosition = originalLocalPos + (Vector3)offset;
-        slot.up = -(targetWorldPos - (Vector2)slot.position).normalized;
+        
+        // Fix rotation if needed
+        Vector2 dir = (targetWorldPos - (Vector2)slot.position).normalized;
+        slot.up = -dir; 
     }
 
     private void HandleLegBobbing()
@@ -110,6 +114,7 @@ public class PlayerAnimationController : MonoBehaviour
     public void TriggerPunch(Transform armToPunch, float punchDuration, Vector2 targetWorldPos)
     {
         Vector3 origPos = (armToPunch == leftArmSlot) ? leftArmOrigPos : rightArmOrigPos;
+        // Correctly transforms World Target to Local Space (handles flipping)
         Vector3 targetLocalPos = visualsHolder.InverseTransformPoint(targetWorldPos);
         StartCoroutine(LimbMoveCoroutine(armToPunch, origPos, targetLocalPos, punchDuration));
     }
@@ -121,7 +126,7 @@ public class PlayerAnimationController : MonoBehaviour
         StartCoroutine(SwingCoroutine(armToSwing, targetRotation, swingDuration, arcAngle));
     }
 
-    // +++ NEW: Trigger Kick +++
+    // +++ FIX IS HERE +++
     public void TriggerKick(bool useLeftLeg, float duration, Vector2 targetWorldPos, float reach)
     {
         Transform leg = useLeftLeg ? leftLegSlot : rightLegSlot;
@@ -129,15 +134,17 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (leg == null) return;
 
-        // Calculate a target position "Reach" distance away towards the mouse
-        Vector2 dir = (targetWorldPos - (Vector2)leg.position).normalized;
-        Vector3 targetLocalPos = origPos + (Vector3)(dir * reach);
+        // 1. Calculate the exact point in the world where the foot should end up
+        Vector2 dirToTarget = (targetWorldPos - (Vector2)leg.position).normalized;
+        Vector2 worldKickDestination = (Vector2)leg.position + (dirToTarget * reach);
 
-        // We assume the kick visuals are controlled by the same type of coroutine as the punch
+        // 2. Convert that World Point into Local Space relative to the VisualsHolder.
+        // This function AUTOMATICALLY handles the negative scale/flipping math.
+        Vector3 targetLocalPos = visualsHolder.InverseTransformPoint(worldKickDestination);
+
         StartCoroutine(LimbMoveCoroutine(leg, origPos, targetLocalPos, duration));
     }
 
-    // +++ REFACTORED: Renamed from PunchCoroutine to LimbMoveCoroutine to reuse for Legs +++
     private IEnumerator LimbMoveCoroutine(Transform limb, Vector3 origPos, Vector3 targetLocalPos, float duration)
     {
         isAttacking = true;
