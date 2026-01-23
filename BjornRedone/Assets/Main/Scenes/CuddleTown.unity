@@ -4155,7 +4155,7 @@ GameObject:
   - component: {fileID: 1256571305}
   - component: {fileID: 1256571306}
   m_Layer: 5
-  m_Name: DealerUi
+  m_Name: DealerUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7924,6 +7924,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b887d689a2dae14393d9e65cf276232, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Multipliers
+--- !u!114 &1970201085 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1482678988472418271, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+  m_PrefabInstance: {fileID: 1433725554247257660}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf3f9ce80b145324d981ea63955b85a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
 --- !u!1 &2015661865
 GameObject:
   m_ObjectHideFlags: 0
@@ -8349,6 +8360,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 1482678988472418271, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: dealerUI
+      value: 
+      objectReference: {fileID: 241086857}
+    - target: {fileID: 1482678988472418271, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: dealerUiName
+      value: DealerUi
+      objectReference: {fileID: 0}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: dealerUI
+      value: 
+      objectReference: {fileID: 241086857}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickReach
       value: 1.8
@@ -8356,6 +8379,10 @@ PrefabInstance:
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickRadius
       value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: dealerUiName
+      value: DealerUi
       objectReference: {fileID: 0}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickCooldown
@@ -8369,6 +8396,10 @@ PrefabInstance:
       propertyPath: kickKnockback
       value: 22
       objectReference: {fileID: 0}
+    - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
+      propertyPath: playerMovement
+      value: 
+      objectReference: {fileID: 1970201085}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickSounds.Array.size
       value: 1

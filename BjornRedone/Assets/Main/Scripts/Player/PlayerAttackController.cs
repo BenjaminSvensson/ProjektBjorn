@@ -4,6 +4,9 @@ using System.Collections;
 
 public class PlayerAttackController : MonoBehaviour
 {
+    [Header("UI Blocking - DRAG DEALER UI HERE")]
+    [SerializeField] private GameObject dealerUI; // DRAG YOUR UI OBJECT HERE IN INSPECTOR
+
     [Header("Required References")]
     [SerializeField] private PlayerLimbController limbController;
     [SerializeField] private PlayerAnimationController animController;
@@ -71,14 +74,29 @@ public class PlayerAttackController : MonoBehaviour
         playerControls.Player.Disable(); 
     }
 
+    // --- HELPER: Is UI Active? ---
+    private bool IsShopOpen()
+    {
+        // Checks if the assigned UI object exists and is currently active
+        return dealerUI != null && dealerUI.activeInHierarchy;
+    }
+
     private void HandleAttack(InputAction.CallbackContext callbackContext)
     {
+        if (IsShopOpen()) 
+        {
+            isAttackHeld = false;
+            return;
+        }
+
         isAttackHeld = callbackContext.performed;
         if (callbackContext.performed) hasFiredSincePress = false;
     }
 
     private void HandleKick(InputAction.CallbackContext context)
     {
+        if (IsShopOpen()) return;
+
         if (kickCooldownTimer <= 0 && globalCooldownTimer <= 0)
         {
             StartCoroutine(PerformKick());
@@ -87,6 +105,14 @@ public class PlayerAttackController : MonoBehaviour
 
     void Update()
     {
+        // --- STOP EVERYTHING IF UI IS OPEN ---
+        if (IsShopOpen()) 
+        {
+            isAttackHeld = false; // Force release
+            return;
+        }
+        // -------------------------------------
+
         if (leftArmCooldownTimer > 0) leftArmCooldownTimer -= Time.deltaTime;
         if (rightArmCooldownTimer > 0) rightArmCooldownTimer -= Time.deltaTime;
         if (globalCooldownTimer > 0) globalCooldownTimer -= Time.deltaTime;
@@ -104,7 +130,6 @@ public class PlayerAttackController : MonoBehaviour
 
     private IEnumerator PerformKick()
     {
-        // --- 1. Smart Leg Selection (Take Over Logic) ---
         Transform leftLegSlot = limbController.GetLeftLegSlot();
         Transform rightLegSlot = limbController.GetRightLegSlot();
 
@@ -114,27 +139,18 @@ public class PlayerAttackController : MonoBehaviour
         if (!hasLeft && !hasRight) yield break;
 
         bool useLeftLeg;
-        if (hasLeft && hasRight)
-        {
-            useLeftLeg = Random.value > 0.5f;
-        }
-        else
-        {
-            useLeftLeg = hasLeft; 
-        }
+        if (hasLeft && hasRight) useLeftLeg = Random.value > 0.5f;
+        else useLeftLeg = hasLeft; 
 
-        // --- 2. Cooldowns & Locking ---
         kickCooldownTimer = kickCooldown;
         globalCooldownTimer = 0.2f; 
         if (playerMovement != null) playerMovement.SetMovementLocked(true);
 
-        // --- 3. Accurate Mouse Aiming ---
         if (cam == null) cam = Camera.main;
         Vector3 mouseScreenPos = Mouse.current.position.ReadValue();
         mouseScreenPos.z = cam.nearClipPlane + 10f; 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
 
-        // --- 4. Animation ---
         animController.TriggerKick(useLeftLeg, kickDuration, mouseWorldPos, kickReach);
 
         if (actionAudioSource != null && kickSounds != null && kickSounds.Length > 0)
@@ -143,7 +159,6 @@ public class PlayerAttackController : MonoBehaviour
             actionAudioSource.PlayOneShot(kickSounds[Random.Range(0, kickSounds.Length)]);
         }
 
-        // --- 5. Calculate Hitbox ---
         Vector2 kickOrigin = transform.position; 
         if (useLeftLeg && leftLegSlot != null) kickOrigin = leftLegSlot.position;
         else if (!useLeftLeg && rightLegSlot != null) kickOrigin = rightLegSlot.position;
@@ -156,7 +171,6 @@ public class PlayerAttackController : MonoBehaviour
 
         CheckHit(hitPos, kickRadius, totalDamage, totalKnockback, dir, null);
 
-        // Debug Draw (Line only, Sphere removed to fix error)
         Debug.DrawLine(kickOrigin, hitPos, Color.red, 1.0f);
 
         yield return new WaitForSeconds(kickDuration);
@@ -169,13 +183,9 @@ public class PlayerAttackController : MonoBehaviour
         WeaponData currentWeapon = weaponSystem != null ? weaponSystem.GetActiveWeapon() : null;
 
         if (currentWeapon != null && currentWeapon.type == WeaponType.Ranged)
-        {
             HandleRangedInput(currentWeapon);
-        }
         else
-        {
             TryMeleeAttack(currentWeapon);
-        }
     }
 
     private void HandleRangedInput(WeaponData weapon)
@@ -228,7 +238,6 @@ public class PlayerAttackController : MonoBehaviour
 
         Vector2 fireOrigin = weaponSystem.GetFirePoint();
         Vector2 aimDir = (mouseWorldPos - fireOrigin).normalized;
-
         float finalKnockback = baseProjectileKnockback * weapon.knockbackMultiplier;
 
         for (int i = 0; i < projectilesToFire; i++)
@@ -282,7 +291,6 @@ public class PlayerAttackController : MonoBehaviour
         else
         {
             bool fireLeft = (leftReady && rightReady) ? isNextPunchLeft : leftReady;
-
             if (fireLeft)
             {
                 ExecuteMelee(limbController.GetLeftArmSlot(), leftData, true, meleeWeapon, speedMult, true);

@@ -4,6 +4,9 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
 {
+    [Header("UI Blocking - DRAG DEALER UI HERE")]
+    [SerializeField] private GameObject dealerUI; // DRAG YOUR UI OBJECT HERE
+
     [Header("Base Stats")]
     [SerializeField] private float baseMoveSpeed = 5f;
     [SerializeField] private float sprintSpeedMultiplier = 1.5f;
@@ -32,8 +35,6 @@ public class PlayerMovement : MonoBehaviour
     private bool isSprinting = false;
 
     private bool isTrapped = false;
-    
-    // +++ NEW: Lock flag for Kicking +++
     private bool isMovementLocked = false; 
 
     void Awake()
@@ -76,6 +77,9 @@ public class PlayerMovement : MonoBehaviour
 
     private void HandleCrawl(InputAction.CallbackContext context)
     {
+        // Don't crawl if shop is open
+        if (dealerUI != null && dealerUI.activeInHierarchy) return;
+
         isCrawlHeld = context.performed;
         if (context.performed && playerLimbController != null && playerLimbController.CanCrawl())
         {
@@ -94,7 +98,14 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // +++ UPDATED: Check for Traps OR Movement Lock (Kick) +++
+        // --- DISABLE MOVEMENT IF UI IS OPEN ---
+        if (dealerUI != null && dealerUI.activeInHierarchy)
+        {
+            rb.linearVelocity = Vector2.zero; // Stop all momentum
+            return;
+        }
+        // ---------------------------------------
+
         if (isTrapped || isMovementLocked)
         {
             rb.linearVelocity = Vector2.zero;
@@ -130,7 +141,6 @@ public class PlayerMovement : MonoBehaviour
     public Vector2 GetMoveInput() { return moveInput; }
     public void SetTrapped(bool trapped) { isTrapped = trapped; }
 
-    // +++ NEW: Allow other scripts to lock movement strictly +++
     public void SetMovementLocked(bool locked)
     {
         isMovementLocked = locked;
