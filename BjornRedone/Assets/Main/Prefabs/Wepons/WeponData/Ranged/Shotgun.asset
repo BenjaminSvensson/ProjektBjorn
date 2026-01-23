@@ -22,6 +22,9 @@ MonoBehaviour:
   heldRotationOffset: 90
   heldPositionOffset: {x: 0, y: 0.3, z: 0}
   muzzleOffset: {x: 0, y: 0}
+  breaksOnMeleeHit: 0
+  breaksOnThrowHit: 0
+  brokenPrefab: {fileID: 0}
   type: 1
   attackStyle: 0
   meleeDamageBonus: 5
@@ -33,13 +36,13 @@ MonoBehaviour:
   projectilePrefab: {fileID: 5854363392945389712, guid: 794ed137c5e40f84d8617a0761b37a85, type: 3}
   fireRate: 0
   projectileSpeed: 28
-  projectileDamage: 4.6
+  projectileDamage: 4.8
   spread: 20
   screenShakeAmount: 0.1
   projectilesPerShot: 4
   shootSounds:
   - {fileID: 8300000, guid: 25aa15b8195ba094297b772d2f2931bd, type: 3}
   magazineSize: 8
-  reloadTime: 1.2
+  reloadTime: 1.1
   reloadSound: {fileID: 8300000, guid: 03189be0bd047954fac601234d518ba7, type: 3}
   emptyClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}

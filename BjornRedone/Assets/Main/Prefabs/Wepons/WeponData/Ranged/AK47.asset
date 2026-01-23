@@ -43,6 +43,6 @@ MonoBehaviour:
   shootSounds:
   - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
   magazineSize: 26
-  reloadTime: 1.2
+  reloadTime: 1.1
   reloadSound: {fileID: 8300000, guid: 03189be0bd047954fac601234d518ba7, type: 3}
   emptyClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}

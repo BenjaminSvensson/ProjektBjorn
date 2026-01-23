@@ -318,7 +318,7 @@ GameObject:
   - component: {fileID: -2335057007309915621}
   - component: {fileID: 1488754549370397814}
   m_Layer: 10
-  m_Name: RiggedDumpster
+  m_Name: 2RiggedDumpster
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

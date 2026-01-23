@@ -430,11 +430,11 @@ MonoBehaviour:
     maxAmount: 3
   - name: Ben
     prefab: {fileID: 2324061009247522880, guid: 2d5c50b6cfa9a51429106b716e53431b, type: 3}
-    dropChance: 0.8
+    dropChance: 0.5
     maxAmount: 1
   - name: Ben
     prefab: {fileID: 2324061009247522880, guid: 2d5c50b6cfa9a51429106b716e53431b, type: 3}
-    dropChance: 0.8
+    dropChance: 0.9
     maxAmount: 1
   - name: Coin
     prefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
