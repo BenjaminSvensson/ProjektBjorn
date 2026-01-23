@@ -10,7 +10,7 @@ public class BloodSplat : MonoBehaviour
     [SerializeField] private float maxScale = 1f;
     
     [Header("Settings")]
-    [SerializeField] private float lifetime = 15f;
+    // Removed 'lifetime' variable as it is no longer needed
     [SerializeField] private bool randomizeRotation = true;
 
     private SpriteRenderer sr;
@@ -21,8 +21,7 @@ public class BloodSplat : MonoBehaviour
     private void Awake()
     {
         sr = GetComponent<SpriteRenderer>();
-        // Removed VisibleInsideMask to simplify setup. 
-        // Now blood just draws normally. Ensure its Sorting Order is higher than the floor (e.g. -50 vs -100).
+        // Ensure its Sorting Order is higher than the floor (e.g. -50 vs -100).
         sr.maskInteraction = SpriteMaskInteraction.None;
     }
 
@@ -44,14 +43,16 @@ public class BloodSplat : MonoBehaviour
         }
 
         // Layering: Randomize sorting order slightly so droplets stack naturally
-        // Assuming Floor is -100 to -10. We use -50 to -40 range.
-        sr.sortingOrder = -32767 + Random.Range(0, 10);
+        // Assuming Floor is -100 to -10. We use -32767 range roughly.
+        sr.sortingOrder = -32767 + Random.Range(0, 100);
 
-        StartCoroutine(FadeAndDestroy());
+        // REMOVED: StartCoroutine(FadeAndDestroy());
     }
 
     private void Update()
     {
+        // Once physics are done, this script stops running logic, 
+        // effectively making the object a static prop.
         if (!isMoving) return;
 
         // 1. Move "Physics"
@@ -70,22 +71,5 @@ public class BloodSplat : MonoBehaviour
         }
     }
 
-    private IEnumerator FadeAndDestroy()
-    {
-        yield return new WaitForSeconds(lifetime * 0.7f); // Wait 70% of lifetime
-        
-        float fadeDuration = lifetime * 0.3f;
-        float timer = 0f;
-        Color startColor = sr.color;
-
-        while (timer < fadeDuration)
-        {
-            float alpha = Mathf.Lerp(startColor.a, 0f, timer / fadeDuration);
-            sr.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
-            timer += Time.deltaTime;
-            yield return null;
-        }
-        
-        Destroy(gameObject);
-    }
+    // REMOVED: FadeAndDestroy() coroutine
 }

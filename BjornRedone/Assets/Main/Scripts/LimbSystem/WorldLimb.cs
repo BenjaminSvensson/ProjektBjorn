@@ -11,6 +11,7 @@ using UnityEngine.Rendering;
 public class WorldLimb : MonoBehaviour, IInteractable
 {
     private static List<WorldLimb> looseLimbs = new List<WorldLimb>();
+    // Limit is technically ignored now, but kept for reference
     private const int MAX_LOOSE_LIMBS = 6; 
 
     [Header("Scene Pickup Settings")]
@@ -24,6 +25,7 @@ public class WorldLimb : MonoBehaviour, IInteractable
     [SerializeField] private float throwForce = 5f, pickupDelay = 1.0f, groundFriction = 5f; 
     
     [Header("Debris Settings")]
+    // Note: brokenLimbLifetime is now ignored
     [SerializeField] private float brokenLimbLifetime = 30f, maxDistanceToPlayer = 40f;
 
     private enum State { Idle, Attached, Thrown, Pickup }
@@ -78,13 +80,16 @@ public class WorldLimb : MonoBehaviour, IInteractable
     private void RegisterLooseLimb()
     {
         looseLimbs.Add(this);
-        if (looseLimbs.Count > MAX_LOOSE_LIMBS) { WorldLimb oldest = looseLimbs[0]; looseLimbs.RemoveAt(0); oldest?.StartLimitFadeOut(); }
+        // --- MODIFIED: Disabled automatic culling of old limbs ---
+        // if (looseLimbs.Count > MAX_LOOSE_LIMBS) { WorldLimb oldest = looseLimbs[0]; looseLimbs.RemoveAt(0); oldest?.StartLimitFadeOut(); }
     }
 
     private void CheckDistanceCleanup()
     {
         if (currentState == State.Attached || currentState == State.Thrown || !playerTransform) return;
-        if ((transform.position - playerTransform.position).sqrMagnitude > maxDistanceSq) Destroy(gameObject);
+        
+        // --- MODIFIED: Disabled distance based destruction ---
+        // if ((transform.position - playerTransform.position).sqrMagnitude > maxDistanceSq) Destroy(gameObject);
     }
 
     private void StartLimitFadeOut() { StopAllCoroutines(); currentState = State.Idle; if (col) col.enabled = false; StartCoroutine(FadeOutImmediate(1.5f)); }
@@ -148,13 +153,23 @@ public class WorldLimb : MonoBehaviour, IInteractable
         currentState = State.Pickup;
         if (rb) { rb.linearDamping = groundFriction; rb.angularDamping = 5f; }
         
-        // --- NEW: If broken (not maintained), becomes a Trigger (walk-through) ---
         col.isTrigger = !isMaintained; 
 
         if (BloodManager.Instance && (isShowingDamaged || !isMaintained)) BloodManager.Instance.SpawnBlood(transform.position, Quaternion.Euler(0, 0, Random.Range(-45f, 45f)) * Vector2.down, 0.7f);
-        if (isMaintained) gameObject.tag = "LimbPickup"; else { gameObject.tag = "Untagged"; StartCoroutine(FadeOutBrokenLimb(brokenLimbLifetime)); }
+        
+        if (isMaintained) 
+        {
+            gameObject.tag = "LimbPickup"; 
+        }
+        else 
+        { 
+            gameObject.tag = "Untagged"; 
+            // --- MODIFIED: Disabled the fade out timer for damaged/broken limbs ---
+            // StartCoroutine(FadeOutBrokenLimb(brokenLimbLifetime)); 
+        }
     }
 
+    // This is no longer called, but left for reference
     private IEnumerator FadeOutBrokenLimb(float duration)
     {
         yield return new WaitForSeconds(Mathf.Max(0, duration - 2.0f)); 
