@@ -299,10 +299,10 @@ MonoBehaviour:
   eggAnimator: {fileID: 3795573638384909994}
   fallStateName: Fall
   crackStateName: Crack
-  fallSpeed: 12
+  fallSpeed: 16
   damage: 5
   damageRadius: 0.5
-  persistDuration: 0.6
+  persistDuration: 0.2
 --- !u!82 &6284836408776694369
 AudioSource:
   m_ObjectHideFlags: 0
@@ -449,7 +449,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageSource
   damageAmount: 10
-  playerTag: Enemy
+  playerTag: Player
   isTickDamage: 0
   tickRate: 1
   isBeartrap: 0
