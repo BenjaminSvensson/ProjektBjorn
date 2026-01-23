@@ -157,10 +157,10 @@ CapsuleCollider2D:
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8192
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1024
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -174,7 +174,7 @@ CapsuleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -312,6 +312,26 @@ MonoBehaviour:
     prefab: {fileID: 4581056051781266002, guid: 0689ac7191407dc438b48b5476e2f102, type: 3}
     dropChance: 1
     maxAmount: 12
+  - name: Arm
+    prefab: {fileID: 1703309220703536604, guid: 246380ff80bfaa04aa9a636480717765, type: 3}
+    dropChance: 1
+    maxAmount: 1
+  - name: Arm
+    prefab: {fileID: 1703309220703536604, guid: 246380ff80bfaa04aa9a636480717765, type: 3}
+    dropChance: 1
+    maxAmount: 1
+  - name: Leg
+    prefab: {fileID: 2324061009247522880, guid: 00ebea1c5052b8b4b894dc528d3a8f59, type: 3}
+    dropChance: 1
+    maxAmount: 1
+  - name: Leg
+    prefab: {fileID: 2324061009247522880, guid: 00ebea1c5052b8b4b894dc528d3a8f59, type: 3}
+    dropChance: 1
+    maxAmount: 1
+  - name: Sythe
+    prefab: {fileID: 8406546666599770303, guid: 6893ebf76facc904794896e9e9096b1a, type: 3}
+    dropChance: 1
+    maxAmount: 1
   startingHead: {fileID: 0}
   startingLeftArm: {fileID: 0}
   startingRightArm: {fileID: 0}
