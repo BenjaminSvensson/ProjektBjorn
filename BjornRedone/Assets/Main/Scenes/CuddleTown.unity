@@ -8374,11 +8374,11 @@ PrefabInstance:
       objectReference: {fileID: 241086857}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickReach
-      value: 1.8
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: kickRadius
-      value: 0.8
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2983627755367885669, guid: d4c4e408777e0734983552f3e99abd28, type: 3}
       propertyPath: dealerUiName

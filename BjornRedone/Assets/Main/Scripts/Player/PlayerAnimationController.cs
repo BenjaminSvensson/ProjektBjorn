@@ -126,7 +126,7 @@ public class PlayerAnimationController : MonoBehaviour
         StartCoroutine(SwingCoroutine(armToSwing, targetRotation, swingDuration, arcAngle));
     }
 
-    // +++ FIX IS HERE +++
+    // --- KICK LOGIC UPDATED HERE ---
     public void TriggerKick(bool useLeftLeg, float duration, Vector2 targetWorldPos, float reach)
     {
         Transform leg = useLeftLeg ? leftLegSlot : rightLegSlot;
@@ -134,17 +134,24 @@ public class PlayerAnimationController : MonoBehaviour
 
         if (leg == null) return;
 
-        // 1. Calculate the exact point in the world where the foot should end up
+        // 1. Calculate Direction
         Vector2 dirToTarget = (targetWorldPos - (Vector2)leg.position).normalized;
-        Vector2 worldKickDestination = (Vector2)leg.position + (dirToTarget * reach);
 
-        // 2. Convert that World Point into Local Space relative to the VisualsHolder.
-        // This function AUTOMATICALLY handles the negative scale/flipping math.
+        // 2. Calculate Target Rotation
+        // We assume the sprite's "down" (-Y) is the foot. 
+        // LookRotation(forward, upwards) -> We set 'up' to -dirToTarget so 'down' points at target.
+        Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, -dirToTarget);
+
+        // 3. Calculate Target Position (Local)
+        // Convert that World Point into Local Space relative to the VisualsHolder.
+        Vector2 worldKickDestination = (Vector2)leg.position + (dirToTarget * reach);
         Vector3 targetLocalPos = visualsHolder.InverseTransformPoint(worldKickDestination);
 
-        StartCoroutine(LimbMoveCoroutine(leg, origPos, targetLocalPos, duration));
+        // 4. Start the dedicated Kick Coroutine
+        StartCoroutine(KickCoroutine(leg, origPos, targetLocalPos, targetRotation, duration));
     }
 
+    // Used for Punching (Position only)
     private IEnumerator LimbMoveCoroutine(Transform limb, Vector3 origPos, Vector3 targetLocalPos, float duration)
     {
         isAttacking = true;
@@ -171,6 +178,65 @@ public class PlayerAnimationController : MonoBehaviour
         }
 
         limb.localPosition = origPos;
+        isAttacking = false;
+    }
+
+    // Used for Kicking (Position + Rotation)
+    private IEnumerator KickCoroutine(Transform limb, Vector3 origPos, Vector3 targetLocalPos, Quaternion targetGlobalRot, float duration)
+    {
+        isAttacking = true;
+
+        // Store original states
+        Quaternion startGlobalRot = limb.rotation;
+        Quaternion startLocalRot = limb.localRotation; // We return to local rotation to respect parent flipping
+
+        float halfDuration = duration / 2f;
+        if (halfDuration < Time.deltaTime) halfDuration = Time.deltaTime;
+
+        float timer = 0f;
+
+        // --- PHASE 1: EXTEND (Move to target + Rotate to face target) ---
+        while (timer < halfDuration)
+        {
+            float t = timer / halfDuration;
+            
+            // Interpolate Position
+            limb.localPosition = Vector3.Lerp(origPos, targetLocalPos, t);
+            
+            // Interpolate Rotation (Global) ensures we point to world target regardless of body flip
+            limb.rotation = Quaternion.Slerp(startGlobalRot, targetGlobalRot, t);
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // Snap to exact target for a frame
+        limb.localPosition = targetLocalPos;
+        limb.rotation = targetGlobalRot;
+
+        // --- PHASE 2: RETRACT (Return to original pos + Return to original local rotation) ---
+        timer = 0f;
+        
+        // Capture the rotation we are at right now (fully extended) to blend back smoothly
+        Quaternion extendedLocalRot = limb.localRotation;
+
+        while (timer < halfDuration)
+        {
+            float t = timer / halfDuration;
+
+            // Interpolate Position back to start
+            limb.localPosition = Vector3.Lerp(targetLocalPos, origPos, t);
+
+            // Interpolate Rotation back to the original local idle rotation
+            limb.localRotation = Quaternion.Slerp(extendedLocalRot, startLocalRot, t);
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // Final Reset
+        limb.localPosition = origPos;
+        limb.localRotation = startLocalRot;
         isAttacking = false;
     }
 
