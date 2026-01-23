@@ -293,16 +293,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: de77b05cbcbba51429fbe52759052c5d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BirdEgg
-  crackSoundSource: {fileID: 6284836408776694369}
+  crackSoundSource: {fileID: 3079329451123778691}
   spriteVisual: {fileID: 5857223522536586545}
   shadowVisual: {fileID: 4083585662033820081}
   eggAnimator: {fileID: 3795573638384909994}
   fallStateName: Fall
   crackStateName: Crack
-  fallSpeed: 16
-  damage: 5
+  fallSpeed: 15
+  damage: 10
   damageRadius: 0.5
-  persistDuration: 0.2
+  persistDuration: 1
 --- !u!82 &6284836408776694369
 AudioSource:
   m_ObjectHideFlags: 0

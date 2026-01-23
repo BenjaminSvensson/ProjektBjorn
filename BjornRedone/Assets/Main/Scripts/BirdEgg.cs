@@ -1,120 +1,158 @@
 using UnityEngine;
 
+[RequireComponent(typeof(AudioSource))]
+[RequireComponent(typeof(Collider2D))] // Added requirement for Collider
 public class BirdEgg : MonoBehaviour
 {
-    [Header("Visuals")]
-    [SerializeField] private Transform spriteHolder; // Assign the Child Sprite Object here
-    [SerializeField] private Animator animator;
-    [SerializeField] private SpriteRenderer shadowRenderer;
-
-    [Header("Settings")]
-    [SerializeField] private float gravity = 40f; // How fast it accelerates down
-    [SerializeField] private float damageRadius = 1.5f;
-    [SerializeField] private float damageAmount = 10f;
-    [SerializeField] private float explosionDuration = 0.5f; // Time to destroy after crack
-
     [Header("Audio")]
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip impactSound;
+    [SerializeField] AudioSource crackSoundSource;
 
-    private float verticalSpeed = 0f;
-    private float currentHeight = 0f;
-    private bool hasHitGround = false;
+    [Header("Components")]
+    public Transform spriteVisual;
+    public Transform shadowVisual;
+    public Animator eggAnimator;
+
+    [Header("Animation States")]
+    public string fallStateName = "Fall";
+    public string crackStateName = "Crack";
+    
+    [Header("Settings")]
+    public float fallSpeed = 15.0f; 
+    public float damage = 10.0f;
+    public float damageRadius = 0.5f;
+    public float persistDuration = 0.6f; // How long the broken egg stays on ground
+    
+    [Header("Shadow Scaling")]
+    private Vector3 shadowScaleGround = new Vector3(0.5f, 0.25f, 1f);
+    private Vector3 shadowScaleAir = new Vector3(0.2f, 0.1f, 1f);
+
+    // Internal State
     private bool isInitialized = false;
+    private bool hasLanded = false;
+    private Collider2D myCollider;
 
-    // Called by BirdEnemyAI
-    public void Initialize(Vector2 targetPos, Vector2 spawnPos)
+    // Movement Tracking
+    private Vector3 startOffset;
+    private Vector3 currentOffset;
+    private float totalHeight;
+    private float fallDuration;
+    private float timer;
+
+    void Awake()
     {
-        // 1. Place the logical object (hitbox/shadow) on the ground
+        // 1. Get Components
+        myCollider = GetComponent<Collider2D>();
+        if (crackSoundSource == null) crackSoundSource = GetComponent<AudioSource>();
+
+        // 2. CRITICAL FIX: Disable collider immediately so player doesn't walk into the invisible egg
+        if (myCollider) myCollider.enabled = false;
+    }
+
+    public void Initialize(Vector2 targetPos, Vector2 visualStartPos)
+    {
+        // 1. Place the GameObject Hitbox on the GROUND (Target)
         transform.position = targetPos;
+        
+        // 2. Calculate how high the sprite should be
+        Vector3 worldDiff = (Vector3)visualStartPos - (Vector3)targetPos;
+        startOffset = worldDiff;
+        currentOffset = startOffset;
+        
+        // 3. Calculate timing based on height
+        totalHeight = Mathf.Max(worldDiff.y, 1.0f);
+        fallDuration = totalHeight / fallSpeed;
 
-        // 2. Calculate how high up the bird was
-        // We use the Y difference between the bird (spawnPos) and the target (targetPos)
-        currentHeight = Mathf.Abs(spawnPos.y - targetPos.y);
-
-        // 3. Set the sprite to that height
-        if (spriteHolder)
-            spriteHolder.localPosition = new Vector3(0, currentHeight, 0);
-
-        // 4. Reset shadow size (small when high up)
-        if (shadowRenderer)
-            shadowRenderer.transform.localScale = Vector3.one * 0.5f;
-
+        // 4. Set Visuals high in the air
+        if (spriteVisual) spriteVisual.localPosition = startOffset;
+        if (eggAnimator) eggAnimator.Play(fallStateName);
+        
         isInitialized = true;
     }
 
     void Update()
     {
-        if (!isInitialized || hasHitGround) return;
+        if (!isInitialized || hasLanded) return;
 
-        // --- Simulate Gravity ---
-        verticalSpeed -= gravity * Time.deltaTime;
-        currentHeight += verticalSpeed * Time.deltaTime;
+        timer += Time.deltaTime;
+        float ratio = Mathf.Clamp01(timer / fallDuration);
 
-        // --- Update Shadow Size (Gets bigger as egg falls) ---
-        if (shadowRenderer)
+        // Move Sprite DOWN towards 0 (local position)
+        currentOffset = Vector3.Lerp(startOffset, Vector3.zero, ratio);
+        if (spriteVisual) spriteVisual.localPosition = currentOffset;
+
+        UpdateShadow(ratio);
+
+        if (ratio >= 1.0f) Land();
+    }
+
+    void UpdateShadow(float ratio)
+    {
+        if (shadowVisual)
         {
-            float shadowScale = Mathf.Lerp(1.2f, 0.5f, Mathf.Clamp01(currentHeight / 10f));
-            shadowRenderer.transform.localScale = new Vector3(shadowScale, shadowScale * 0.5f, 1f);
-        }
-
-        // --- Check for Impact ---
-        if (currentHeight <= 0)
-        {
-            // SNAP to ground
-            currentHeight = 0;
-            if (spriteHolder) spriteHolder.localPosition = Vector3.zero;
+            shadowVisual.localScale = Vector3.Lerp(shadowScaleAir, shadowScaleGround, ratio);
             
-            Crack(); // Trigger immediately
-        }
-        else
-        {
-            // Apply visual height
-            if (spriteHolder) spriteHolder.localPosition = new Vector3(0, currentHeight, 0);
-        }
-    }
-
-    private void Crack()
-    {
-        hasHitGround = true;
-
-        // 1. Play Animation
-        if (animator) animator.Play("Crack"); // Make sure your Animation clip is named "Crack"
-
-        // 2. Play Sound
-        if (audioSource && impactSound) 
-        {
-            audioSource.pitch = Random.Range(0.9f, 1.1f);
-            audioSource.PlayOneShot(impactSound);
-        }
-
-        // 3. Hide Shadow
-        if (shadowRenderer) shadowRenderer.enabled = false;
-
-        // 4. Deal Damage Area
-        ExplodeDamage();
-
-        // 5. Destroy Object after animation finishes
-        Destroy(gameObject, explosionDuration);
-    }
-
-    private void ExplodeDamage()
-    {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
-        foreach (var hit in hits)
-        {
-            if (hit.TryGetComponent<PlayerLimbController>(out var player))
+            SpriteRenderer sr = shadowVisual.GetComponent<SpriteRenderer>();
+            if(sr)
             {
-                // Calculate push direction from egg center
-                Vector2 dir = (hit.transform.position - transform.position).normalized;
-                player.TakeDamage(damageAmount, dir);
+                Color c = sr.color;
+                c.a = Mathf.Lerp(0.2f, 0.8f, ratio);
+                sr.color = c;
             }
         }
     }
 
-    private void OnDrawGizmos()
+    void Land()
     {
-        Gizmos.color = Color.red;
+        hasLanded = true;
+        
+        // 1. Play FX
+        if (crackSoundSource != null) crackSoundSource.Play();
+        if (spriteVisual) spriteVisual.localPosition = Vector3.zero;
+        if (eggAnimator) eggAnimator.Play(crackStateName);
+
+        // 2. Visual Cleanup
+        if (shadowVisual)
+        {
+            shadowVisual.localScale = shadowScaleGround;
+            SpriteRenderer sr = shadowVisual.GetComponent<SpriteRenderer>();
+            if(sr) { Color c = sr.color; c.a = 0.8f; sr.color = c; }
+            shadowVisual.gameObject.SetActive(false); // Hide shadow on impact
+        }
+
+        // 3. EXPLODE (Deal Damage)
+        Explode();
+        
+        // 4. Enable Collider (Optional: if you want the broken egg to block movement for a moment)
+        // If you don't want the broken egg to block the player, keep this line commented out.
+        // if (myCollider) myCollider.enabled = true; 
+
+        Destroy(gameObject, persistDuration);
+    }
+
+    void Explode()
+    {
+        // Use OverlapCircle to detect anyone standing in the landing zone
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, damageRadius);
+        
+        foreach (var hit in hits)
+        {
+            // 1. Check for Player
+            PlayerLimbController playerController = hit.GetComponent<PlayerLimbController>();
+            if (playerController != null)
+            {
+                Vector2 dir = (hit.transform.position - transform.position).normalized;
+                playerController.TakeDamage(damage, dir);
+                continue; // Found player, move to next hit
+            }
+            
+            // 2. Ignore the Bird that dropped it (Safety check)
+            if (hit.GetComponent<BirdEnemyAI>()) continue;
+        }
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, damageRadius);
     }
 }
