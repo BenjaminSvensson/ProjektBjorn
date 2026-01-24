@@ -52,8 +52,10 @@ public class PlayerCollision : MonoBehaviour
         {
             if (weaponSystem != null)
             {
-                // --- UPDATED: Pass the persistent ammo count from the pickup ---
+                // TryPickupWeapon will now return FALSE if inventory is full
                 bool pickedUp = weaponSystem.TryPickupWeapon(weaponPickup.GetWeaponData(), weaponPickup.currentAmmoCount);
+                
+                // We only destroy the pickup object if it was successfully added to the inventory
                 if (pickedUp)
                 {
                     Destroy(otherObj);

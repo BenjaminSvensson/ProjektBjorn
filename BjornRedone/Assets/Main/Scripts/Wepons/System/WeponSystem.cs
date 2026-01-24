@@ -72,7 +72,7 @@ public class WeaponSystem : MonoBehaviour
         UpdateWeaponTransform();
     }
 
-    // --- NEW: Handle Weapon Breaking ---
+    // --- Handle Weapon Breaking ---
     public void BreakActiveWeapon()
     {
         WeaponData activeWeapon = GetActiveWeapon();
@@ -81,7 +81,6 @@ public class WeaponSystem : MonoBehaviour
         // 1. Spawn Broken Visual (if any)
         if (activeWeapon.brokenPrefab != null)
         {
-            // Spawn at the weapon's current position/rotation
             Instantiate(activeWeapon.brokenPrefab, heldWeaponRenderer.transform.position, heldWeaponRenderer.transform.rotation);
         }
 
@@ -256,20 +255,49 @@ public class WeaponSystem : MonoBehaviour
     public WeaponData GetActiveWeapon() { return weaponSlots[activeSlotIndex]; }
     public bool IsHoldingWithRightHand() { return isHoldingWithRightHand; }
 
+    // --- REWORKED PICKUP LOGIC ---
     public bool TryPickupWeapon(WeaponData newData, int loadedAmmo)
     {
         if (newData == null) return false;
         if (limbController != null && !limbController.CanAttack()) return false;
 
-        if (weaponSlots[activeSlotIndex] != null) DropWeapon(activeSlotIndex);
+        int targetSlot = -1;
 
-        weaponSlots[activeSlotIndex] = newData;
-        slotCooldowns[activeSlotIndex] = 0f; 
-        slotAmmoCounts[activeSlotIndex] = loadedAmmo; 
-        isReloading = false;
+        // 1. Check Active Slot first
+        if (weaponSlots[activeSlotIndex] == null)
+        {
+            targetSlot = activeSlotIndex;
+        }
+        // 2. Check Other Slot second
+        else
+        {
+            // Assuming 2 slots total. This finds the index that isn't the active one.
+            int otherSlotIndex = (activeSlotIndex == 0) ? 1 : 0;
+            if (weaponSlots[otherSlotIndex] == null)
+            {
+                targetSlot = otherSlotIndex;
+            }
+        }
 
-        UpdateState();
-        return true;
+        // 3. If we found a valid empty slot
+        if (targetSlot != -1)
+        {
+            weaponSlots[targetSlot] = newData;
+            slotCooldowns[targetSlot] = 0f;
+            slotAmmoCounts[targetSlot] = loadedAmmo;
+            
+            // If we filled the active slot, make sure reloading status is reset
+            if (targetSlot == activeSlotIndex)
+            {
+                isReloading = false;
+            }
+
+            UpdateState();
+            return true; // Successfully picked up
+        }
+
+        // 4. Both full - do nothing
+        return false;
     }
 
     public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
