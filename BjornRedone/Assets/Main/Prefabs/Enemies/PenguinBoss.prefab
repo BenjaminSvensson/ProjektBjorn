@@ -102,7 +102,7 @@ MonoBehaviour:
   shopUiName: Shop UI
   moveSpeed: 1
   stopDistance: 2.7
-  wakeUpDistance: 10
+  wakeUpDistance: 15
   meleeRange: 2.7
   meleeCooldown: 0.25
   magicRange: 8
@@ -193,7 +193,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
