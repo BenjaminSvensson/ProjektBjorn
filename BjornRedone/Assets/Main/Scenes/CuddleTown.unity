@@ -7474,6 +7474,10 @@ MonoBehaviour:
     prefab: {fileID: 7443698164649891963, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
     cost: 12
     minDistanceReq: 3
+  - name: DogVariant1
+    prefab: {fileID: 8447582695004223394, guid: 33e89338cc2ec2c4ba781c22e416473d, type: 3}
+    cost: 7
+    minDistanceReq: 2
   baseEnemyBudget: 5
   enemyBudgetPerDistance: 2
   environmentProps:
