@@ -558,9 +558,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SceneMenuManager
   menuButtons:
   - button: {fileID: 1210615362}
-    sceneName: CuddleTown
-  - button: {fileID: 0}
-    sceneName: 
+    sceneName: IntroScene
   - button: {fileID: 1115354489}
     sceneName: 
   uiAudioSource: {fileID: 181390465}
