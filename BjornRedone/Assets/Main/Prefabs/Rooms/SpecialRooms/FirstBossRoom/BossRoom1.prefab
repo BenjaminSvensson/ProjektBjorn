@@ -311,7 +311,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -32768
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 748644753109814542, guid: 9b04d46fcc580a64984697a9b1b622e9, type: 3}
+  m_Sprite: {fileID: 21300000, guid: f1b8bd17017b3834aa4de650cec52f84, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -807,7 +807,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c87ab3241e5d6f4ba0e4a777cb79846, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossRoomTrigger
-  musicSource: {fileID: 0}
   bossMusic: {fileID: 8300000, guid: 193ad35c9fbad474c97d8934c4134fb3, type: 3}
   bossGameObject: {fileID: 6227541881480241279}
 --- !u!1 &3629172341729069547

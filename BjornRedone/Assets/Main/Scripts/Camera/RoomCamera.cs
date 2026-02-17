@@ -50,24 +50,16 @@ public class RoomCamera : MonoBehaviour
     void Awake()
     {
         if (Instance == null) Instance = this;
+        cam = GetComponent<Camera>();
+
+        if (cam == null)
+        {
+            Debug.LogError("RoomCamera requires a Camera component on the same GameObject.");
+        }
     }
 
     void Start()
     {
-        cam = GetComponent<Camera>();
-
-        // Ensure background is solid color
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        
-        if (ColorUtility.TryParseHtmlString("#5DB64A", out Color bgColor))
-        {
-            cam.backgroundColor = bgColor;
-        }
-        else
-        {
-            cam.backgroundColor = Color.black; 
-        }
-
         if (target == null)
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -164,6 +156,7 @@ public class RoomCamera : MonoBehaviour
 
     private void FitCameraToRoom()
     {
+        if (cam == null) return;
         if (!cam.orthographic) return;
 
         float effectiveHeight = roomSize.y * zoomScale;
