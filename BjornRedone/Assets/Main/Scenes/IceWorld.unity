@@ -12398,33 +12398,27 @@ MonoBehaviour:
   maxGenerationAttempts: 300
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
   normalRoomRules:
-  - roomPrefab: {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: 1fe705c43894cda4cb0f50e1871b28cf, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: 3203430101b3ff247894230fd213982a, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: 0f326486dbb1a8c47b93892b9e812a49, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: f65a179cba51094448cc67cddca39f8e, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: 8c776483f7a7c2e41ac1595d264c22d4, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: a73afc622c67ea143affedd826f97712, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: 20756176bc691e749a24e6f4a07cbbb5, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: 18937705890835c498f64ca42fe90c9f, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: c58bb8bfe8128f14db329bfa78e9835d, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: d89b4344a762a0e4b8a8a33c98a5c5d1, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: 6fef3005c73b4354396d75818ca31a53, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
+  - roomPrefab: {fileID: 3293985558420901034, guid: 3196a74eef218be43a73b4d8c184e076, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
-    spawnWeight: 20
-    maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
-    spawnWeight: 10
-    maxSpawns: 1
   bossRoomPrefabs:
   - {fileID: 3770010974507935584, guid: ca71d995ab454d448b24c9d98842b9a0, type: 3}
   deadEndRoomPrefabs:
