@@ -54,7 +54,6 @@ public class WeaponPickup : MonoBehaviour
 
         bool hitEnemy = false;
         bool hitContainer = false;
-        bool killedSomething = false;
 
         EnemyLimbController enemy = collision.gameObject.GetComponent<EnemyLimbController>();
         if (enemy != null)
@@ -64,7 +63,7 @@ public class WeaponPickup : MonoBehaviour
             if (weaponData != null) totalDamage += weaponData.meleeDamageBonus;
 
             Vector2 hitDir = rb.linearVelocity.normalized;
-            killedSomething |= enemy.TakeDamage(totalDamage, hitDir);
+            enemy.TakeDamage(totalDamage, hitDir);
 
             if (collision.gameObject.TryGetComponent<Rigidbody2D>(out Rigidbody2D enemyRb))
             {
@@ -79,13 +78,11 @@ public class WeaponPickup : MonoBehaviour
             float totalDamage = baseThrowDamage;
             if (weaponData != null) totalDamage += weaponData.meleeDamageBonus;
 
-            killedSomething |= container.TakeDamage(totalDamage, rb.linearVelocity.normalized);
+            container.TakeDamage(totalDamage, rb.linearVelocity.normalized);
         }
 
         if (hitEnemy || hitContainer)
         {
-            HitStop.Request(killedSomething);
-
             // --- NEW: Break on Throw Impact ---
             if (weaponData != null && weaponData.breaksOnThrowHit)
             {
