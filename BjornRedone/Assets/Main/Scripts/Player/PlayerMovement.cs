@@ -47,6 +47,7 @@ public class PlayerMovement : MonoBehaviour
         rb.freezeRotation = true;
 
         cam = Camera.main; 
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
         if (actionAudioSource == null) Debug.LogWarning("PlayerMovement missing Audio Source!");
     }
 
@@ -83,6 +84,10 @@ public class PlayerMovement : MonoBehaviour
         isCrawlHeld = context.performed;
         if (context.performed && playerLimbController != null && playerLimbController.CanCrawl())
         {
+            if (cam == null) cam = Camera.main;
+            if (cam == null) cam = FindFirstObjectByType<Camera>();
+            if (cam == null || Mouse.current == null) return;
+
             Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
             Vector2 directionToMouse = mouseWorldPos - (Vector2)transform.position;
             
@@ -114,6 +119,10 @@ public class PlayerMovement : MonoBehaviour
 
         if (isCrawlHeld && isCrawling && playerLimbController != null && playerLimbController.CanCrawl())
         {
+            if (cam == null) cam = Camera.main;
+            if (cam == null) cam = FindFirstObjectByType<Camera>();
+            if (cam == null || Mouse.current == null) { rb.linearVelocity = Vector2.zero; return; }
+
             float distanceToPoint = Vector2.Distance(transform.position, crawlPlantPoint);
             if (distanceToPoint < 0.1f) { rb.linearVelocity = Vector2.zero; isCrawling = false; return; }
             

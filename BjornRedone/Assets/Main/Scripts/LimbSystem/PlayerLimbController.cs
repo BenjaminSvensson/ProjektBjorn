@@ -113,7 +113,7 @@ public class PlayerLimbController : MonoBehaviour
         // Auto-find death screen if not assigned
         if (deathScreen == null)
         {
-            deathScreen = FindObjectOfType<DeathScreenUI>();
+            deathScreen = FindFirstObjectByType<DeathScreenUI>();
         }
     }
 
@@ -278,7 +278,7 @@ public class PlayerLimbController : MonoBehaviour
         if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos; 
 
         // Try to find death screen if we missed it in Start
-        if (deathScreen == null) deathScreen = FindObjectOfType<DeathScreenUI>();
+        if (deathScreen == null) deathScreen = FindFirstObjectByType<DeathScreenUI>();
 
         if (deathScreen) 
         {

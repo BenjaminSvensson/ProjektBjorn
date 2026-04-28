@@ -80,7 +80,7 @@ public class PenguinEnemyAI : MonoBehaviour
         // --- AUTO-TARGETING ---
         if (player == null)
         {
-            var playerScript = FindObjectOfType<PlayerMovement>(); 
+            var playerScript = FindFirstObjectByType<PlayerMovement>(); 
             if (playerScript != null) player = playerScript.transform;
             else {
                 GameObject pTag = GameObject.FindGameObjectWithTag("Player");

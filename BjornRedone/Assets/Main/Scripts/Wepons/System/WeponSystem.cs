@@ -223,6 +223,10 @@ public class WeaponSystem : MonoBehaviour
     private void ThrowActiveWeapon()
     {
         if (!IsHoldingWeapon()) return;
+        if (cam == null) cam = Camera.main;
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
+        if (cam == null || Mouse.current == null) return;
+
         isReloading = false; 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;

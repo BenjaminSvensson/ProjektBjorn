@@ -30,7 +30,7 @@ public class BossRoomTrigger : MonoBehaviour
     {
         // 1. FIND THE MUSIC OBJECT AUTOMATICALLY
         // We look for the script "Music_slider" that you mentioned exists on the music object.
-        Music_slider musicScript = FindObjectOfType<Music_slider>();
+        Music_slider musicScript = FindFirstObjectByType<Music_slider>();
 
         if (musicScript != null)
         {

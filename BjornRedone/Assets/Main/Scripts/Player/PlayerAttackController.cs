@@ -147,6 +147,13 @@ public class PlayerAttackController : MonoBehaviour
         if (playerMovement != null) playerMovement.SetMovementLocked(true);
 
         if (cam == null) cam = Camera.main;
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
+        if (cam == null || Mouse.current == null)
+        {
+            if (playerMovement != null) playerMovement.SetMovementLocked(false);
+            yield break;
+        }
+
         Vector3 mouseScreenPos = Mouse.current.position.ReadValue();
         mouseScreenPos.z = cam.nearClipPlane + 10f; 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
@@ -222,6 +229,10 @@ public class PlayerAttackController : MonoBehaviour
     private void FireRangedWeapon(WeaponData weapon)
     {
         if (weapon.projectilePrefab == null) return;
+        if (cam == null) cam = Camera.main;
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
+        if (cam == null || Mouse.current == null) return;
+
         int availableAmmo = weaponSystem.GetCurrentClipAmmo();
         int projectilesToFire = Mathf.Min(weapon.projectilesPerShot, availableAmmo);
         if (projectilesToFire <= 0) return;
@@ -374,7 +385,13 @@ public class PlayerAttackController : MonoBehaviour
 
     private void CheckHit(Vector2 pos, float radius, float damage, float knockback, Vector2 dir, LimbData data)
     {
-        int hitCount = Physics2D.OverlapCircleNonAlloc(pos, radius, hitBuffer, hittableLayers);
+        ContactFilter2D hitFilter = new ContactFilter2D
+        {
+            useLayerMask = true,
+            layerMask = hittableLayers,
+            useTriggers = Physics2D.queriesHitTriggers
+        };
+        int hitCount = Physics2D.OverlapCircle(pos, radius, hitFilter, hitBuffer);
         bool brokeWeapon = false; 
 
         for (int i = 0; i < hitCount; i++)

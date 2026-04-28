@@ -43,7 +43,7 @@ public class BossWatcher : MonoBehaviour
         if (!hasFoundBoss)
         {
             // Try to find the penguin by his unique script
-            PenguinEnemyAI bossScript = FindObjectOfType<PenguinEnemyAI>();
+            PenguinEnemyAI bossScript = FindFirstObjectByType<PenguinEnemyAI>();
             
             if (bossScript != null)
             {

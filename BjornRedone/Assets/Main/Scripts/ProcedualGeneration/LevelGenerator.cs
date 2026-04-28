@@ -113,7 +113,7 @@ public class LevelGenerator : MonoBehaviour
 
     public void GenerateLevel()
     {
-        if (loadingScreen == null) loadingScreen = FindObjectOfType<LoadingScreen>();
+        if (loadingScreen == null) loadingScreen = FindFirstObjectByType<LoadingScreen>();
 
         foreach (var room in instantiatedRooms) if (room) Destroy(room.gameObject);
         instantiatedRooms.Clear(); finalLayout.Clear();

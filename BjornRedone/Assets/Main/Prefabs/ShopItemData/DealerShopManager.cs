@@ -78,7 +78,7 @@ public class DealerShopManager : MonoBehaviour
         
         currentDealer = dealer;
 
-        if (playerWallet == null) playerWallet = FindObjectOfType<PlayerWallet>();
+        if (playerWallet == null) playerWallet = FindFirstObjectByType<PlayerWallet>();
 
         UpdateUI();
     }
