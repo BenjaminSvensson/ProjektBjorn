@@ -41,6 +41,7 @@ public class Projectile : MonoBehaviour
         if (other.GetComponent<Projectile>()) return;
 
         bool hitSomething = false;
+        bool killedSomething = false;
 
         // --- ENEMY BULLET ---
         if (isEnemyProjectile)
@@ -60,7 +61,7 @@ public class Projectile : MonoBehaviour
             EnemyLimbController enemy = other.GetComponent<EnemyLimbController>();
             if (enemy != null)
             {
-                enemy.TakeDamage(damage, direction);
+                killedSomething |= enemy.TakeDamage(damage, direction);
                 // Note: Enemy script handles its own knockback inside TakeDamage usually, 
                 // but we can apply extra physics force below if needed.
                 hitSomething = true;
@@ -70,7 +71,7 @@ public class Projectile : MonoBehaviour
             LootContainer loot = other.GetComponent<LootContainer>();
             if (loot != null)
             {
-                loot.TakeDamage(damage, direction);
+                killedSomething |= loot.TakeDamage(damage, direction);
                 hitSomething = true;
             }
 
@@ -96,6 +97,7 @@ public class Projectile : MonoBehaviour
         // --- WALLS / OBSTACLES ---
         if (!other.isTrigger || hitSomething)
         {
+            if (!isEnemyProjectile && hitSomething) HitStop.Request(killedSomething);
             Destroy(gameObject);
         }
     }

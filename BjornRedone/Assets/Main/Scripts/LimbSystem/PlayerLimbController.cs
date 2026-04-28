@@ -293,6 +293,7 @@ public class PlayerLimbController : MonoBehaviour
     public bool CanAttack() => currentLeftArm != null || currentRightArm != null;
     public bool CanCrawl() => canCrawl;
     public LimbData GetArmData(bool left) => left ? (currentLeftArm?.GetLimbData()) : (currentRightArm?.GetLimbData());
+    public LimbData GetLegData(bool left) => left ? (currentLeftLeg?.GetLimbData()) : (currentRightLeg?.GetLimbData());
     public Transform GetVisualsHolder() => visualsHolder; public Transform GetLeftArmSlot() => leftArmSlot; public Transform GetRightArmSlot() => rightArmSlot; public Transform GetLeftLegSlot() => leftLegSlot; public Transform GetRightLegSlot() => rightLegSlot;
 
     private IEnumerator ShakeVisuals()

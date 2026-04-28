@@ -133,8 +133,8 @@ public class PlayerAttackController : MonoBehaviour
         Transform leftLegSlot = limbController.GetLeftLegSlot();
         Transform rightLegSlot = limbController.GetRightLegSlot();
 
-        bool hasLeft = leftLegSlot != null;
-        bool hasRight = rightLegSlot != null;
+        bool hasLeft = leftLegSlot != null && limbController.GetLegData(true) != null;
+        bool hasRight = rightLegSlot != null && limbController.GetLegData(false) != null;
 
         if (!hasLeft && !hasRight) yield break;
 
@@ -393,6 +393,8 @@ public class PlayerAttackController : MonoBehaviour
         };
         int hitCount = Physics2D.OverlapCircle(pos, radius, hitFilter, hitBuffer);
         bool brokeWeapon = false; 
+        bool hitSomething = false;
+        bool killedSomething = false;
 
         for (int i = 0; i < hitCount; i++)
         {
@@ -401,7 +403,7 @@ public class PlayerAttackController : MonoBehaviour
             
             if (hit.TryGetComponent<EnemyLimbController>(out EnemyLimbController enemy))
             {
-                enemy.TakeDamage(damage, dir);
+                killedSomething |= enemy.TakeDamage(damage, dir);
                 if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D enemyRb))
                 {
                     enemyRb.linearVelocity = Vector2.zero; 
@@ -411,7 +413,7 @@ public class PlayerAttackController : MonoBehaviour
             }
             else if (hit.TryGetComponent<BirdEnemyAI>(out BirdEnemyAI bird))
             {
-                bird.TakeDamage(damage);
+                killedSomething |= bird.TakeDamage(damage);
                 if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D birdRb))
                 {
                     birdRb.linearVelocity = Vector2.zero;
@@ -421,7 +423,7 @@ public class PlayerAttackController : MonoBehaviour
             }
             else if (hit.TryGetComponent<LootContainer>(out LootContainer container))
             {
-                container.TakeDamage(damage, dir);
+                killedSomething |= container.TakeDamage(damage, dir);
                 validHit = true;
             }
             else if (hit.TryGetComponent<Rigidbody2D>(out Rigidbody2D rb))
@@ -435,13 +437,81 @@ public class PlayerAttackController : MonoBehaviour
 
             if (validHit && !brokeWeapon && data != null)
             {
-                WeaponData w = weaponSystem.GetActiveWeapon();
+                WeaponData w = weaponSystem != null ? weaponSystem.GetActiveWeapon() : null;
                 if (w != null && w.breaksOnMeleeHit)
                 {
                     weaponSystem.BreakActiveWeapon();
                     brokeWeapon = true;
                 }
             }
+
+            hitSomething |= validHit;
+        }
+
+        if (hitSomething) HitStop.Request(killedSomething);
+    }
+}
+
+public static class HitStop
+{
+    private const float HitDuration = 0.025f;
+    private const float KillDuration = 0.11f;
+    private const float FreezeTimeScale = 0f;
+
+    private static HitStopRunner runner;
+    private static Coroutine activeRoutine;
+    private static float stopUntilTime;
+    private static float previousTimeScale = 1f;
+    private static float previousFixedDeltaTime = 0.02f;
+
+    public static void Request(bool prominent)
+    {
+        Request(prominent ? KillDuration : HitDuration);
+    }
+
+    public static void Request(float duration)
+    {
+        if (duration <= 0f) return;
+
+        EnsureRunner();
+        stopUntilTime = Mathf.Max(stopUntilTime, Time.realtimeSinceStartup + duration);
+
+        if (activeRoutine == null)
+        {
+            previousTimeScale = Time.timeScale;
+            previousFixedDeltaTime = Time.fixedDeltaTime;
+            activeRoutine = runner.StartCoroutine(FreezeRoutine());
         }
     }
+
+    private static IEnumerator FreezeRoutine()
+    {
+        Time.timeScale = FreezeTimeScale;
+        Time.fixedDeltaTime = Mathf.Max(previousFixedDeltaTime * 0.01f, 0.0001f);
+
+        while (Time.realtimeSinceStartup < stopUntilTime)
+        {
+            yield return null;
+        }
+
+        if (Mathf.Approximately(Time.timeScale, FreezeTimeScale))
+        {
+            Time.timeScale = previousTimeScale;
+            Time.fixedDeltaTime = previousFixedDeltaTime;
+        }
+
+        activeRoutine = null;
+        stopUntilTime = 0f;
+    }
+
+    private static void EnsureRunner()
+    {
+        if (runner != null) return;
+
+        GameObject runnerObject = new GameObject("HitStop");
+        Object.DontDestroyOnLoad(runnerObject);
+        runner = runnerObject.AddComponent<HitStopRunner>();
+    }
+
+    private sealed class HitStopRunner : MonoBehaviour { }
 }

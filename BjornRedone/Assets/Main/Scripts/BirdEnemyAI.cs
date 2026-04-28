@@ -198,9 +198,9 @@ public class BirdEnemyAI : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float damageAmount)
+    public bool TakeDamage(float damageAmount)
     {
-        if (currentState == BirdState.Dead) return;
+        if (currentState == BirdState.Dead) return false;
         currentHealth -= damageAmount;
         PlayOneShot(hitSound, 1f); 
         if (animator) animator.SetTrigger("Hit");
@@ -209,7 +209,13 @@ public class BirdEnemyAI : MonoBehaviour
             if (flashCoroutine != null) StopCoroutine(flashCoroutine);
             flashCoroutine = StartCoroutine(FlashDamageEffect());
         }
-        if (currentHealth <= 0) Die();
+        if (currentHealth <= 0)
+        {
+            Die();
+            return true;
+        }
+
+        return false;
     }
 
     private IEnumerator FlashDamageEffect()

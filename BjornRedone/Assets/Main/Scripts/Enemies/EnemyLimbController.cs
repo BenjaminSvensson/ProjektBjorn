@@ -114,9 +114,9 @@ public class EnemyLimbController : MonoBehaviour
         GetComponentsInChildren<SpriteRenderer>(renderers);
     }
 
-    public void TakeDamage(float amount, Vector2 hitDirection = default)
+    public bool TakeDamage(float amount, Vector2 hitDirection = default)
     {
-        if (isDead) return;
+        if (isDead) return false;
 
         currentHealth -= amount;
         
@@ -147,6 +147,7 @@ public class EnemyLimbController : MonoBehaviour
         if (currentHealth <= 0)
         {
             Die();
+            return true;
         }
         else
         {
@@ -172,6 +173,8 @@ public class EnemyLimbController : MonoBehaviour
 
             UpdateDamageVisuals();
         }
+
+        return false;
     }
 
     private void PickNextWeakLimb()

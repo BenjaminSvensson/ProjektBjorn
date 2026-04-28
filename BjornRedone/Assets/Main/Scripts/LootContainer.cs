@@ -83,9 +83,9 @@ public class LootContainer : MonoBehaviour
         if (destroyedVisual) destroyedVisual.SetActive(false);
     }
 
-    public void TakeDamage(float amount, Vector2 hitDirection)
+    public bool TakeDamage(float amount, Vector2 hitDirection)
     {
-        if (isLooted) return;
+        if (isLooted) return false;
 
         currentHealth -= amount;
 
@@ -102,6 +102,7 @@ public class LootContainer : MonoBehaviour
         if (currentHealth <= 0)
         {
             BreakOpen(hitDirection);
+            return true;
         }
         else
         {
@@ -115,6 +116,8 @@ public class LootContainer : MonoBehaviour
                 SpawnSingleItem(hitDirection);
             }
         }
+
+        return false;
     }
 
     private void BreakOpen(Vector2 hitDir)
