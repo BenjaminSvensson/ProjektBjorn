@@ -24,8 +24,6 @@ public class PenguinEnemyAI : MonoBehaviour
     [Header("Setup")]
     public string weaponTag = "Weapon";
     public Animator animator;
-    // NEW: Name of your shop object
-    public string shopUiName = "Shop UI"; 
 
     [Header("Movement")]
     public float moveSpeed = 3f;
@@ -64,16 +62,12 @@ public class PenguinEnemyAI : MonoBehaviour
     private float magicTimer;
     private bool isBusy = false;
     private float generalSoundTimer;
-    private GameObject shopRef; // NEW: Reference to the shop
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         limbController = GetComponent<EnemyLimbController>();
         audioSource = GetComponent<AudioSource>();
-
-        // NEW: Find the shop once at start
-        shopRef = GameObject.Find(shopUiName);
 
         generalSoundTimer = Random.Range(2f, 5f);
 
@@ -95,9 +89,7 @@ public class PenguinEnemyAI : MonoBehaviour
 
     void Update()
     {
-        // --- NEW: SHOP CHECK ---
-        // If the Shop exists and is Active, freeze everything and do nothing
-        if (shopRef != null && shopRef.activeInHierarchy)
+        if (DealerShopManager.IsShopOpen)
         {
             rb.linearVelocity = Vector2.zero; // Stop sliding
             if (animator) animator.speed = 0; // Freeze animation

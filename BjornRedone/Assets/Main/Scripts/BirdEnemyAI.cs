@@ -14,7 +14,6 @@ public class BirdEnemyAI : MonoBehaviour
     public Transform shadowSprite;
     public Transform eggSpawnPoint; 
     [SerializeField] private Animator animator;
-    public string shopUiName = "Shop UI"; 
 
     [Header("Audio Profile")]
     public AudioClip flapSound;
@@ -56,10 +55,12 @@ public class BirdEnemyAI : MonoBehaviour
     public float offScreenDuration = 5.0f;
 
     [Header("Shadow Settings")]
+    [SerializeField] private Color shadowColor = Color.black;
+    [SerializeField] private Vector2 shadowGroundOffset = Vector2.zero;
     public Vector3 shadowScaleGround = new Vector3(1f, 0.5f, 1f);
-    public Vector3 shadowScaleAir = new Vector3(0.5f, 0.25f, 1f);
-    public float shadowAlphaGround = 0.8f;
-    public float shadowAlphaAir = 0.3f;
+    public Vector3 shadowScaleAir = new Vector3(0.35f, 0.18f, 1f);
+    [Range(0f, 1f)] public float shadowAlphaGround = 0.65f;
+    [Range(0f, 1f)] public float shadowAlphaAir = 0.2f;
 
     [Header("Combat - Egg Bombing")]
     public GameObject eggPrefab;
@@ -78,7 +79,6 @@ public class BirdEnemyAI : MonoBehaviour
     private Transform player;
     private SpriteRenderer shadowRenderer;
     private Camera mainCam;
-    private GameObject shopRef; 
 
     private float currentHeight = 0f;
     private float stateTimer;
@@ -93,8 +93,6 @@ public class BirdEnemyAI : MonoBehaviour
     {
         currentHealth = maxHealth;
         rb = GetComponent<Rigidbody2D>();
-        
-        shopRef = GameObject.Find(shopUiName);
 
         rb.gravityScale = 0f; 
         
@@ -123,17 +121,19 @@ public class BirdEnemyAI : MonoBehaviour
 
         mainCam = Camera.main;
         if(spriteHolder) spriteHolder.localScale = new Vector3(groundScale, groundScale, 1);
+        UpdateVisualsAndShadow();
 
         SwitchState(BirdState.Grounded);
     }
 
     void Update()
     {
-        if (shopRef != null && shopRef.activeInHierarchy)
+        if (DealerShopManager.IsShopOpen)
         {
             rb.linearVelocity = Vector2.zero; 
             if (animator) animator.speed = 0; 
             if (wingAudioSource.isPlaying) wingAudioSource.Stop();
+            UpdateVisualsAndShadow();
             return;
         }
         else
@@ -150,6 +150,7 @@ public class BirdEnemyAI : MonoBehaviour
         {
             rb.linearVelocity = Vector2.zero;
             if (wingAudioSource.isPlaying) wingAudioSource.Stop(); 
+            UpdateVisualsAndShadow();
             return; 
         }
 
@@ -348,7 +349,7 @@ public class BirdEnemyAI : MonoBehaviour
 
         while (t < 1.0f)
         {
-            if (shopRef != null && shopRef.activeInHierarchy) { yield return null; continue; }
+            if (DealerShopManager.IsShopOpen) { yield return null; continue; }
             t += Time.deltaTime / duration;
             Vector2 nextPos = Vector2.Lerp(startPos, diveTargetPos, t);
             rb.MovePosition(nextPos);
@@ -416,24 +417,29 @@ public class BirdEnemyAI : MonoBehaviour
         {
             if (lockShadowToTarget)
             {
-                shadowSprite.position = shadowTargetPos;
-                shadowSprite.localScale = shadowScaleGround * 1.5f; 
-                Color c = shadowRenderer.color;
-                c.a = 0.5f; 
-                shadowRenderer.color = c;
+                ApplyShadow(shadowTargetPos, shadowScaleGround * 1.5f, shadowAlphaGround);
             }
             else
             {
-                shadowSprite.position = transform.position; 
-                float ratio = Mathf.Clamp01(currentHeight / flyHeight);
-                float alpha = Mathf.Lerp(shadowAlphaGround, shadowAlphaAir, ratio);
-                if (currentHeight > flyHeight * 2.0f) alpha = 0f;
-                shadowSprite.localScale = Vector3.Lerp(shadowScaleGround, shadowScaleAir, ratio);
-                Color c = shadowRenderer.color;
-                c.a = alpha;
-                shadowRenderer.color = c;
+                float heightRatio = Mathf.Clamp01(currentHeight / flyHeight);
+                float fadeOutRatio = Mathf.InverseLerp(flyHeight, offScreenHeight, currentHeight);
+                float alpha = Mathf.Lerp(shadowAlphaGround, shadowAlphaAir, heightRatio);
+                alpha = Mathf.Lerp(alpha, 0f, fadeOutRatio);
+
+                Vector3 scale = Vector3.Lerp(shadowScaleGround, shadowScaleAir, heightRatio);
+                ApplyShadow((Vector2)transform.position + shadowGroundOffset, scale, alpha);
             }
         }
+    }
+
+    void ApplyShadow(Vector2 worldPosition, Vector3 scale, float alpha)
+    {
+        shadowSprite.position = worldPosition;
+        shadowSprite.localScale = scale;
+
+        Color c = shadowColor;
+        c.a = Mathf.Clamp01(alpha);
+        shadowRenderer.color = c;
     }
 
     void CheckImpactDamage()

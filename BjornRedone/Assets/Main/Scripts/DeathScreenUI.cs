@@ -62,6 +62,7 @@ public class DeathScreenUI : MonoBehaviour
     public void RestartGame()
     {
         Time.timeScale = 1f; 
+        PlayerSceneState.Clear();
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 

@@ -77,7 +77,7 @@ public class SceneMenuManager : MonoBehaviour
     {
         if (Application.CanStreamedLevelBeLoaded(sceneName))
         {
-            SceneManager.LoadScene(sceneName);
+            PlayerSceneState.LoadSceneWithPlayerState(sceneName);
         }
         else
         {

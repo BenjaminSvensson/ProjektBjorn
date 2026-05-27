@@ -202,6 +202,48 @@ public class WeaponSystem : MonoBehaviour
     public int GetTotalReserveAmmo() { return totalReserveAmmo; }
     public bool IsReloading() { return isReloading; }
 
+    public void CaptureSceneState(PlayerSceneState.PlayerState state)
+    {
+        if (state == null) return;
+
+        state.activeWeaponSlot = activeSlotIndex;
+        state.reserveAmmo = totalReserveAmmo;
+        state.weapons = new PlayerSceneState.WeaponSlotState[weaponSlots.Length];
+
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            state.weapons[i] = new PlayerSceneState.WeaponSlotState
+            {
+                data = weaponSlots[i],
+                ammo = slotAmmoCounts[i],
+                cooldown = slotCooldowns[i]
+            };
+        }
+    }
+
+    public void RestoreSceneState(PlayerSceneState.PlayerState state)
+    {
+        if (state == null || !state.hasState) return;
+
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            PlayerSceneState.WeaponSlotState slotState = i < state.weapons.Length
+                ? state.weapons[i]
+                : new PlayerSceneState.WeaponSlotState();
+
+            weaponSlots[i] = slotState.data;
+            slotAmmoCounts[i] = slotState.data != null ? slotState.ammo : 0;
+            slotCooldowns[i] = slotState.data != null ? slotState.cooldown : 0f;
+        }
+
+        activeSlotIndex = Mathf.Clamp(state.activeWeaponSlot, 0, weaponSlots.Length - 1);
+        totalReserveAmmo = Mathf.Clamp(state.reserveAmmo, 0, maxReserveAmmo);
+        isReloading = false;
+        reloadTimer = 0f;
+
+        UpdateState();
+    }
+
     private void HandleInput()
     {
         if (Keyboard.current == null) return;

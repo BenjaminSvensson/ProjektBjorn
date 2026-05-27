@@ -25,6 +25,7 @@ public class returnbutton : MonoBehaviour
     private void OnButtonClick()
     {
         // Change scene
+        PlayerSceneState.Clear();
         SceneManager.LoadScene("BjornMenu");
     }
 }

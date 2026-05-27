@@ -81,6 +81,6 @@ public class BossDeathManager : MonoBehaviour
         }
 
         // 5. Load the Credits
-        SceneManager.LoadScene(creditsSceneName);
+        PlayerSceneState.LoadSceneWithPlayerState(creditsSceneName);
     }
 }

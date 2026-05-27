@@ -99,6 +99,6 @@ public class BossWatcher : MonoBehaviour
         }
 
         // 3. Load Credits
-        SceneManager.LoadScene(creditsSceneName);
+        PlayerSceneState.LoadSceneWithPlayerState(creditsSceneName);
     }
 }

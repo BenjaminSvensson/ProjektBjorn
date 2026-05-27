@@ -115,6 +115,8 @@ public class PlayerLimbController : MonoBehaviour
         {
             deathScreen = FindFirstObjectByType<DeathScreenUI>();
         }
+
+        PlayerSceneState.RestoreTo(gameObject);
     }
 
     void Update()
@@ -206,6 +208,78 @@ public class PlayerLimbController : MonoBehaviour
     private int GetCurrentArmLegCount() => (currentLeftArm?1:0) + (currentRightArm?1:0) + (currentLeftLeg?1:0) + (currentRightLeg?1:0);
     private bool IsLimbAttached(LimbSlot slot) => GetLimb(slot) != null;
     private WorldLimb GetLimb(LimbSlot slot) { switch (slot) { case LimbSlot.Head: return currentHead; case LimbSlot.LeftArm: return currentLeftArm; case LimbSlot.RightArm: return currentRightArm; case LimbSlot.LeftLeg: return currentLeftLeg; case LimbSlot.RightLeg: return currentRightLeg; default: return null; } }
+
+    public PlayerSceneState.PlayerState CaptureSceneState()
+    {
+        List<PlayerSceneState.LimbSlotState> limbStates = new List<PlayerSceneState.LimbSlotState>();
+        AddLimbState(limbStates, LimbSlot.Head, currentHead);
+        AddLimbState(limbStates, LimbSlot.LeftArm, currentLeftArm);
+        AddLimbState(limbStates, LimbSlot.RightArm, currentRightArm);
+        AddLimbState(limbStates, LimbSlot.LeftLeg, currentLeftLeg);
+        AddLimbState(limbStates, LimbSlot.RightLeg, currentRightLeg);
+
+        return new PlayerSceneState.PlayerState
+        {
+            torsoHealth = torsoHealth,
+            maxTorsoHealth = maxTorsoHealth,
+            limbs = limbStates.ToArray()
+        };
+    }
+
+    private void AddLimbState(List<PlayerSceneState.LimbSlotState> limbStates, LimbSlot slot, WorldLimb limb)
+    {
+        if (limb == null || limb.GetLimbData() == null) return;
+
+        limbStates.Add(new PlayerSceneState.LimbSlotState
+        {
+            slot = slot,
+            data = limb.GetLimbData(),
+            isDamaged = limb.IsShowingDamaged()
+        });
+    }
+
+    public void RestoreSceneState(PlayerSceneState.PlayerState state)
+    {
+        if (state == null || !state.hasState) return;
+
+        ClearAttachedLimbs();
+
+        maxTorsoHealth = Mathf.Max(1f, state.maxTorsoHealth);
+        torsoHealth = Mathf.Clamp(state.torsoHealth, 0f, maxTorsoHealth);
+
+        foreach (PlayerSceneState.LimbSlotState limbState in state.limbs)
+        {
+            if (limbState.data == null) continue;
+
+            bool flipSprite = limbState.slot == LimbSlot.LeftArm || limbState.slot == LimbSlot.LeftLeg;
+            AttachToSlot(limbState.data, limbState.slot, flipSprite, limbState.isDamaged, false);
+        }
+
+        PickNextWeakLimb();
+        UpdateDamageVisuals();
+        UpdatePlayerStats();
+    }
+
+    private void ClearAttachedLimbs()
+    {
+        DestroyAttachedLimb(currentHead);
+        DestroyAttachedLimb(currentLeftArm);
+        DestroyAttachedLimb(currentRightArm);
+        DestroyAttachedLimb(currentLeftLeg);
+        DestroyAttachedLimb(currentRightLeg);
+
+        currentHead = null;
+        currentLeftArm = null;
+        currentRightArm = null;
+        currentLeftLeg = null;
+        currentRightLeg = null;
+        currentRenderers.Clear();
+    }
+
+    private void DestroyAttachedLimb(WorldLimb limb)
+    {
+        if (limb != null) Destroy(limb.gameObject);
+    }
 
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {

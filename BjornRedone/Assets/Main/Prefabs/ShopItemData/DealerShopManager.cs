@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public class DealerShopManager : MonoBehaviour
 {
     public static DealerShopManager Instance { get; private set; }
+    public static bool IsShopOpen => Instance != null && Instance.gameObject.activeInHierarchy;
 
     [Header("Global Shop Database")]
     public List<ShopItemData> allPossibleItems; 

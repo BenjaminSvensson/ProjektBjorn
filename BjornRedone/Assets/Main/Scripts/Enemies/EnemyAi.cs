@@ -141,9 +141,7 @@ public class EnemyAI : MonoBehaviour
 
     void FixedUpdate()
     {
-        // --- NEW: SHOP CHECK ---
-        // If the shop manager exists AND the shop UI is currently open
-        if (DealerShopManager.Instance != null && DealerShopManager.Instance.gameObject.activeSelf)
+        if (DealerShopManager.IsShopOpen)
         {
             rb.linearVelocity = Vector2.zero; // Stop moving
             
@@ -156,7 +154,6 @@ public class EnemyAI : MonoBehaviour
             
             return; // STOP HERE. Do not execute any AI logic below.
         }
-        // -----------------------
 
         if (player == null) return;
 
