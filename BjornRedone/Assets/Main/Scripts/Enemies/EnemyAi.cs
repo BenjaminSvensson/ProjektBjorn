@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(EnemyLimbController))]
@@ -6,7 +7,7 @@ using UnityEngine;
 public class EnemyAI : MonoBehaviour
 {
     // Added 'Idle' at the start to match EnemyAnimationController.State indices
-    private enum State { Idle, Roam, Chase, Attack, Investigate, Scavenge, Flee }
+    private enum State { Idle, Roam, Chase, Attack, Investigate, Scavenge, Flee, ScavengeWeapon }
 
     public int mouthVaritation = 0;
 
@@ -39,6 +40,23 @@ public class EnemyAI : MonoBehaviour
     [Header("Scavenging")]
     [SerializeField] private float scavengeRadius = 6f;
     [SerializeField] private float scavengeScanInterval = 1.0f; 
+
+    [Header("Weapons")]
+    [Tooltip("If enabled, this enemy can pick up WeaponPickup objects and use WeaponData attacks.")]
+    [SerializeField] private bool canCarryWeapons = false;
+    [Tooltip("Optional weapon this enemy starts with when canCarryWeapons is enabled.")]
+    [SerializeField] private WeaponData startingWeapon;
+    [Tooltip("Renderer used to show the held weapon. Usually an empty child SpriteRenderer near the hands.")]
+    [SerializeField] private SpriteRenderer heldWeaponRenderer;
+    [SerializeField] private AudioSource weaponAudioSource;
+    [SerializeField] private float weaponScanRadius = 6f;
+    [SerializeField] private float weaponPickupDistance = 1.4f;
+    [SerializeField] private float rangedPreferredDistance = 5f;
+    [SerializeField] private float enemyProjectileKnockback = 5f;
+    [SerializeField] private float meleeWeaponHitRadius = 0.65f;
+    [SerializeField] private float weaponArmReachDistance = 0.3f;
+    [SerializeField] private Vector3 rightHandWeaponGripOffset = new Vector3(0.3f, 0f, 0f);
+    [SerializeField] private Vector3 leftHandWeaponGripOffset = new Vector3(0.3f, 0f, 0f);
 
     [Header("Speed Multipliers")]
     [SerializeField] private float roamSpeedMult = 0.5f;
@@ -92,7 +110,18 @@ public class EnemyAI : MonoBehaviour
 
     // Scavenge State
     private WorldLimb targetLimb;
+    private WeaponPickup targetWeaponPickup;
     private float scavengeScanTimer = 0f;
+    private float weaponScanTimer = 0f;
+
+    // Weapon State
+    private WeaponData heldWeapon;
+    private int heldWeaponAmmo;
+    private float weaponCooldownTimer;
+    private bool isReloadingWeapon;
+    private float weaponReloadTimer;
+    private GameObject currentEquippedWeaponInstance;
+    private Transform currentWeaponMuzzleSocket;
 
     // Avoidance State
     private float avoidanceCommitTimer = 0f;
@@ -116,6 +145,7 @@ public class EnemyAI : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         body = GetComponent<EnemyLimbController>();
         anim = GetComponent<EnemyAnimationController>();
+        if (weaponAudioSource == null) weaponAudioSource = GetComponent<AudioSource>();
         
         startPos = transform.position;
         originalScale = transform.localScale;
@@ -136,7 +166,21 @@ public class EnemyAI : MonoBehaviour
         // Pre-calculate squared distance for cheaper checks
         cullingDistanceSq = cullingDistance * cullingDistance;
 
+        EnsureHeldWeaponRenderer();
+        if (canCarryWeapons && startingWeapon != null) StartCoroutine(EquipStartingWeaponAfterLimbsInitialize());
+
         PickNewRoamTarget();
+    }
+
+    private IEnumerator EquipStartingWeaponAfterLimbsInitialize()
+    {
+        yield return null;
+        EquipWeapon(startingWeapon, startingWeapon.magazineSize);
+    }
+
+    void LateUpdate()
+    {
+        UpdateHeldWeaponTransform();
     }
 
     void FixedUpdate()
@@ -176,7 +220,11 @@ public class EnemyAI : MonoBehaviour
         // --- Sync Animation State ---
         if (anim != null)
         {
-            anim.SetState((EnemyAnimationController.State)currentState);
+            EnemyAnimationController.State animationState = currentState == State.ScavengeWeapon
+                ? EnemyAnimationController.State.Scavenge
+                : (EnemyAnimationController.State)currentState;
+
+            anim.SetState(animationState);
         }
 
         if (isTrapped)
@@ -211,14 +259,20 @@ public class EnemyAI : MonoBehaviour
             case State.Scavenge:
                 LogicScavenge();
                 break;
+            case State.ScavengeWeapon:
+                LogicScavengeWeapon();
+                break;
             case State.Flee:
                 LogicFlee();
                 break;
         }
 
         if (attackTimer > 0) attackTimer -= Time.deltaTime;
+        if (weaponCooldownTimer > 0) weaponCooldownTimer -= Time.deltaTime;
+        HandleWeaponReload();
         if (avoidanceCommitTimer > 0) avoidanceCommitTimer -= Time.deltaTime;
         if (scavengeScanTimer > 0) scavengeScanTimer -= Time.deltaTime;
+        if (weaponScanTimer > 0) weaponScanTimer -= Time.deltaTime;
         if (fleeSoundTimer > 0) fleeSoundTimer -= Time.deltaTime;
     }
 
@@ -360,6 +414,30 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    void LogicScavengeWeapon()
+    {
+        if (!CanUseWeapons() || targetWeaponPickup == null || !targetWeaponPickup.CanPickup())
+        {
+            targetWeaponPickup = null;
+            PickNewRoamTarget();
+            return;
+        }
+
+        float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
+        if (!body.hasLegs) speed = 0f;
+
+        MoveTowards(targetWeaponPickup.transform.position, speed);
+
+        float dist = Vector2.Distance(transform.position, targetWeaponPickup.transform.position);
+        if (dist < weaponPickupDistance)
+        {
+            EquipWeapon(targetWeaponPickup.GetWeaponData(), targetWeaponPickup.currentAmmoCount);
+            Destroy(targetWeaponPickup.gameObject);
+            targetWeaponPickup = null;
+            PickNewRoamTarget();
+        }
+    }
+
     void ScanForLimbs()
     {
         if (scavengeScanTimer > 0) return;
@@ -412,6 +490,37 @@ public class EnemyAI : MonoBehaviour
         {
             targetLimb = bestCandidate;
             currentState = State.Scavenge;
+        }
+    }
+
+    void ScanForWeapons()
+    {
+        if (!CanUseWeapons() || heldWeapon != null) return;
+        if (weaponScanTimer > 0) return;
+        weaponScanTimer = scavengeScanInterval;
+
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, weaponScanRadius);
+        float closestDist = float.MaxValue;
+        WeaponPickup bestCandidate = null;
+
+        foreach (var hit in hits)
+        {
+            WeaponPickup pickup = hit.GetComponent<WeaponPickup>();
+            if (pickup == null || !pickup.CanPickup() || pickup.GetWeaponData() == null) continue;
+            if (!CanSeeWeaponPickup(hit.transform.position)) continue;
+
+            float d = Vector2.Distance(transform.position, hit.transform.position);
+            if (d < closestDist)
+            {
+                closestDist = d;
+                bestCandidate = pickup;
+            }
+        }
+
+        if (bestCandidate != null)
+        {
+            targetWeaponPickup = bestCandidate;
+            currentState = State.ScavengeWeapon;
         }
     }
 
@@ -472,6 +581,9 @@ public class EnemyAI : MonoBehaviour
         ScanForLimbs();
         if (currentState == State.Scavenge) return;
 
+        ScanForWeapons();
+        if (currentState == State.ScavengeWeapon) return;
+
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * roamSpeedMult;
         if (!body.hasLegs) speed = 0f; 
 
@@ -493,12 +605,15 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        ScanForWeapons();
+        if (currentState == State.ScavengeWeapon) return;
+
         float distToPlayer = Vector2.Distance(transform.position, player.position);
 
         if (CanSeePlayer())
         {
             lastKnownPlayerPos = player.position;
-            if (distToPlayer < attackRange)
+            if (distToPlayer < GetCurrentAttackRange())
             {
                 currentState = State.Attack;
                 return;
@@ -517,13 +632,16 @@ public class EnemyAI : MonoBehaviour
         if (!body.hasLegs) speed = 0f;
 
         // --- MOVEMENT LOGIC ---
-        if (maintainDistance)
+        bool shouldMaintainDistance = maintainDistance || IsHoldingRangedWeapon();
+        float desiredDistance = IsHoldingRangedWeapon() ? rangedPreferredDistance : preferredDistance;
+
+        if (shouldMaintainDistance)
         {
-            if (distToPlayer > preferredDistance + distanceBuffer)
+            if (distToPlayer > desiredDistance + distanceBuffer)
             {
                 MoveTowards(player.position, speed);
             }
-            else if (distToPlayer < preferredDistance - distanceBuffer)
+            else if (distToPlayer < desiredDistance - distanceBuffer)
             {
                 Vector2 dirAway = ((Vector2)transform.position - (Vector2)player.position).normalized;
                 Vector2 fleePos = (Vector2)transform.position + dirAway;
@@ -555,9 +673,15 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        ScanForWeapons();
+        if (currentState == State.ScavengeWeapon) return;
+
         float distToPlayer = Vector2.Distance(transform.position, player.position);
 
-        if (maintainDistance && distToPlayer < preferredDistance - distanceBuffer)
+        bool shouldMaintainDistance = maintainDistance || IsHoldingRangedWeapon();
+        float desiredDistance = IsHoldingRangedWeapon() ? rangedPreferredDistance : preferredDistance;
+
+        if (shouldMaintainDistance && distToPlayer < desiredDistance - distanceBuffer)
         {
             float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult;
             if (!body.hasLegs) speed = 0f;
@@ -570,7 +694,7 @@ public class EnemyAI : MonoBehaviour
             rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.deltaTime * 10f);
         }
         
-        if (distToPlayer > attackRange * 1.2f)
+        if (distToPlayer > GetCurrentAttackRange() * 1.2f)
         {
             SwitchToChaseState(); // Go back to chase
             return;
@@ -579,7 +703,9 @@ public class EnemyAI : MonoBehaviour
         if (attackTimer <= 0)
         {
             PerformAttack();
-            attackTimer = attackCooldown;
+            attackTimer = IsHoldingRangedWeapon()
+                ? Mathf.Max(weaponCooldownTimer, 0.1f)
+                : attackCooldown;
         }
     }
 
@@ -593,6 +719,9 @@ public class EnemyAI : MonoBehaviour
 
         ScanForLimbs();
         if (currentState == State.Scavenge) return;
+
+        ScanForWeapons();
+        if (currentState == State.ScavengeWeapon) return;
 
         float speed = (baseMoveSpeed + body.moveSpeedBonus) * chaseSpeedMult; 
         if (!body.hasLegs) speed = 0f;
@@ -641,25 +770,322 @@ public class EnemyAI : MonoBehaviour
     {
         if (!body.hasArms) return; 
 
+        if (heldWeapon != null && heldWeapon.type == WeaponType.Ranged)
+        {
+            TryFireRangedWeapon();
+            return;
+        }
+
         body.PlayAttackSound();
 
         LimbData weapon = body.GetActiveWeaponLimb();
         float damage = baseDamage + body.attackDamageBonus;
+        if (heldWeapon != null && heldWeapon.type == WeaponType.Melee)
+        {
+            damage += heldWeapon.meleeDamageBonus;
+            PlayRandomWeaponClip(heldWeapon.meleeImpactSounds);
+            weaponCooldownTimer = Mathf.Max(heldWeapon.fireRate, 0.1f);
+        }
+
+        if (weaponCooldownTimer > 0 && heldWeapon != null && heldWeapon.type == WeaponType.Melee)
+        {
+            attackTimer = Mathf.Max(attackTimer, weaponCooldownTimer);
+        }
+
         float punchDuration = weapon != null ? weapon.punchDuration : 0.2f;
         anim.TriggerPunch((Vector2)player.position, punchDuration);
         
         Vector2 dirToPlayer = (player.position - transform.position).normalized;
         Vector2 hitPos = (Vector2)transform.position + (dirToPlayer * 0.5f);
         
-        Collider2D[] hits = Physics2D.OverlapCircleAll(hitPos, 0.5f);
+        float hitRadius = heldWeapon != null && heldWeapon.type == WeaponType.Melee ? meleeWeaponHitRadius : 0.5f;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(hitPos, hitRadius);
         foreach (var hit in hits)
         {
             if (hit.CompareTag("Player"))
             {
                 PlayerLimbController pc = hit.GetComponent<PlayerLimbController>();
                 if (pc) pc.TakeDamage(damage);
+
+                if (heldWeapon != null && heldWeapon.breaksOnMeleeHit)
+                {
+                    BreakHeldWeapon();
+                    break;
+                }
             }
         }
+    }
+
+    private bool CanUseWeapons()
+    {
+        return canCarryWeapons && body != null && (body.hasArms || body.HasLeftArm() || body.HasRightArm());
+    }
+
+    private bool IsHoldingRangedWeapon()
+    {
+        return heldWeapon != null && heldWeapon.type == WeaponType.Ranged;
+    }
+
+    private float GetCurrentAttackRange()
+    {
+        if (IsHoldingRangedWeapon()) return Mathf.Max(attackRange, rangedPreferredDistance);
+        return attackRange;
+    }
+
+    private void EquipWeapon(WeaponData weaponData, int loadedAmmo)
+    {
+        if (!CanUseWeapons() || weaponData == null) return;
+
+        EnsureHeldWeaponRenderer();
+        heldWeapon = weaponData;
+        heldWeaponAmmo = loadedAmmo >= 0 ? loadedAmmo : weaponData.magazineSize;
+        weaponCooldownTimer = 0f;
+        isReloadingWeapon = false;
+        weaponReloadTimer = 0f;
+        RefreshHeldWeaponVisual();
+    }
+
+    private void BreakHeldWeapon()
+    {
+        if (heldWeapon == null) return;
+
+        if (heldWeapon.brokenPrefab != null)
+        {
+            Vector3 breakPos = heldWeaponRenderer != null ? heldWeaponRenderer.transform.position : transform.position;
+            Instantiate(heldWeapon.brokenPrefab, breakPos, Quaternion.identity);
+        }
+
+        heldWeapon = null;
+        heldWeaponAmmo = 0;
+        isReloadingWeapon = false;
+        weaponReloadTimer = 0f;
+        RefreshHeldWeaponVisual();
+    }
+
+    private void DropHeldWeapon()
+    {
+        if (heldWeapon == null) return;
+
+        WeaponData weaponToDrop = heldWeapon;
+        int ammoToDrop = heldWeaponAmmo;
+        heldWeapon = null;
+        heldWeaponAmmo = 0;
+        isReloadingWeapon = false;
+        weaponReloadTimer = 0f;
+        RefreshHeldWeaponVisual();
+
+        if (weaponToDrop.pickupPrefab == null) return;
+
+        Vector2 dropDir = Random.insideUnitCircle.normalized;
+        GameObject drop = Instantiate(weaponToDrop.pickupPrefab, (Vector2)transform.position + dropDir * 0.75f, Quaternion.identity);
+        WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
+        if (pickupScript != null)
+        {
+            pickupScript.InitializeDrop(dropDir, 5f, ammoToDrop);
+            pickupScript.IgnorePhysicsCollisionWith(GetComponentsInChildren<Collider2D>(), 0.8f);
+        }
+    }
+
+    private void HandleWeaponReload()
+    {
+        if (!isReloadingWeapon) return;
+
+        weaponReloadTimer -= Time.deltaTime;
+        if (weaponReloadTimer > 0f) return;
+
+        isReloadingWeapon = false;
+        if (heldWeapon != null)
+        {
+            heldWeaponAmmo = heldWeapon.magazineSize;
+        }
+    }
+
+    private void TryFireRangedWeapon()
+    {
+        if (heldWeapon == null || heldWeapon.projectilePrefab == null) return;
+        if (weaponCooldownTimer > 0 || isReloadingWeapon) return;
+
+        if (heldWeaponAmmo <= 0)
+        {
+            StartEnemyReload();
+            return;
+        }
+
+        int projectilesToFire = Mathf.Min(heldWeapon.projectilesPerShot, heldWeaponAmmo);
+        if (projectilesToFire <= 0) return;
+
+        heldWeaponAmmo -= projectilesToFire;
+        weaponCooldownTimer = Mathf.Max(heldWeapon.fireRate, 0.1f);
+
+        Vector2 fireOrigin = GetEnemyFirePoint();
+        Vector2 aimDir = ((Vector2)player.position - fireOrigin).normalized;
+        float finalKnockback = enemyProjectileKnockback * heldWeapon.knockbackMultiplier;
+
+        for (int i = 0; i < projectilesToFire; i++)
+        {
+            float currentSpread = Random.Range(-heldWeapon.spread / 2f, heldWeapon.spread / 2f);
+            Vector2 finalDir = Quaternion.Euler(0, 0, currentSpread) * aimDir;
+            GameObject projObj = Instantiate(heldWeapon.projectilePrefab, fireOrigin, Quaternion.identity);
+            Projectile projScript = projObj.GetComponent<Projectile>();
+            if (projScript != null)
+            {
+                projScript.Initialize(finalDir, heldWeapon.projectileSpeed, heldWeapon.projectileDamage, finalKnockback, true);
+            }
+        }
+
+        PlayRandomWeaponClip(heldWeapon.shootSounds);
+
+        if (heldWeaponAmmo <= 0)
+        {
+            StartEnemyReload();
+        }
+    }
+
+    private void StartEnemyReload()
+    {
+        if (heldWeapon == null || heldWeapon.type != WeaponType.Ranged || isReloadingWeapon) return;
+
+        isReloadingWeapon = true;
+        weaponReloadTimer = Mathf.Max(heldWeapon.reloadTime, 0.1f);
+        PlayRandomWeaponClip(new[] { heldWeapon.reloadSound });
+    }
+
+    private Vector2 GetEnemyFirePoint()
+    {
+        if (currentWeaponMuzzleSocket != null) return currentWeaponMuzzleSocket.position;
+        if (heldWeaponRenderer != null && heldWeapon != null)
+            return heldWeaponRenderer.transform.TransformPoint(heldWeapon.muzzleOffset);
+        return transform.position;
+    }
+
+    private void PlayRandomWeaponClip(AudioClip[] clips)
+    {
+        if (weaponAudioSource == null || clips == null || clips.Length == 0) return;
+
+        AudioClip clip = clips[Random.Range(0, clips.Length)];
+        if (clip == null) return;
+
+        weaponAudioSource.pitch = Random.Range(0.9f, 1.1f);
+        weaponAudioSource.PlayOneShot(clip);
+    }
+
+    private void RefreshHeldWeaponVisual()
+    {
+        EnsureHeldWeaponRenderer();
+
+        if (currentEquippedWeaponInstance != null)
+        {
+            Destroy(currentEquippedWeaponInstance);
+            currentEquippedWeaponInstance = null;
+            currentWeaponMuzzleSocket = null;
+        }
+
+        if (heldWeaponRenderer == null) return;
+
+        if (heldWeapon == null)
+        {
+            heldWeaponRenderer.sprite = null;
+            heldWeaponRenderer.enabled = false;
+            return;
+        }
+
+        if (heldWeapon.equippedPrefab != null)
+        {
+            heldWeaponRenderer.enabled = false;
+            currentEquippedWeaponInstance = Instantiate(heldWeapon.equippedPrefab, heldWeaponRenderer.transform);
+            currentEquippedWeaponInstance.transform.localPosition = Vector3.zero;
+            currentEquippedWeaponInstance.transform.localRotation = Quaternion.identity;
+            currentEquippedWeaponInstance.transform.localScale = Vector3.one;
+
+            Transform socket = currentEquippedWeaponInstance.transform.Find(heldWeapon.muzzleSocketName);
+            if (socket != null) currentWeaponMuzzleSocket = socket;
+            else currentWeaponMuzzleSocket = currentEquippedWeaponInstance.GetComponentInChildren<Transform>()?.Find(heldWeapon.muzzleSocketName);
+        }
+        else
+        {
+            heldWeaponRenderer.sprite = heldWeapon.heldSprite;
+            heldWeaponRenderer.enabled = true;
+        }
+    }
+
+    private void UpdateHeldWeaponTransform()
+    {
+        if (heldWeapon == null || body == null) return;
+        EnsureHeldWeaponRenderer();
+        if (heldWeaponRenderer == null) return;
+
+        if (anim != null && player != null)
+        {
+            anim.AimArmsAt(player.position, weaponArmReachDistance);
+        }
+
+        Transform mainAnchor = null;
+        Vector3 gripOffset = Vector3.zero;
+
+        if (body.HasRightArm())
+        {
+            mainAnchor = body.GetRightArmSlot();
+            gripOffset = rightHandWeaponGripOffset;
+        }
+        else if (body.HasLeftArm())
+        {
+            mainAnchor = body.GetLeftArmSlot();
+            gripOffset = leftHandWeaponGripOffset;
+        }
+        else
+        {
+            DropHeldWeapon();
+            return;
+        }
+
+        if (mainAnchor == null) return;
+
+        Vector3 finalGripOffset = gripOffset + heldWeapon.heldPositionOffset;
+        Vector3 targetPos = mainAnchor.TransformPoint(finalGripOffset);
+
+        Quaternion baseRotation = mainAnchor.rotation * Quaternion.Euler(0, 0, 180f);
+
+        if (body.GetVisualsHolder() != null && body.GetVisualsHolder().localScale.x < 0)
+            baseRotation *= Quaternion.Euler(0, 180, 0);
+
+        Quaternion finalWeaponRotation = baseRotation;
+        if (heldWeapon.heldRotationOffset != 0f)
+            finalWeaponRotation *= Quaternion.Euler(0, 0, heldWeapon.heldRotationOffset);
+
+        heldWeaponRenderer.transform.SetPositionAndRotation(targetPos, finalWeaponRotation);
+        heldWeaponRenderer.transform.localScale = heldWeapon.heldScale;
+    }
+
+    private void EnsureHeldWeaponRenderer()
+    {
+        if (heldWeaponRenderer != null) return;
+
+        Transform existing = transform.Find("EnemyHeldWeaponRenderer");
+        if (existing != null)
+        {
+            heldWeaponRenderer = existing.GetComponent<SpriteRenderer>();
+            if (heldWeaponRenderer != null) return;
+        }
+
+        GameObject rendererObject = new GameObject("EnemyHeldWeaponRenderer");
+        rendererObject.transform.SetParent(transform);
+        rendererObject.transform.localPosition = Vector3.zero;
+        rendererObject.transform.localRotation = Quaternion.identity;
+        rendererObject.transform.localScale = Vector3.one;
+
+        heldWeaponRenderer = rendererObject.AddComponent<SpriteRenderer>();
+        heldWeaponRenderer.sortingOrder = 8;
+        heldWeaponRenderer.enabled = false;
+    }
+
+    private bool CanSeeWeaponPickup(Vector2 targetPos)
+    {
+        float dist = Vector2.Distance(transform.position, targetPos);
+        if (dist > weaponScanRadius) return false;
+
+        Vector2 dirToTarget = (targetPos - (Vector2)transform.position).normalized;
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, dirToTarget, dist, obstacleLayer);
+        return hit.collider == null;
     }
 
     void MoveTowards(Vector2 target, float speed)

@@ -202,6 +202,29 @@ public class EnemyAnimationController : MonoBehaviour
         }
     }
 
+    public void AimArmsAt(Vector2 targetWorldPos, float armReachDistance)
+    {
+        if (isPunching || visualsHolder == null) return;
+
+        AimSlot(leftArmSlot, leftArmOrigPos, targetWorldPos, armReachDistance);
+        AimSlot(rightArmSlot, rightArmOrigPos, targetWorldPos, armReachDistance);
+    }
+
+    private void AimSlot(Transform slot, Vector3 originalLocalPos, Vector2 targetWorldPos, float armReachDistance)
+    {
+        if (slot == null) return;
+
+        Vector2 localTargetPos = visualsHolder.InverseTransformPoint(targetWorldPos);
+        Vector2 offset = Vector2.ClampMagnitude(localTargetPos - (Vector2)originalLocalPos, armReachDistance);
+        slot.localPosition = originalLocalPos + (Vector3)offset;
+
+        Vector2 dir = (targetWorldPos - (Vector2)slot.position).normalized;
+        if (dir.sqrMagnitude > 0.0001f)
+        {
+            slot.up = -dir;
+        }
+    }
+
     private IEnumerator PunchCoroutine(Transform arm, Vector3 origPos, Vector3 targetLocalPos, float duration)
     {
         isPunching = true;
