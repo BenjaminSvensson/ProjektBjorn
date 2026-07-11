@@ -2,10 +2,6 @@ using UnityEngine;
 using UnityEngine.InputSystem; 
 using System.Collections; 
 
-/// <summary>
-/// This script handles all procedural animations for the player,
-/// like leg bobbing, arm aiming, and sprite flipping.
-/// </summary>
 public class PlayerAnimationController : MonoBehaviour
 {
     [Header("Required References")]
@@ -20,19 +16,17 @@ public class PlayerAnimationController : MonoBehaviour
     [Header("Arm Aiming")]
     [SerializeField] private float armReachDistance = 0.3f;
 
-    // --- Private Variables ---
     private Camera cam;
     private Transform visualsHolder;
     private Transform leftArmSlot, rightArmSlot, leftLegSlot, rightLegSlot;
 
-    // Store the original positions
     private Vector3 leftLegOrigPos, rightLegOrigPos;
     private Vector3 leftArmOrigPos, rightArmOrigPos;
 
     private float walkTimer = 0f;
     private float currentBobOffset = 0f;
     private bool isFacingRight = true;
-    private bool isAttacking = false; // Renamed from isPunching to cover Swings too
+    private bool isAttacking = false; 
 
     void Start()
     {
@@ -57,35 +51,21 @@ public class PlayerAnimationController : MonoBehaviour
             if (leftArmSlot) leftArmOrigPos = leftArmSlot.localPosition;
             if (rightArmSlot) rightArmOrigPos = rightArmSlot.localPosition;
         }
-        else
-        {
-            Debug.LogError("PlayerAnimationController could not find PlayerLimbController!");
-        }
     }
 
     void Update()
     {
-        if (limbController == null || playerMovement == null || cam == null || visualsHolder == null)
-            return;
+        if (limbController == null || playerMovement == null || cam == null || visualsHolder == null) return;
 
-        // Don't aim while attacking (Punching OR Swinging)
-        if (!isAttacking)
-        {
-            HandleArmAimingAndFlipping();
-        }
+        if (!isAttacking) HandleArmAimingAndFlipping();
         HandleLegBobbing();
     }
 
     private void HandleArmAimingAndFlipping()
     {
         if (Mouse.current == null) return;
-
-        Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
-        if (float.IsNaN(mouseScreenPos.x) || float.IsNaN(mouseScreenPos.y)) return;
-
-        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(mouseScreenPos);
-
-        // --- 1. Flipping Logic ---
+        Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        
         bool mouseIsRight = (mouseWorldPos.x > transform.position.x);
         if (mouseIsRight != isFacingRight)
         {
@@ -93,8 +73,6 @@ public class PlayerAnimationController : MonoBehaviour
             visualsHolder.localScale = new Vector3(isFacingRight ? 1 : -1, 1, 1);
         }
 
-        // --- 2. Arm Aiming Logic ---
-        // Always aim arms at the mouse, even if holding a weapon.
         AimSlot(leftArmSlot, leftArmOrigPos, mouseWorldPos);
         AimSlot(rightArmSlot, rightArmOrigPos, mouseWorldPos);
     }
@@ -102,21 +80,22 @@ public class PlayerAnimationController : MonoBehaviour
     private void AimSlot(Transform slot, Vector3 originalLocalPos, Vector2 targetWorldPos)
     {
         if (slot == null) return;
-
+        // InverseTransformPoint automatically accounts for flipped parent scale
         Vector2 localTargetPos = visualsHolder.InverseTransformPoint(targetWorldPos);
-        Vector2 localDirectionToTarget = localTargetPos - (Vector2)originalLocalPos;
-        Vector2 offset = Vector2.ClampMagnitude(localDirectionToTarget, armReachDistance);
+        Vector2 offset = Vector2.ClampMagnitude(localTargetPos - (Vector2)originalLocalPos, armReachDistance);
         slot.localPosition = originalLocalPos + (Vector3)offset;
-
-        Vector2 worldDirToMouse = (targetWorldPos - (Vector2)slot.position).normalized;
-        Vector2 lookDirection = -worldDirToMouse;
-        slot.up = lookDirection;
+        
+        // Fix rotation if needed
+        Vector2 dir = (targetWorldPos - (Vector2)slot.position).normalized;
+        slot.up = -dir; 
     }
 
     private void HandleLegBobbing()
     {
-        Vector2 moveInput = playerMovement.GetMoveInput();
+        // Don't bob legs if attacking (kicking)
+        if (isAttacking) return; 
 
+        Vector2 moveInput = playerMovement.GetMoveInput();
         if (moveInput.magnitude > 0.1f)
         {
             walkTimer += Time.deltaTime * bobSpeed;
@@ -128,34 +107,52 @@ public class PlayerAnimationController : MonoBehaviour
             currentBobOffset = Mathf.Lerp(currentBobOffset, 0f, Time.deltaTime * 10f);
         }
 
-        if (leftLegSlot)
-            leftLegSlot.localPosition = new Vector3(leftLegOrigPos.x, leftLegOrigPos.y + currentBobOffset, leftLegOrigPos.z);
-        
-        if (rightLegSlot)
-            rightLegSlot.localPosition = new Vector3(rightLegOrigPos.x, rightLegOrigPos.y - currentBobOffset, rightLegOrigPos.z);
+        if (leftLegSlot) leftLegSlot.localPosition = new Vector3(leftLegOrigPos.x, leftLegOrigPos.y + currentBobOffset, leftLegOrigPos.z);
+        if (rightLegSlot) rightLegSlot.localPosition = new Vector3(rightLegOrigPos.x, rightLegOrigPos.y - currentBobOffset, rightLegOrigPos.z);
     }
-
-    // --- ANIMATION TRIGGERS ---
 
     public void TriggerPunch(Transform armToPunch, float punchDuration, Vector2 targetWorldPos)
     {
         Vector3 origPos = (armToPunch == leftArmSlot) ? leftArmOrigPos : rightArmOrigPos;
+        // Correctly transforms World Target to Local Space (handles flipping)
         Vector3 targetLocalPos = visualsHolder.InverseTransformPoint(targetWorldPos);
-        StartCoroutine(PunchCoroutine(armToPunch, origPos, targetLocalPos, punchDuration));
+        StartCoroutine(LimbMoveCoroutine(armToPunch, origPos, targetLocalPos, punchDuration));
     }
 
-    // --- NEW: Swing Trigger ---
     public void TriggerSwing(Transform armToSwing, float swingDuration, Vector2 targetWorldPos, float arcAngle)
     {
-        // Calculate the base rotation needed to point at the target
         Vector2 dirToTarget = (targetWorldPos - (Vector2)armToSwing.position).normalized;
-        // The arm's 'up' vector points opposite to the hand, so we use -dir
         Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, -dirToTarget);
-        
         StartCoroutine(SwingCoroutine(armToSwing, targetRotation, swingDuration, arcAngle));
     }
 
-    private IEnumerator PunchCoroutine(Transform arm, Vector3 origPos, Vector3 targetLocalPos, float duration)
+    // --- KICK LOGIC UPDATED HERE ---
+    public void TriggerKick(bool useLeftLeg, float duration, Vector2 targetWorldPos, float reach)
+    {
+        Transform leg = useLeftLeg ? leftLegSlot : rightLegSlot;
+        Vector3 origPos = useLeftLeg ? leftLegOrigPos : rightLegOrigPos;
+
+        if (leg == null) return;
+
+        // 1. Calculate Direction
+        Vector2 dirToTarget = (targetWorldPos - (Vector2)leg.position).normalized;
+
+        // 2. Calculate Target Rotation
+        // We assume the sprite's "down" (-Y) is the foot. 
+        // LookRotation(forward, upwards) -> We set 'up' to -dirToTarget so 'down' points at target.
+        Quaternion targetRotation = Quaternion.LookRotation(Vector3.forward, -dirToTarget);
+
+        // 3. Calculate Target Position (Local)
+        // Convert that World Point into Local Space relative to the VisualsHolder.
+        Vector2 worldKickDestination = (Vector2)leg.position + (dirToTarget * reach);
+        Vector3 targetLocalPos = visualsHolder.InverseTransformPoint(worldKickDestination);
+
+        // 4. Start the dedicated Kick Coroutine
+        StartCoroutine(KickCoroutine(leg, origPos, targetLocalPos, targetRotation, duration));
+    }
+
+    // Used for Punching (Position only)
+    private IEnumerator LimbMoveCoroutine(Transform limb, Vector3 origPos, Vector3 targetLocalPos, float duration)
     {
         isAttacking = true;
         
@@ -166,7 +163,7 @@ public class PlayerAnimationController : MonoBehaviour
         while (timer < halfDuration)
         {
             float t = timer / halfDuration;
-            arm.localPosition = Vector3.Lerp(origPos, targetLocalPos, t);
+            limb.localPosition = Vector3.Lerp(origPos, targetLocalPos, t);
             timer += Time.deltaTime;
             yield return null;
         }
@@ -175,40 +172,88 @@ public class PlayerAnimationController : MonoBehaviour
         while (timer < halfDuration)
         {
             float t = timer / halfDuration; 
-            arm.localPosition = Vector3.Lerp(targetLocalPos, origPos, t);
+            limb.localPosition = Vector3.Lerp(targetLocalPos, origPos, t);
             timer += Time.deltaTime;
             yield return null;
         }
 
-        arm.localPosition = origPos;
+        limb.localPosition = origPos;
         isAttacking = false;
     }
 
-    // --- NEW: Swing Coroutine ---
-    private IEnumerator SwingCoroutine(Transform arm, Quaternion centerRotation, float duration, float arcAngle)
+    // Used for Kicking (Position + Rotation)
+    private IEnumerator KickCoroutine(Transform limb, Vector3 origPos, Vector3 targetLocalPos, Quaternion targetGlobalRot, float duration)
     {
         isAttacking = true;
 
-        // Start angle relative to center (e.g. -45)
+        // Store original states
+        Quaternion startGlobalRot = limb.rotation;
+        Quaternion startLocalRot = limb.localRotation; // We return to local rotation to respect parent flipping
+
+        float halfDuration = duration / 2f;
+        if (halfDuration < Time.deltaTime) halfDuration = Time.deltaTime;
+
+        float timer = 0f;
+
+        // --- PHASE 1: EXTEND (Move to target + Rotate to face target) ---
+        while (timer < halfDuration)
+        {
+            float t = timer / halfDuration;
+            
+            // Interpolate Position
+            limb.localPosition = Vector3.Lerp(origPos, targetLocalPos, t);
+            
+            // Interpolate Rotation (Global) ensures we point to world target regardless of body flip
+            limb.rotation = Quaternion.Slerp(startGlobalRot, targetGlobalRot, t);
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // Snap to exact target for a frame
+        limb.localPosition = targetLocalPos;
+        limb.rotation = targetGlobalRot;
+
+        // --- PHASE 2: RETRACT (Return to original pos + Return to original local rotation) ---
+        timer = 0f;
+        
+        // Capture the rotation we are at right now (fully extended) to blend back smoothly
+        Quaternion extendedLocalRot = limb.localRotation;
+
+        while (timer < halfDuration)
+        {
+            float t = timer / halfDuration;
+
+            // Interpolate Position back to start
+            limb.localPosition = Vector3.Lerp(targetLocalPos, origPos, t);
+
+            // Interpolate Rotation back to the original local idle rotation
+            limb.localRotation = Quaternion.Slerp(extendedLocalRot, startLocalRot, t);
+
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // Final Reset
+        limb.localPosition = origPos;
+        limb.localRotation = startLocalRot;
+        isAttacking = false;
+    }
+
+    private IEnumerator SwingCoroutine(Transform arm, Quaternion centerRotation, float duration, float arcAngle)
+    {
+        isAttacking = true;
         Quaternion startRot = centerRotation * Quaternion.Euler(0, 0, -arcAngle / 2f);
-        // End angle relative to center (e.g. +45)
         Quaternion endRot = centerRotation * Quaternion.Euler(0, 0, arcAngle / 2f);
 
         float timer = 0f;
         while (timer < duration)
         {
-            // Spherical Lerp (Slerp) for smooth rotation
-            float t = timer / duration;
-            // Easing function for a "slash" feel (starts slow, fast middle, slow end)
-            t = Mathf.SmoothStep(0f, 1f, t);
-            
+            float t = Mathf.SmoothStep(0f, 1f, timer / duration);
             arm.rotation = Quaternion.Slerp(startRot, endRot, t);
-            
             timer += Time.deltaTime;
             yield return null;
         }
-
         isAttacking = false;
-        // Arms will snap back to aim at mouse in Update() immediately after
     }
 }

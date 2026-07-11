@@ -1,0 +1,4 @@
+repository "2d phone/ProjektBjornDevBuild@5772623809329@cloud"
+  path "/"
+    br "/main"
+    co "/main"

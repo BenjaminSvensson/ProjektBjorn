@@ -9,13 +9,25 @@ public enum Direction { Top, Bottom, Left, Right }
 public class LevelGenerator : MonoBehaviour
 {
     [System.Serializable]
+    public class RoomSpawnRule
+    {
+        [Tooltip("The Room Prefab.")]
+        public Room roomPrefab;
+        
+        [Tooltip("Relative chance to spawn. Higher values = more frequent.")]
+        [Range(0.1f, 100f)]
+        public float spawnWeight = 10f;
+
+        [Tooltip("Maximum times this specific room can spawn in the level. 0 = Unlimited.")]
+        [Min(0)]
+        public int maxSpawns = 0;
+    }
+
+    [System.Serializable]
     public class EnvironmentProp
     {
         public GameObject prefab;
-        [Tooltip("The chance (0.0 to 1.0) this prop will spawn at a given point.")]
-        [Range(0f, 1f)]
-        public float spawnChance = 0.5f;
-
+        [Range(0f, 1f)] public float spawnChance = 0.5f;
         [Header("Variation")]
         public bool allowRandomFlip = true;
         [Range(0.5f, 1.5f)] public float minScale = 0.9f;
@@ -34,14 +46,19 @@ public class LevelGenerator : MonoBehaviour
     [Header("Generation Settings")]
     [SerializeField] private int totalRooms = 20;
     [SerializeField] private int numberOfBossRooms = 1;
+    [Tooltip("The minimum number of rooms between Start and Boss.")]
+    [SerializeField] private int minBossDistance = 5; 
     [SerializeField] private Vector2 roomSize = new Vector2(20, 10);
-    [Tooltip("Maximum attempts to generate a valid layout before giving up.")]
     [SerializeField] private int maxGenerationAttempts = 100; 
 
-    [Header("Room Prefabs")]
+    [Header("Room Rules")]
     [SerializeField] private Room startRoomPrefab;
-    [SerializeField] private List<Room> normalRoomPrefabs;
+    [SerializeField] private List<RoomSpawnRule> normalRoomRules; 
     [SerializeField] private List<Room> bossRoomPrefabs;
+    
+    [Header("Dead Ends")]
+    [Tooltip("Prefabs used to cap off open paths (Must have exactly 1 door to work best).")]
+    [SerializeField] private List<Room> deadEndRoomPrefabs;
 
     [Header("Enemy Spawning")]
     [SerializeField] private List<EnemySpawnData> enemySpawnList;
@@ -53,210 +70,261 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private float propSpawnAttemptsPerUnit = 0.1f;
     
     [Header("Exceptions")]
-    [Tooltip("If false, Boss Rooms will always be empty of props (debris/rocks).")]
     [SerializeField] private bool spawnPropsInBossRooms = false;
-    [Tooltip("Drag specific Room Prefabs here to prevent props from ever spawning inside them (e.g. Puzzle Rooms).")]
     [SerializeField] private List<Room> preventPropSpawningInRooms;
 
-    // --- Virtual Data Structures ---
+    [Header("UI")]
+    [SerializeField] private LoadingScreen loadingScreen;
+
     private class RoomNode
     {
         public Vector2Int gridPos;
         public Room roomPrefab;
         public bool isBossRoom;
+        public int distanceFromStart; 
         
-        public RoomNode(Vector2Int pos, Room prefab, bool boss = false)
-        {
-            gridPos = pos;
-            roomPrefab = prefab;
-            isBossRoom = boss;
+        public RoomNode(Vector2Int pos, Room prefab, int dist, bool boss = false) 
+        { 
+            gridPos = pos; 
+            roomPrefab = prefab; 
+            distanceFromStart = dist;
+            isBossRoom = boss; 
         }
     }
 
-    private class GenerationState
-    {
-        public Vector2Int gridPos;
+    private class GenerationState 
+    { 
+        public Vector2Int gridPos; 
         public Direction fromDir; 
+        public int distance; 
     }
 
     private List<RoomNode> finalLayout = new List<RoomNode>();
     private List<Room> instantiatedRooms = new List<Room>();
 
-    void Start()
-    {
-        GenerateLevel();
-    }
+    void Start() => GenerateLevel();
 
     void Update()
     {
         if (Keyboard.current == null) return;
-
-        // Debug Regen on 'Y'
-        if (Keyboard.current.yKey.wasPressedThisFrame)
-        {
-            Debug.Log("--- [DEBUG] Regenerating Level... ---");
-            GenerateLevel();
-        }
-
-        if (Keyboard.current.tKey.wasPressedThisFrame)
-        {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        }
+        if (Keyboard.current.yKey.wasPressedThisFrame) GenerateLevel();
+        if (Keyboard.current.tKey.wasPressedThisFrame) SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void GenerateLevel()
     {
-        // 1. Cleanup Old Level
-        foreach (var room in instantiatedRooms)
-        {
-            if (room) Destroy(room.gameObject);
-        }
-        instantiatedRooms.Clear();
-        finalLayout.Clear();
+        if (loadingScreen == null) loadingScreen = FindFirstObjectByType<LoadingScreen>();
 
-        // 2. Try to find a valid layout using Virtual Generation
+        foreach (var room in instantiatedRooms) if (room) Destroy(room.gameObject);
+        instantiatedRooms.Clear(); finalLayout.Clear();
+
         bool success = false;
         int attempt = 0;
+        while (!success && attempt < maxGenerationAttempts) { attempt++; success = AttemptVirtualGeneration(); }
 
-        while (!success && attempt < maxGenerationAttempts)
+        if (success) 
         {
-            attempt++;
-            success = AttemptVirtualGeneration();
-        }
-
-        if (success)
-        {
-            Debug.Log($"Generated valid layout on attempt {attempt}. Spawning world...");
             SpawnWorld();
+            if (loadingScreen != null) loadingScreen.Dismiss();
         }
-        else
+        else 
         {
-            Debug.LogError($"Failed to generate level after {maxGenerationAttempts} attempts. Check Room settings/Doors.");
+            Debug.LogError($"Failed to generate level after {maxGenerationAttempts} attempts. Try reducing Min Boss Distance or increasing Total Rooms.");
         }
     }
 
-    // --- PHASE 1: Virtual Generation (Fast, Logic only) ---
     private bool AttemptVirtualGeneration()
     {
         Dictionary<Vector2Int, RoomNode> virtualGrid = new Dictionary<Vector2Int, RoomNode>();
         List<GenerationState> frontier = new List<GenerationState>();
         List<RoomNode> generatedNodes = new List<RoomNode>();
+        
+        Dictionary<Room, int> spawnCounts = new Dictionary<Room, int>();
 
-        // A. Place Start Room
         if (startRoomPrefab == null) return false;
         
-        RoomNode startNode = new RoomNode(Vector2Int.zero, startRoomPrefab);
-        virtualGrid[Vector2Int.zero] = startNode;
-        generatedNodes.Add(startNode);
-        
-        AddNeighborsToFrontier(virtualGrid, frontier, startNode);
+        RoomNode startNode = new RoomNode(Vector2Int.zero, startRoomPrefab, 0);
+        virtualGrid[Vector2Int.zero] = startNode; generatedNodes.Add(startNode);
+        AddNeighborsToFrontier(virtualGrid, frontier, startNode, 0);
 
-        // B. Place Normal Rooms
         int targetNormalRooms = totalRooms - numberOfBossRooms - 1;
-        int roomsBuilt = 0;
-        int safetyLoop = 0;
+        int roomsBuilt = 0, safetyLoop = 0;
 
         while (roomsBuilt < targetNormalRooms && frontier.Count > 0 && safetyLoop < 5000)
         {
             safetyLoop++;
-
             int randIndex = Random.Range(0, frontier.Count);
             GenerationState state = frontier[randIndex];
             frontier.RemoveAt(randIndex);
 
             if (virtualGrid.ContainsKey(state.gridPos)) continue;
 
-            Room validPrefab = FindBestMatchingRoom(virtualGrid, state.gridPos, normalRoomPrefabs);
-
+            Room validPrefab = FindBestMatchingRoomWeighted(virtualGrid, state.gridPos, normalRoomRules, spawnCounts);
+            
             if (validPrefab != null)
             {
-                RoomNode newNode = new RoomNode(state.gridPos, validPrefab);
-                virtualGrid[state.gridPos] = newNode;
+                RoomNode newNode = new RoomNode(state.gridPos, validPrefab, state.distance);
+                virtualGrid[state.gridPos] = newNode; 
                 generatedNodes.Add(newNode);
-                roomsBuilt++;
+                
+                if (!spawnCounts.ContainsKey(validPrefab)) spawnCounts[validPrefab] = 0;
+                spawnCounts[validPrefab]++;
 
-                AddNeighborsToFrontier(virtualGrid, frontier, newNode);
+                roomsBuilt++; 
+                AddNeighborsToFrontier(virtualGrid, frontier, newNode, state.distance);
             }
         }
 
         if (roomsBuilt < targetNormalRooms) return false; 
 
-        // D. Place Boss Rooms (At dead ends or end of frontier)
+        var validBossSpots = frontier.Where(x => x.distance >= minBossDistance && !virtualGrid.ContainsKey(x.gridPos)).ToList();
+        
+        if (validBossSpots.Count < numberOfBossRooms) return false; 
+
         int bossesPlaced = 0;
         int bossSafety = 0;
-        while (bossesPlaced < numberOfBossRooms && frontier.Count > 0 && bossSafety < 100)
+        
+        while (bossesPlaced < numberOfBossRooms && validBossSpots.Count > 0 && bossSafety < 100)
         {
             bossSafety++;
-            int randIndex = Random.Range(0, frontier.Count);
-            GenerationState state = frontier[randIndex];
-            frontier.RemoveAt(randIndex);
+            int randIndex = Random.Range(0, validBossSpots.Count);
+            GenerationState state = validBossSpots[randIndex]; 
+            validBossSpots.RemoveAt(randIndex);
 
             if (virtualGrid.ContainsKey(state.gridPos)) continue;
-
-            Room validBoss = FindBestMatchingRoom(virtualGrid, state.gridPos, bossRoomPrefabs);
+            
+            Room validBoss = FindBestMatchingRoomSimple(virtualGrid, state.gridPos, bossRoomPrefabs);
+            
             if (validBoss != null)
             {
-                RoomNode bossNode = new RoomNode(state.gridPos, validBoss, true);
-                virtualGrid[state.gridPos] = bossNode;
-                generatedNodes.Add(bossNode);
+                RoomNode bossNode = new RoomNode(state.gridPos, validBoss, state.distance, true);
+                virtualGrid[state.gridPos] = bossNode; generatedNodes.Add(bossNode);
                 bossesPlaced++;
             }
         }
 
         if (bossesPlaced < numberOfBossRooms) return false; 
 
-        finalLayout = generatedNodes;
+        CapOpenConnections(virtualGrid, generatedNodes);
+
+        finalLayout = generatedNodes; 
         return true;
     }
 
-    private void AddNeighborsToFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, RoomNode node)
+    private void CapOpenConnections(Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> allNodes)
     {
-        if (node.roomPrefab.hasTopDoor)    TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.up, Direction.Bottom);
-        if (node.roomPrefab.hasBottomDoor) TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.down, Direction.Top);
-        if (node.roomPrefab.hasLeftDoor)   TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.left, Direction.Right);
-        if (node.roomPrefab.hasRightDoor)  TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.right, Direction.Left);
+        var existingPositions = grid.Keys.ToList();
+
+        foreach (var pos in existingPositions)
+        {
+            RoomNode node = grid[pos];
+            
+            // --- NEW: Skip Boss Rooms ---
+            // Prevents putting dead ends on the boss room's extra doors.
+            if (node.isBossRoom) continue;
+
+            int dist = node.distanceFromStart + 1;
+
+            if (node.roomPrefab.hasTopDoor)    TryCap(grid, allNodes, pos + Vector2Int.up, Direction.Bottom, dist);
+            if (node.roomPrefab.hasBottomDoor) TryCap(grid, allNodes, pos + Vector2Int.down, Direction.Top, dist);
+            if (node.roomPrefab.hasLeftDoor)   TryCap(grid, allNodes, pos + Vector2Int.left, Direction.Right, dist);
+            if (node.roomPrefab.hasRightDoor)  TryCap(grid, allNodes, pos + Vector2Int.right, Direction.Left, dist);
+        }
     }
 
-    private void TryAddFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, Vector2Int pos, Direction fromDir)
+    private void TryCap(Dictionary<Vector2Int, RoomNode> grid, List<RoomNode> allNodes, Vector2Int pos, Direction requiredDoor, int dist)
     {
-        if (!grid.ContainsKey(pos))
+        if (grid.ContainsKey(pos)) return; 
+
+        Room capPrefab = deadEndRoomPrefabs.FirstOrDefault(r => 
+            (requiredDoor == Direction.Top && r.hasTopDoor && !r.hasBottomDoor && !r.hasLeftDoor && !r.hasRightDoor) ||
+            (requiredDoor == Direction.Bottom && r.hasBottomDoor && !r.hasTopDoor && !r.hasLeftDoor && !r.hasRightDoor) ||
+            (requiredDoor == Direction.Left && r.hasLeftDoor && !r.hasTopDoor && !r.hasBottomDoor && !r.hasRightDoor) ||
+            (requiredDoor == Direction.Right && r.hasRightDoor && !r.hasTopDoor && !r.hasBottomDoor && !r.hasLeftDoor)
+        );
+
+        if (capPrefab == null) capPrefab = FindBestMatchingRoomSimple(grid, pos, deadEndRoomPrefabs);
+
+        if (capPrefab != null)
         {
-            if (!frontier.Any(x => x.gridPos == pos))
+            RoomNode capNode = new RoomNode(pos, capPrefab, dist);
+            grid[pos] = capNode;
+            allNodes.Add(capNode);
+        }
+    }
+
+    private void AddNeighborsToFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, RoomNode node, int curDist)
+    {
+        int nextDist = curDist + 1;
+        if (node.roomPrefab.hasTopDoor)    TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.up, Direction.Bottom, nextDist);
+        if (node.roomPrefab.hasBottomDoor) TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.down, Direction.Top, nextDist);
+        if (node.roomPrefab.hasLeftDoor)   TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.left, Direction.Right, nextDist);
+        if (node.roomPrefab.hasRightDoor)  TryAddFrontier(grid, frontier, node.gridPos + Vector2Int.right, Direction.Left, nextDist);
+    }
+
+    private void TryAddFrontier(Dictionary<Vector2Int, RoomNode> grid, List<GenerationState> frontier, Vector2Int pos, Direction fromDir, int dist)
+    {
+        if (!grid.ContainsKey(pos) && !frontier.Any(x => x.gridPos == pos)) 
+            frontier.Add(new GenerationState { gridPos = pos, fromDir = fromDir, distance = dist });
+    }
+
+    private Room FindBestMatchingRoomWeighted(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<RoomSpawnRule> rules, Dictionary<Room, int> currentCounts)
+    {
+        bool? t = GetRequirement(grid, pos + Vector2Int.up, Direction.Bottom);
+        bool? b = GetRequirement(grid, pos + Vector2Int.down, Direction.Top);
+        bool? l = GetRequirement(grid, pos + Vector2Int.left, Direction.Right);
+        bool? r = GetRequirement(grid, pos + Vector2Int.right, Direction.Left);
+
+        List<RoomSpawnRule> validRules = new List<RoomSpawnRule>();
+        float totalWeight = 0f;
+
+        foreach (var rule in rules)
+        {
+            if (rule.roomPrefab == null) continue;
+            if (rule.maxSpawns > 0)
             {
-                frontier.Add(new GenerationState { gridPos = pos, fromDir = fromDir });
+                int usedCount = currentCounts.ContainsKey(rule.roomPrefab) ? currentCounts[rule.roomPrefab] : 0;
+                if (usedCount >= rule.maxSpawns) continue; 
+            }
+
+            Room room = rule.roomPrefab;
+            if (Matches(room.hasTopDoor, t) && Matches(room.hasBottomDoor, b) && 
+                Matches(room.hasLeftDoor, l) && Matches(room.hasRightDoor, r))
+            {
+                validRules.Add(rule);
+                totalWeight += rule.spawnWeight;
             }
         }
-    }
 
-    private Room FindBestMatchingRoom(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<Room> candidates)
-    {
-        bool? needTop = GetRequirement(grid, pos + Vector2Int.up, Direction.Bottom);
-        bool? needBottom = GetRequirement(grid, pos + Vector2Int.down, Direction.Top);
-        bool? needLeft = GetRequirement(grid, pos + Vector2Int.left, Direction.Right);
-        bool? needRight = GetRequirement(grid, pos + Vector2Int.right, Direction.Left);
+        if (validRules.Count == 0) return null;
 
-        List<Room> valid = new List<Room>();
+        float randomValue = Random.Range(0, totalWeight);
+        float weightSum = 0;
 
-        foreach (var room in candidates)
+        foreach (var rule in validRules)
         {
-            if (!Matches(room.hasTopDoor, needTop)) continue;
-            if (!Matches(room.hasBottomDoor, needBottom)) continue;
-            if (!Matches(room.hasLeftDoor, needLeft)) continue;
-            if (!Matches(room.hasRightDoor, needRight)) continue;
-
-            valid.Add(room);
+            weightSum += rule.spawnWeight;
+            if (randomValue <= weightSum) return rule.roomPrefab;
         }
 
-        if (valid.Count > 0) return valid[Random.Range(0, valid.Count)];
-        return null;
+        return validRules.Last().roomPrefab; 
+    }
+
+    private Room FindBestMatchingRoomSimple(Dictionary<Vector2Int, RoomNode> grid, Vector2Int pos, List<Room> candidates)
+    {
+        bool? t = GetRequirement(grid, pos + Vector2Int.up, Direction.Bottom);
+        bool? b = GetRequirement(grid, pos + Vector2Int.down, Direction.Top);
+        bool? l = GetRequirement(grid, pos + Vector2Int.left, Direction.Right);
+        bool? r = GetRequirement(grid, pos + Vector2Int.right, Direction.Left);
+        List<Room> valid = candidates.Where(room => Matches(room.hasTopDoor, t) && Matches(room.hasBottomDoor, b) && Matches(room.hasLeftDoor, l) && Matches(room.hasRightDoor, r)).ToList();
+        return valid.Count > 0 ? valid[Random.Range(0, valid.Count)] : null;
     }
 
     private bool? GetRequirement(Dictionary<Vector2Int, RoomNode> grid, Vector2Int neighborPos, Direction neighborDoorDir)
     {
         if (grid.TryGetValue(neighborPos, out RoomNode neighbor))
         {
-            switch (neighborDoorDir)
-            {
+            switch (neighborDoorDir) {
                 case Direction.Top: return neighbor.roomPrefab.hasTopDoor;
                 case Direction.Bottom: return neighbor.roomPrefab.hasBottomDoor;
                 case Direction.Left: return neighbor.roomPrefab.hasLeftDoor;
@@ -266,73 +334,32 @@ public class LevelGenerator : MonoBehaviour
         return null; 
     }
 
-    private bool Matches(bool roomHasDoor, bool? requirement)
-    {
-        if (requirement == null) return true; 
-        return roomHasDoor == requirement.Value; 
-    }
+    private bool Matches(bool has, bool? req) => req == null || has == req.Value;
 
-    // --- PHASE 2: Instantiation (Real World) ---
     private void SpawnWorld()
     {
         Dictionary<Vector2Int, Room> worldGrid = new Dictionary<Vector2Int, Room>();
-
         foreach (RoomNode node in finalLayout)
         {
-            Vector3 worldPos = new Vector3(node.gridPos.x * roomSize.x, node.gridPos.y * roomSize.y, 0);
-            Room newRoom = Instantiate(node.roomPrefab, worldPos, Quaternion.identity, transform);
-            newRoom.name = $"Room_{node.gridPos.x}_{node.gridPos.y}";
-            newRoom.gridPos = node.gridPos;
-            
-            worldGrid[node.gridPos] = newRoom;
-            instantiatedRooms.Add(newRoom);
+            Room newRoom = Instantiate(node.roomPrefab, new Vector3(node.gridPos.x * roomSize.x, node.gridPos.y * roomSize.y, 0), Quaternion.identity, transform);
+            newRoom.name = $"Room_{node.gridPos.x}_{node.gridPos.y}"; newRoom.gridPos = node.gridPos;
+            worldGrid[node.gridPos] = newRoom; instantiatedRooms.Add(newRoom);
         }
 
-        // Connect Doors & Populate
         foreach (var kvp in worldGrid)
         {
-            Vector2Int pos = kvp.Key;
-            Room room = kvp.Value;
-            
-            // Find the original node data to check properties
+            Vector2Int pos = kvp.Key; Room room = kvp.Value;
             RoomNode originalNode = finalLayout.Find(n => n.gridPos == pos);
-
             if (worldGrid.ContainsKey(pos + Vector2Int.up)) room.OpenDoor(Direction.Top);
             if (worldGrid.ContainsKey(pos + Vector2Int.down)) room.OpenDoor(Direction.Bottom);
             if (worldGrid.ContainsKey(pos + Vector2Int.left)) room.OpenDoor(Direction.Left);
             if (worldGrid.ContainsKey(pos + Vector2Int.right)) room.OpenDoor(Direction.Right);
 
-            // Populate
-            int dist = Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
+            int dist = originalNode != null ? originalNode.distanceFromStart : Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
 
-            // --- PROP SPAWNING LOGIC ---
-            bool allowProps = true;
-
-            // 1. Never spawn in start room (dist 0)
-            if (dist == 0) allowProps = false;
-            
-            // 2. Check Boss Room settings
-            if (originalNode != null && originalNode.isBossRoom && !spawnPropsInBossRooms) allowProps = false;
-
-            // 3. Check specific exclusions
-            if (preventPropSpawningInRooms != null && originalNode != null)
-            {
-                if (preventPropSpawningInRooms.Contains(originalNode.roomPrefab)) 
-                    allowProps = false;
-            }
-
-            if (allowProps && environmentProps != null)
-            {
-                room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
-            }
-
-            // --- ENEMY SPAWNING LOGIC ---
-            if (dist > 0) // Skip start room for enemies
-            {
-                int budget = baseEnemyBudget + (dist * enemyBudgetPerDistance);
-                if (enemySpawnList != null && enemySpawnList.Count > 0)
-                    room.SpawnEnemies(enemySpawnList, budget, roomSize);
-            }
+            bool allowProps = dist != 0 && (originalNode == null || !originalNode.isBossRoom || spawnPropsInBossRooms) && (preventPropSpawningInRooms == null || originalNode == null || !preventPropSpawningInRooms.Contains(originalNode.roomPrefab));
+            if (allowProps && environmentProps != null) room.PopulateRoom(environmentProps, roomSize, propSpawnAttemptsPerUnit);
+            if (dist > 0 && enemySpawnList != null && enemySpawnList.Count > 0) room.SpawnEnemies(enemySpawnList, baseEnemyBudget + (dist * enemyBudgetPerDistance), roomSize);
         }
     }
 }

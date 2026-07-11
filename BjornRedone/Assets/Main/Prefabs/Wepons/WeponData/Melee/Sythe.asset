@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
+  m_Name: Sythe
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponData
+  weaponName: Sythe
+  icon: {fileID: 3170254101049220755, guid: a1fc06059ca5c1047b660f7ee6aaecfc, type: 3}
+  pickupPrefab: {fileID: 8406546666599770303, guid: 6893ebf76facc904794896e9e9096b1a, type: 3}
+  equippedPrefab: {fileID: 0}
+  muzzleSocketName: Muzzle
+  heldSprite: {fileID: 3170254101049220755, guid: a1fc06059ca5c1047b660f7ee6aaecfc, type: 3}
+  heldScale: {x: 0.9, y: 0.9, z: 0.9}
+  heldRotationOffset: 90
+  heldPositionOffset: {x: -0.5, y: 0, z: 0}
+  muzzleOffset: {x: 0.5, y: 0}
+  breaksOnMeleeHit: 0
+  breaksOnThrowHit: 0
+  brokenPrefab: {fileID: 0}
+  type: 0
+  attackStyle: 1
+  meleeDamageBonus: 15
+  meleeImpactSounds:
+  - {fileID: 8300000, guid: 9d7ab24ac4a239c46aaab65c648f133b, type: 3}
+  attackSpeedMultiplier: 1
+  knockbackMultiplier: 2
+  swingArc: 120
+  allowHoldToFire: 1
+  projectilePrefab: {fileID: 0}
+  fireRate: 0.2
+  projectileSpeed: 15
+  projectileDamage: 5
+  spread: 5
+  screenShakeAmount: 0.1
+  projectilesPerShot: 1
+  shootSounds: []
+  magazineSize: 6
+  reloadTime: 1.5
+  reloadSound: {fileID: 0}
+  emptyClickSound: {fileID: 0}

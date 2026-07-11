@@ -23,4 +23,10 @@ public class PlayerWallet : MonoBehaviour
     {
         return currentCoins;
     }
+
+    public void SetCoins(int amount)
+    {
+        currentCoins = Mathf.Max(0, amount);
+        OnCoinsChanged?.Invoke(currentCoins);
+    }
 }

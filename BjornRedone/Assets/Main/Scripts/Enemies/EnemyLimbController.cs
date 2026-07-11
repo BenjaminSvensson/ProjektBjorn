@@ -5,14 +5,29 @@ using System.Collections.Generic;
 [RequireComponent(typeof(AudioSource))]
 public class EnemyLimbController : MonoBehaviour
 {
+    // --- NEW: Custom definition for gore drops ---
+    [System.Serializable]
+    public struct GoreDropItem
+    {
+        public string name; // Just for organization in Inspector
+        public GameObject prefab;
+        [Range(0f, 1f)] public float dropChance;
+        public int maxAmount;
+    }
+    // ---------------------------------------------
+
     [Header("Base Stats")]
     public float maxHealth = 50f;
     public float currentHealth;
     
-    [Header("Loot")]
+    [Header("Loot - Currency")]
     [SerializeField] private GameObject coinPrefab;
     [SerializeField] private int minCoins = 1;
     [SerializeField] private int maxCoins = 3;
+
+    [Header("Loot - Gore")]
+    [Tooltip("Define specific gore items, their drop chance, and how many can spawn.")]
+    [SerializeField] private GoreDropItem[] goreDrops;
 
     [Header("Limb Configuration")]
     public LimbData startingHead;
@@ -74,7 +89,6 @@ public class EnemyLimbController : MonoBehaviour
     [HideInInspector] public bool hasLegs = false;
     [HideInInspector] public bool hasArms = false;
     
-    // --- NEW: Fix for shotgun multi-kill loot bug ---
     private bool isDead = false; 
 
     private AudioSource audioSource;
@@ -102,10 +116,17 @@ public class EnemyLimbController : MonoBehaviour
 
     public void TakeDamage(float amount, Vector2 hitDirection = default)
     {
-        if (isDead) return; // --- FIX: Ignore damage if already dead ---
+        if (isDead) return;
 
         currentHealth -= amount;
         
+        // --- NEW: Alert SELF (Instantly Chase) ---
+        if (TryGetComponent<EnemyAI>(out EnemyAI myAI))
+        {
+            myAI.OnDamageTaken();
+        }
+        // ----------------------------------------
+
         AlertNearbyEnemies();
 
         if (BloodManager.Instance != null)
@@ -408,7 +429,7 @@ public class EnemyLimbController : MonoBehaviour
 
     private void Die()
     {
-        if (isDead) return; // --- FIX: Prevent double death events ---
+        if (isDead) return;
         isDead = true;
 
         if (BloodManager.Instance != null)
@@ -433,7 +454,31 @@ public class EnemyLimbController : MonoBehaviour
                 }
             }
         }
-        // -------------------
+        
+        // --- NEW: SPAWN GORE DROPS (With Chance & Counts) ---
+        if (goreDrops != null && goreDrops.Length > 0)
+        {
+            foreach (var drop in goreDrops)
+            {
+                if (drop.prefab != null)
+                {
+                    // 1. Roll the chance
+                    if (Random.value <= drop.dropChance)
+                    {
+                        // 2. Determine quantity (1 to Max)
+                        int quantity = Random.Range(1, drop.maxAmount + 1);
+
+                        // 3. Spawn them
+                        for (int i = 0; i < quantity; i++)
+                        {
+                            Vector2 randomOffset = Random.insideUnitCircle * 0.5f;
+                            Instantiate(drop.prefab, (Vector2)transform.position + randomOffset, Quaternion.identity);
+                        }
+                    }
+                }
+            }
+        }
+        // ---------------------------------------------------
 
         if (currentLeftArm) DetachLimb(LimbSlot.LeftArm);
         if (currentRightArm) DetachLimb(LimbSlot.RightArm);

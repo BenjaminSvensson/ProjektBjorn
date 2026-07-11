@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ace83185559982e44876e0bbff5f0246, type: 3}
   m_Name: AK47
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
-  weaponName: Shotgun
+  weaponName: AK47
   icon: {fileID: 1490390596225347881, guid: 9dac1d6679bc3f043a2547bd90a67864, type: 3}
   pickupPrefab: {fileID: 6631119458644919795, guid: dbf9225c7fc0c2445804a994809dc7b6, type: 3}
   equippedPrefab: {fileID: 51549661887671870, guid: 7f428945c59df334793830044143f7da, type: 3}
@@ -22,6 +22,9 @@ MonoBehaviour:
   heldRotationOffset: 90
   heldPositionOffset: {x: 0, y: 0.4, z: 0}
   muzzleOffset: {x: 0, y: 0}
+  breaksOnMeleeHit: 0
+  breaksOnThrowHit: 0
+  brokenPrefab: {fileID: 0}
   type: 1
   attackStyle: 0
   meleeDamageBonus: 5
@@ -29,15 +32,17 @@ MonoBehaviour:
   attackSpeedMultiplier: 1
   knockbackMultiplier: 1
   swingArc: 90
+  allowHoldToFire: 1
   projectilePrefab: {fileID: 5854363392945389712, guid: 794ed137c5e40f84d8617a0761b37a85, type: 3}
-  fireRate: 0.09
-  projectileSpeed: 35
-  projectileDamage: 2
-  spread: 8
+  fireRate: 0.06
+  projectileSpeed: 40
+  projectileDamage: 4
+  spread: 6
+  screenShakeAmount: 0.02
   projectilesPerShot: 1
   shootSounds:
   - {fileID: 8300000, guid: 08d72f517f1661f4d92d8491bb521a35, type: 3}
   magazineSize: 26
-  reloadTime: 1.2
-  reloadSound: {fileID: 0}
+  reloadTime: 1.1
+  reloadSound: {fileID: 8300000, guid: 03189be0bd047954fac601234d518ba7, type: 3}
   emptyClickSound: {fileID: 8300000, guid: 8712adde96a5f4e4eba8e17081b4038d, type: 3}

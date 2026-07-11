@@ -203,8 +203,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -6002522755579643121, guid: 63043bbb2cfa3524dae1cf76b210a121, type: 3}
-  m_Color: {r: 1, g: 0.5330188, b: 0.5330188, a: 1}
+  m_Sprite: {fileID: -2874625552622402059, guid: 14a6dee7522da694a9965b16813a69bf, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -843,8 +843,29 @@ MonoBehaviour:
   maxHealth: 15
   currentHealth: 15
   coinPrefab: {fileID: 6604177083717084493, guid: 528fca1b623d2e145b2814eeb95476a3, type: 3}
-  minCoins: 1
-  maxCoins: 3
+  minCoins: 4
+  maxCoins: 9
+  goreDrops:
+  - name: Tarmar
+    prefab: {fileID: 3073958071732642810, guid: 02f6c1c49f4bac04ebc22f861aa8e2c5, type: 3}
+    dropChance: 0.2
+    maxAmount: 1
+  - name: "K\xF6ttbit"
+    prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+    dropChance: 0.4
+    maxAmount: 3
+  - name: "K\xF6ttbit"
+    prefab: {fileID: 7044662610405455640, guid: ae8704d07f8c4f14290c383bffc236c9, type: 3}
+    dropChance: 1
+    maxAmount: 2
+  - name: "K\xF6ttbit2"
+    prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
+    dropChance: 0.4
+    maxAmount: 2
+  - name: "K\xF6ttbit2"
+    prefab: {fileID: 4581056051781266002, guid: 768477ffeccd604479c7f1f4ce4cd81b, type: 3}
+    dropChance: 1
+    maxAmount: 4
   startingHead: {fileID: 11400000, guid: 89af93c1ba131e7419b438f6e3acbc61, type: 2}
   startingLeftArm: {fileID: 11400000, guid: b08bb1dd2006f014da7d0c9052a79866, type: 2}
   startingRightArm: {fileID: 11400000, guid: b08bb1dd2006f014da7d0c9052a79866, type: 2}
@@ -866,22 +887,18 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   damageSounds:
-  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
-  - {fileID: 8300000, guid: 48a0b08f74dee744a927f59907030c82, type: 3}
-  - {fileID: 8300000, guid: ea60473b98b3f3848bce01d2fa38544b, type: 3}
-  - {fileID: 8300000, guid: 661633bb9caa537498a81a54687a3485, type: 3}
-  - {fileID: 8300000, guid: 62799f7d5c270624ea0007ba339580ea, type: 3}
+  - {fileID: 8300000, guid: 4be5700607dd3934c9b9352c5e625c0a, type: 3}
   idleSounds:
-  - {fileID: 8300000, guid: 20570c881034cf34d9172e3e9b91b7c6, type: 3}
-  - {fileID: 8300000, guid: 076e5811bb91275478177cd94639f218, type: 3}
-  - {fileID: 8300000, guid: 719eab725997e3547887c19002d6fb9e, type: 3}
+  - {fileID: 8300000, guid: fef859b45f3a22148967f0ec4b8fa8f9, type: 3}
+  - {fileID: 8300000, guid: 73e66f59ea3d4e44b8f1a8ea5842525f, type: 3}
+  - {fileID: 8300000, guid: f65a15a3c5d591b49b03a937292a4a3d, type: 3}
   spotSounds:
-  - {fileID: 8300000, guid: 6a221fe9073aa9640a08dc1dafa0e315, type: 3}
+  - {fileID: 8300000, guid: 4b4292484138a0a40a9b98210409f0a7, type: 3}
+  - {fileID: 8300000, guid: da6979b5181add5468113bb22b7596f2, type: 3}
   attackSounds: []
-  fleeSounds:
-  - {fileID: 8300000, guid: 6d545bf825cfebc489bc32540c573965, type: 3}
+  fleeSounds: []
   deathSounds:
-  - {fileID: 8300000, guid: 2ad84133cd8e0c24597de247bdf81e78, type: 3}
+  - {fileID: 8300000, guid: 4eb2a47b907d1094d9e81ddc233f0f79, type: 3}
   bloodSounds:
   - {fileID: 8300000, guid: 85be76fa8c0db204bb2e0ae4e2d9551c, type: 3}
   damageFlashColor: {r: 1, g: 0, b: 0, a: 1}
@@ -901,6 +918,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 00b9fbb9502f27f4283622cedea06bf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
+  mouthVaritation: 0
   detectionRadius: 5
   hearingRadius: 8
   attackRange: 1.7
@@ -953,6 +971,12 @@ MonoBehaviour:
   rb: {fileID: 1147609957351382229}
   bobSpeed: 12
   bobAmount: 0.1
+  breathSpeed: 2
+  breathAmount: 0.05
+  swaySpeed: 1.5
+  swayAngle: 5
+  shakeIntensity: 0.05
+  shakeSpeed: 20
 --- !u!114 &1463525113735732293
 MonoBehaviour:
   m_ObjectHideFlags: 0

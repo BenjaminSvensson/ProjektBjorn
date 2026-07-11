@@ -31,6 +31,8 @@ public class WeaponSystem : MonoBehaviour
 
     [Header("Off-Hand Grip")]
     [SerializeField] private Vector3 secondaryGripOffset = new Vector3(-0.3f, 0f, 0f);
+    [Tooltip("How far the hand moves back during the reload animation.")]
+    [SerializeField] private float reloadSlideDistance = 0.4f;
 
     private PlayerLimbController limbController;
     private bool isHoldingWithRightHand = false; 
@@ -69,6 +71,28 @@ public class WeaponSystem : MonoBehaviour
     {
         UpdateWeaponTransform();
     }
+
+    // --- Handle Weapon Breaking ---
+    public void BreakActiveWeapon()
+    {
+        WeaponData activeWeapon = GetActiveWeapon();
+        if (activeWeapon == null) return;
+
+        // 1. Spawn Broken Visual (if any)
+        if (activeWeapon.brokenPrefab != null)
+        {
+            Instantiate(activeWeapon.brokenPrefab, heldWeaponRenderer.transform.position, heldWeaponRenderer.transform.rotation);
+        }
+
+        // 2. Clear the slot (Destroy logic)
+        weaponSlots[activeSlotIndex] = null;
+        slotAmmoCounts[activeSlotIndex] = 0;
+        slotCooldowns[activeSlotIndex] = 0;
+        isReloading = false;
+
+        UpdateState();
+    }
+    // -----------------------------------
 
     private void HandleReloadLogic()
     {
@@ -128,6 +152,11 @@ public class WeaponSystem : MonoBehaviour
         {
             slotAmmoCounts[activeSlotIndex] = Mathf.Max(0, slotAmmoCounts[activeSlotIndex] - amount);
             UpdateAmmoUI();
+
+            if (slotAmmoCounts[activeSlotIndex] <= 0 && totalReserveAmmo > 0)
+            {
+                StartReload();
+            }
         }
     }
 
@@ -173,6 +202,48 @@ public class WeaponSystem : MonoBehaviour
     public int GetTotalReserveAmmo() { return totalReserveAmmo; }
     public bool IsReloading() { return isReloading; }
 
+    public void CaptureSceneState(PlayerSceneState.PlayerState state)
+    {
+        if (state == null) return;
+
+        state.activeWeaponSlot = activeSlotIndex;
+        state.reserveAmmo = totalReserveAmmo;
+        state.weapons = new PlayerSceneState.WeaponSlotState[weaponSlots.Length];
+
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            state.weapons[i] = new PlayerSceneState.WeaponSlotState
+            {
+                data = weaponSlots[i],
+                ammo = slotAmmoCounts[i],
+                cooldown = slotCooldowns[i]
+            };
+        }
+    }
+
+    public void RestoreSceneState(PlayerSceneState.PlayerState state)
+    {
+        if (state == null || !state.hasState) return;
+
+        for (int i = 0; i < weaponSlots.Length; i++)
+        {
+            PlayerSceneState.WeaponSlotState slotState = i < state.weapons.Length
+                ? state.weapons[i]
+                : new PlayerSceneState.WeaponSlotState();
+
+            weaponSlots[i] = slotState.data;
+            slotAmmoCounts[i] = slotState.data != null ? slotState.ammo : 0;
+            slotCooldowns[i] = slotState.data != null ? slotState.cooldown : 0f;
+        }
+
+        activeSlotIndex = Mathf.Clamp(state.activeWeaponSlot, 0, weaponSlots.Length - 1);
+        totalReserveAmmo = Mathf.Clamp(state.reserveAmmo, 0, maxReserveAmmo);
+        isReloading = false;
+        reloadTimer = 0f;
+
+        UpdateState();
+    }
+
     private void HandleInput()
     {
         if (Keyboard.current == null) return;
@@ -194,6 +265,10 @@ public class WeaponSystem : MonoBehaviour
     private void ThrowActiveWeapon()
     {
         if (!IsHoldingWeapon()) return;
+        if (cam == null) cam = Camera.main;
+        if (cam == null) cam = FindFirstObjectByType<Camera>();
+        if (cam == null || Mouse.current == null) return;
+
         isReloading = false; 
         Vector2 mouseWorldPos = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 throwDir = (mouseWorldPos - (Vector2)transform.position).normalized;
@@ -226,20 +301,49 @@ public class WeaponSystem : MonoBehaviour
     public WeaponData GetActiveWeapon() { return weaponSlots[activeSlotIndex]; }
     public bool IsHoldingWithRightHand() { return isHoldingWithRightHand; }
 
-    public bool TryPickupWeapon(WeaponData newData)
+    // --- REWORKED PICKUP LOGIC ---
+    public bool TryPickupWeapon(WeaponData newData, int loadedAmmo)
     {
         if (newData == null) return false;
         if (limbController != null && !limbController.CanAttack()) return false;
 
-        if (weaponSlots[activeSlotIndex] != null) DropWeapon(activeSlotIndex);
+        int targetSlot = -1;
 
-        weaponSlots[activeSlotIndex] = newData;
-        slotCooldowns[activeSlotIndex] = 0f; 
-        slotAmmoCounts[activeSlotIndex] = newData.magazineSize; 
-        isReloading = false;
+        // 1. Check Active Slot first
+        if (weaponSlots[activeSlotIndex] == null)
+        {
+            targetSlot = activeSlotIndex;
+        }
+        // 2. Check Other Slot second
+        else
+        {
+            // Assuming 2 slots total. This finds the index that isn't the active one.
+            int otherSlotIndex = (activeSlotIndex == 0) ? 1 : 0;
+            if (weaponSlots[otherSlotIndex] == null)
+            {
+                targetSlot = otherSlotIndex;
+            }
+        }
 
-        UpdateState();
-        return true;
+        // 3. If we found a valid empty slot
+        if (targetSlot != -1)
+        {
+            weaponSlots[targetSlot] = newData;
+            slotCooldowns[targetSlot] = 0f;
+            slotAmmoCounts[targetSlot] = loadedAmmo;
+            
+            // If we filled the active slot, make sure reloading status is reset
+            if (targetSlot == activeSlotIndex)
+            {
+                isReloading = false;
+            }
+
+            UpdateState();
+            return true; // Successfully picked up
+        }
+
+        // 4. Both full - do nothing
+        return false;
     }
 
     public void DropWeapon(int slotIndex, Vector2? dropDir = null, float force = 5f)
@@ -248,18 +352,23 @@ public class WeaponSystem : MonoBehaviour
         WeaponData weaponToDrop = weaponSlots[slotIndex];
         if (weaponToDrop == null) return;
 
+        int currentAmmo = slotAmmoCounts[slotIndex];
+
         weaponSlots[slotIndex] = null;
         slotCooldowns[slotIndex] = 0f; 
         slotAmmoCounts[slotIndex] = 0; 
 
         if (weaponToDrop.pickupPrefab != null)
         {
-            GameObject drop = Instantiate(weaponToDrop.pickupPrefab, transform.position, Quaternion.identity);
+            Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
+            Vector2 spawnPos = (Vector2)transform.position + (finalDir * 0.75f); // Spawn Offset
+
+            GameObject drop = Instantiate(weaponToDrop.pickupPrefab, spawnPos, Quaternion.identity);
             WeaponPickup pickupScript = drop.GetComponent<WeaponPickup>();
             if (pickupScript != null)
             {
-                Vector2 finalDir = dropDir.HasValue ? dropDir.Value : Random.insideUnitCircle.normalized;
-                pickupScript.InitializeDrop(finalDir, force);
+                pickupScript.InitializeDrop(finalDir, force, currentAmmo);
+                pickupScript.IgnorePhysicsCollisionWith(GetComponentsInChildren<Collider2D>(), 0.8f);
             }
         }
 
@@ -336,7 +445,6 @@ public class WeaponSystem : MonoBehaviour
 
         if (mainAnchor != null)
         {
-            // --- NEW: Apply heldPositionOffset ---
             Vector3 finalGripOffset = gripOffset;
             if (activeWeapon != null)
             {
@@ -359,10 +467,19 @@ public class WeaponSystem : MonoBehaviour
             if (activeWeapon != null)
             {
                 heldWeaponRenderer.transform.localScale = activeWeapon.heldScale;
+
+                Vector3 dynamicSecondaryGrip = secondaryGripOffset;
+                if (isReloading && activeWeapon.reloadTime > 0)
+                {
+                    float progress = 1f - (reloadTimer / activeWeapon.reloadTime);
+                    float slide = Mathf.Sin(progress * Mathf.PI) * reloadSlideDistance;
+                    dynamicSecondaryGrip.x -= slide;
+                }
+
                 if (isHoldingWithRightHand && limbController.GetArmData(true) != null)
-                    SnapOffHand(limbController.GetLeftArmSlot(), heldWeaponRenderer.transform, baseRotation);
+                    SnapOffHand(limbController.GetLeftArmSlot(), heldWeaponRenderer.transform, baseRotation, dynamicSecondaryGrip);
                 else if (!isHoldingWithRightHand && limbController.GetArmData(false) != null)
-                    SnapOffHand(limbController.GetRightArmSlot(), heldWeaponRenderer.transform, baseRotation);
+                    SnapOffHand(limbController.GetRightArmSlot(), heldWeaponRenderer.transform, baseRotation, dynamicSecondaryGrip);
             }
             else
             {
@@ -371,10 +488,10 @@ public class WeaponSystem : MonoBehaviour
         }
     }
 
-    private void SnapOffHand(Transform hand, Transform weaponTransform, Quaternion baseRotation)
+    private void SnapOffHand(Transform hand, Transform weaponTransform, Quaternion baseRotation, Vector3 offset)
     {
         if (hand == null) return;
-        Vector3 worldOffset = baseRotation * secondaryGripOffset;
+        Vector3 worldOffset = baseRotation * offset;
         Vector3 targetPos = weaponTransform.position + worldOffset;
         Quaternion targetRot = baseRotation * Quaternion.Euler(0, 0, 180f);
         hand.SetPositionAndRotation(targetPos, targetRot);

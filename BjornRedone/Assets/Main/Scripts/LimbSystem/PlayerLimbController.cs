@@ -1,20 +1,18 @@
 using UnityEngine;
+using UnityEngine.UI; 
 using System.Collections;
 using System.Collections.Generic;
 
 [RequireComponent(typeof(AudioSource))]
 public class PlayerLimbController : MonoBehaviour
 {
-    [Header("Visuals (Assign in Inspector)")]
-    [Tooltip("The parent GameObject that holds all limb slots. This is what will shake.")]
+    [Header("Visuals")]
     [SerializeField] private Transform visualsHolder;
-    [SerializeField] private float shakeDuration = 0.15f;
-    [SerializeField] private float shakeMagnitude = 0.1f;
+    [SerializeField] private float shakeDuration = 0.15f, shakeMagnitude = 0.1f;
+    [SerializeField] private float absolutemax = 150f;
 
     [Header("Visuals - Torso")]
-    [SerializeField] private GameObject torsoDefaultVisual;
-    [SerializeField] private GameObject torsoDamagedVisual;
-    [Tooltip("Health percentage (0-1) to show damaged visuals for Head/Torso.")]
+    [SerializeField] private GameObject torsoDefaultVisual, torsoDamagedVisual;
     [SerializeField] private float damageVisualThreshold = 0.25f;
 
     [Header("Damage Feedback")]
@@ -22,397 +20,400 @@ public class PlayerLimbController : MonoBehaviour
     [SerializeField] private float flashDuration = 0.2f;
     [SerializeField] private Color flashColor = Color.red;
 
-    [Header("Audio")] // --- NEW ---
+    [Header("Audio")] 
     [SerializeField] private AudioClip limbAttachSound;
 
-    [Header("Sorting Orders (Relative to Body)")]
-    [SerializeField] private int headOrder = 10;
-    [SerializeField] private int leftArmOrder = 5;
-    [SerializeField] private int rightArmOrder = -5;
-    [SerializeField] private int legOrder = -10;
+    [Header("Low Health Feedback")]
+    [Tooltip("An AudioSource dedicated to the heartbeat sound (separate from the main Action AudioSource).")]
+    [SerializeField] private AudioSource heartbeatSource;
+    [Tooltip("A UI Image covering the screen (e.g., a black or red vignette sprite).")]
+    [SerializeField] private RawImage vignetteImage;
+    [Range(0f, 1f)]
+    [SerializeField] private float lowHealthThreshold = 0.4f; 
+    [SerializeField] private float maxVignetteAlpha = 0.8f;
+    [SerializeField] private float minHeartbeatPitch = 1.0f;
+    [SerializeField] private float maxHeartbeatPitch = 1.8f;
+    private Multipliers multiplier;
 
-    [Header("Limb Slots (Assign in Inspector)")]
-    public Transform headSlot;
-    public Transform leftArmSlot;
-    public Transform rightArmSlot;
-    public Transform leftLegSlot;
-    public Transform rightLegSlot;
+    [Header("UI")]
+    [Tooltip("Reference to the DeathScreenUI script in the scene.")]
+    [SerializeField] private DeathScreenUI deathScreen;
+
+    [Header("Sorting Orders")]
+    [SerializeField] private int headOrder = 10, leftArmOrder = 5, rightArmOrder = -5, legOrder = -10;
+
+    [Header("Limb Slots")]
+    public Transform headSlot, leftArmSlot, rightArmSlot, leftLegSlot, rightLegSlot;
 
     [Header("Base Stats")]
-    public float baseMoveSpeed = 5f;
-    public float baseAttackDamage = 1f;
-    public float torsoHealth = 100f; 
-    private float maxTorsoHealth; // Used for threshold check
+    public float baseMoveSpeed = 5f, baseAttackDamage = 1f, torsoHealth = 100f; 
+    private float maxTorsoHealth;
 
-    [Header("Starting Limbs (Prefabs)")]
-    public LimbData startingHead;
-    public LimbData startingArm;
-    public LimbData startingLeg;
+    [Header("Starting Limbs")]
+    public LimbData startingHead, startingArm, startingLeg;
 
     [Header("Limb Physics")]
-    [Range(0f, 1f)]
-    public float maintainLimbChance = 0.3f;
+    [Range(0f, 1f)] public float maintainLimbChance = 0.3f;
 
-    // --- Current Limb References ---
-    private WorldLimb currentHead;
-    private WorldLimb currentLeftArm;
-    private WorldLimb currentRightArm;
-    private WorldLimb currentLeftLeg;
-    private WorldLimb currentRightLeg;
-    
-    // --- Logic ---
-    private int initialLimbCount = 4; // Assuming 4 limbs for player usually
+    private WorldLimb currentHead, currentLeftArm, currentRightArm, currentLeftLeg, currentRightLeg;
+    private int initialLimbCount = 4;
     private LimbSlot nextWeakLimb = (LimbSlot)(-1);
 
-    // --- Component References ---
     private PlayerMovement playerMovement;
     private Rigidbody2D rb; 
     private Vector3 visualsHolderOriginalPos; 
-    private bool isShaking = false;
-    private bool canCrawl = false;
-    private AudioSource audioSource;
+    private bool isShaking = false, canCrawl = false;
+    private AudioSource audioSource; 
     private List<SpriteRenderer> currentRenderers = new List<SpriteRenderer>();
     private Coroutine flashCoroutine;
 
     void Start()
     {
+        multiplier = GetComponent<Multipliers>();
         playerMovement = GetComponent<PlayerMovement>();
-        rb = GetComponent<Rigidbody2D>(); 
+        rb = GetComponent<Rigidbody2D>();
         audioSource = GetComponent<AudioSource>();
-        
+
         maxTorsoHealth = torsoHealth;
+        if (visualsHolder) visualsHolderOriginalPos = visualsHolder.localPosition;
 
-        if (visualsHolder != null)
-        {
-            visualsHolderOriginalPos = visualsHolder.localPosition;
-        }
+        if (startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
+        if (startingArm) { AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false); AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false); }
+        if (startingLeg) { AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false); AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false); }
 
-        if(startingHead) AttachToSlot(startingHead, LimbSlot.Head, false, false, false);
-        if(startingArm) AttachToSlot(startingArm, LimbSlot.LeftArm, true, false, false);
-        if(startingArm) AttachToSlot(startingArm, LimbSlot.RightArm, false, false, false);
-        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.LeftLeg, true, false, false);
-        if(startingLeg) AttachToSlot(startingLeg, LimbSlot.RightLeg, false, false, false);
-
-        PickNextWeakLimb(); // Initial pick
+        PickNextWeakLimb();
         UpdateDamageVisuals();
         UpdatePlayerStats();
+
+        // Setup Heartbeat Loop
+        if (heartbeatSource != null)
+        {
+            heartbeatSource.loop = true;
+            heartbeatSource.volume = 0f;
+            if (!heartbeatSource.isPlaying) heartbeatSource.Play();
+        }
+        else
+        {
+            Debug.LogWarning("PlayerLimbController: Heartbeat AudioSource not assigned!");
+        }
+
+        // Initialize Vignette
+        if (vignetteImage != null)
+        {
+            Color c = vignetteImage.color;
+            c.a = 0f;
+            vignetteImage.color = c;
+            vignetteImage.gameObject.SetActive(true);
+        }
+        else
+        {
+            Debug.LogWarning("PlayerLimbController: Vignette Image not assigned!");
+        }
+
+        // Auto-find death screen if not assigned
+        if (deathScreen == null)
+        {
+            deathScreen = FindFirstObjectByType<DeathScreenUI>();
+        }
+
+        PlayerSceneState.RestoreTo(gameObject);
+    }
+
+    void Update()
+    {
+        HandleLowHealthEffects();
+    }
+
+    private void HandleLowHealthEffects()
+    {
+        if (maxTorsoHealth <= 0) return;
+
+        float healthPercent = Mathf.Clamp01(torsoHealth / maxTorsoHealth);
+
+        // If we are below threshold and alive
+        if (healthPercent <= lowHealthThreshold && torsoHealth > 0)
+        {
+            float intensity = 1f - (healthPercent / lowHealthThreshold);
+            
+            // Audio
+            if (heartbeatSource)
+            {
+                heartbeatSource.volume = Mathf.Lerp(heartbeatSource.volume, intensity, Time.deltaTime * 2f);
+                heartbeatSource.pitch = Mathf.Lerp(minHeartbeatPitch, maxHeartbeatPitch, intensity);
+            }
+
+            // Visual
+            if (vignetteImage)
+            {
+                Color c = vignetteImage.color;
+                c.a = Mathf.Lerp(c.a, intensity * maxVignetteAlpha, Time.deltaTime * 5f);
+                vignetteImage.color = c;
+            }
+        }
+        else
+        {
+            // Fade out effects
+            if (heartbeatSource)
+            {
+                heartbeatSource.volume = Mathf.Lerp(heartbeatSource.volume, 0f, Time.deltaTime * 2f);
+            }
+
+            if (vignetteImage)
+            {
+                Color c = vignetteImage.color;
+                c.a = Mathf.Lerp(c.a, 0f, Time.deltaTime * 5f);
+                vignetteImage.color = c;
+            }
+        }
     }
 
     public void TakeDamage(float damageAmount, Vector2 hitDirection = default)
     {
-        if (audioSource != null && damageSound != null)
-        {
-            audioSource.PlayOneShot(damageSound);
-        }
-
-        if (BloodManager.Instance != null)
-        {
-            Vector2 dir = hitDirection == Vector2.zero ? Random.insideUnitCircle.normalized : hitDirection;
-            BloodManager.Instance.SpawnBlood(transform.position, dir);
-        }
-
-        if (flashCoroutine != null) StopCoroutine(flashCoroutine);
-        flashCoroutine = StartCoroutine(FlashDamageCoroutine());
-
-        if (visualsHolder != null && !isShaking) StartCoroutine(ShakeVisuals());
+        audioSource?.PlayOneShot(damageSound);
+        BloodManager.Instance?.SpawnBlood(transform.position, hitDirection == Vector2.zero ? Random.insideUnitCircle.normalized : hitDirection);
+        if (flashCoroutine != null) StopCoroutine(flashCoroutine); flashCoroutine = StartCoroutine(FlashDamageCoroutine());
+        if (visualsHolder && !isShaking) StartCoroutine(ShakeVisuals());
         
-        // --- Damage Logic ---
         torsoHealth -= damageAmount;
-
-        float healthPercent = Mathf.Clamp01(torsoHealth / maxTorsoHealth);
-        int targetLimbCount = Mathf.CeilToInt(healthPercent * initialLimbCount);
-        int currentLimbs = GetCurrentArmLegCount();
-
-        if (currentLimbs > targetLimbCount)
+        int targetCount = Mathf.CeilToInt((torsoHealth / maxTorsoHealth) * initialLimbCount);
+        if (GetCurrentArmLegCount() > targetCount)
         {
-            // We need to lose a limb. Lose the targeted one.
-            if ((int)nextWeakLimb != -1 && IsLimbAttached(nextWeakLimb))
-            {
-                DetachLimb(nextWeakLimb);
-            }
-            else
-            {
-                PickNextWeakLimb();
-                if((int)nextWeakLimb != -1) DetachLimb(nextWeakLimb);
-            }
-            PickNextWeakLimb(); // Prepare next
+            if ((int)nextWeakLimb != -1 && IsLimbAttached(nextWeakLimb)) DetachLimb(nextWeakLimb);
+            else { PickNextWeakLimb(); if((int)nextWeakLimb != -1) DetachLimb(nextWeakLimb); }
+            PickNextWeakLimb();
         }
-        else if (currentHead && torsoHealth <= 0)
-        {
-            Debug.Log("Losing head!");
-            DetachLimb(LimbSlot.Head);
-        }
-
-        if (torsoHealth <= 0)
-        {
-            Die();
-        }
+        else if (currentHead && torsoHealth <= 0) DetachLimb(LimbSlot.Head);
         
-        UpdateDamageVisuals();
+        if (torsoHealth <= 0) Die();
+        else UpdateDamageVisuals(); // Only update visuals if still alive, otherwise Die handles it
     }
 
     private void PickNextWeakLimb()
     {
-        List<LimbSlot> available = new List<LimbSlot>();
-        if (currentLeftArm) available.Add(LimbSlot.LeftArm);
-        if (currentRightArm) available.Add(LimbSlot.RightArm);
-        if (currentLeftLeg) available.Add(LimbSlot.LeftLeg);
-        if (currentRightLeg) available.Add(LimbSlot.RightLeg);
-
-        nextWeakLimb = (LimbSlot)(-1);
-        if (available.Count > 0)
-        {
-            nextWeakLimb = available[Random.Range(0, available.Count)];
-        }
+        List<LimbSlot> avail = new List<LimbSlot>();
+        if (currentLeftArm) avail.Add(LimbSlot.LeftArm); if (currentRightArm) avail.Add(LimbSlot.RightArm);
+        if (currentLeftLeg) avail.Add(LimbSlot.LeftLeg); if (currentRightLeg) avail.Add(LimbSlot.RightLeg);
+        nextWeakLimb = avail.Count > 0 ? avail[Random.Range(0, avail.Count)] : (LimbSlot)(-1);
     }
 
     private void UpdateDamageVisuals()
     {
-        int currentLimbs = GetCurrentArmLegCount();
-        
-        float healthPerLimb = maxTorsoHealth / Mathf.Max(1, initialLimbCount);
-        float dropThreshold = (currentLimbs - 1) * healthPerLimb; 
-        float warningThreshold = dropThreshold + (healthPerLimb * 0.7f);
+        int count = GetCurrentArmLegCount();
+        float hPerLimb = maxTorsoHealth / Mathf.Max(1, initialLimbCount);
+        if ((int)nextWeakLimb != -1) GetLimb(nextWeakLimb)?.SetVisualState(torsoHealth <= (count - 1) * hPerLimb + (hPerLimb * 0.7f));
+        bool crit = (torsoHealth / maxTorsoHealth) <= damageVisualThreshold;
+        torsoDefaultVisual?.SetActive(!crit); torsoDamagedVisual?.SetActive(crit); currentHead?.SetVisualState(crit);
+    }
 
-        if ((int)nextWeakLimb != -1)
+    private int GetCurrentArmLegCount() => (currentLeftArm?1:0) + (currentRightArm?1:0) + (currentLeftLeg?1:0) + (currentRightLeg?1:0);
+    private bool IsLimbAttached(LimbSlot slot) => GetLimb(slot) != null;
+    private WorldLimb GetLimb(LimbSlot slot) { switch (slot) { case LimbSlot.Head: return currentHead; case LimbSlot.LeftArm: return currentLeftArm; case LimbSlot.RightArm: return currentRightArm; case LimbSlot.LeftLeg: return currentLeftLeg; case LimbSlot.RightLeg: return currentRightLeg; default: return null; } }
+
+    public PlayerSceneState.PlayerState CaptureSceneState()
+    {
+        List<PlayerSceneState.LimbSlotState> limbStates = new List<PlayerSceneState.LimbSlotState>();
+        AddLimbState(limbStates, LimbSlot.Head, currentHead);
+        AddLimbState(limbStates, LimbSlot.LeftArm, currentLeftArm);
+        AddLimbState(limbStates, LimbSlot.RightArm, currentRightArm);
+        AddLimbState(limbStates, LimbSlot.LeftLeg, currentLeftLeg);
+        AddLimbState(limbStates, LimbSlot.RightLeg, currentRightLeg);
+
+        return new PlayerSceneState.PlayerState
         {
-            bool shouldShowDamage = torsoHealth <= warningThreshold;
-            WorldLimb limb = GetLimb(nextWeakLimb);
-            if (limb != null)
-            {
-                limb.SetVisualState(shouldShowDamage);
-            }
+            torsoHealth = torsoHealth,
+            maxTorsoHealth = maxTorsoHealth,
+            limbs = limbStates.ToArray()
+        };
+    }
+
+    private void AddLimbState(List<PlayerSceneState.LimbSlotState> limbStates, LimbSlot slot, WorldLimb limb)
+    {
+        if (limb == null || limb.GetLimbData() == null) return;
+
+        limbStates.Add(new PlayerSceneState.LimbSlotState
+        {
+            slot = slot,
+            data = limb.GetLimbData(),
+            isDamaged = limb.IsShowingDamaged()
+        });
+    }
+
+    public void RestoreSceneState(PlayerSceneState.PlayerState state)
+    {
+        if (state == null || !state.hasState) return;
+
+        ClearAttachedLimbs();
+
+        maxTorsoHealth = Mathf.Max(1f, state.maxTorsoHealth);
+        torsoHealth = Mathf.Clamp(state.torsoHealth, 0f, maxTorsoHealth);
+
+        foreach (PlayerSceneState.LimbSlotState limbState in state.limbs)
+        {
+            if (limbState.data == null) continue;
+
+            bool flipSprite = limbState.slot == LimbSlot.LeftArm || limbState.slot == LimbSlot.LeftLeg;
+            AttachToSlot(limbState.data, limbState.slot, flipSprite, limbState.isDamaged, false);
         }
 
-        bool criticalHealth = (torsoHealth / maxTorsoHealth) <= damageVisualThreshold;
-        if (torsoDefaultVisual) torsoDefaultVisual.SetActive(!criticalHealth);
-        if (torsoDamagedVisual) torsoDamagedVisual.SetActive(criticalHealth);
-        if (currentHead != null) currentHead.SetVisualState(criticalHealth);
+        PickNextWeakLimb();
+        UpdateDamageVisuals();
+        UpdatePlayerStats();
     }
 
-    private int GetCurrentArmLegCount()
+    private void ClearAttachedLimbs()
     {
-        int count = 0;
-        if (currentLeftArm) count++;
-        if (currentRightArm) count++;
-        if (currentLeftLeg) count++;
-        if (currentRightLeg) count++;
-        return count;
+        DestroyAttachedLimb(currentHead);
+        DestroyAttachedLimb(currentLeftArm);
+        DestroyAttachedLimb(currentRightArm);
+        DestroyAttachedLimb(currentLeftLeg);
+        DestroyAttachedLimb(currentRightLeg);
+
+        currentHead = null;
+        currentLeftArm = null;
+        currentRightArm = null;
+        currentLeftLeg = null;
+        currentRightLeg = null;
+        currentRenderers.Clear();
     }
 
-    private bool IsLimbAttached(LimbSlot slot)
+    private void DestroyAttachedLimb(WorldLimb limb)
     {
-        return GetLimb(slot) != null;
-    }
-
-    private WorldLimb GetLimb(LimbSlot slot)
-    {
-        switch (slot)
-        {
-            case LimbSlot.Head: return currentHead;
-            case LimbSlot.LeftArm: return currentLeftArm;
-            case LimbSlot.RightArm: return currentRightArm;
-            case LimbSlot.LeftLeg: return currentLeftLeg;
-            case LimbSlot.RightLeg: return currentRightLeg;
-            default: return null;
-        }
+        if (limb != null) Destroy(limb.gameObject);
     }
 
     public bool TryAttachLimb(LimbData limbToAttach, bool isDamaged)
     {
-        if (limbToAttach == null) return false;
-
+        if (!limbToAttach) return false;
         bool attached = false;
-
-        // --- UNIVERSAL UPDATE ---
-        // 1. Check Legs (Prioritize filling legs for Universal types)
         if (limbToAttach.limbType == LimbType.Leg || limbToAttach.limbType == LimbType.Universal)
         {
-            if (currentRightLeg == null) { AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged); attached = true; }
-            else if (currentLeftLeg == null) { AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged); attached = true; }
+            if (!currentRightLeg) { AttachToSlot(limbToAttach, LimbSlot.RightLeg, false, isDamaged); attached = true; }
+            else if (!currentLeftLeg) { AttachToSlot(limbToAttach, LimbSlot.LeftLeg, true, isDamaged); attached = true; }
         }
-
-        // 2. Check Arms (If Universal wasn't used for a leg, or if it's an Arm type)
         if (!attached && (limbToAttach.limbType == LimbType.Arm || limbToAttach.limbType == LimbType.Universal))
         {
-            if (currentRightArm == null) { AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged); attached = true; }
-            else if (currentLeftArm == null) { AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged); attached = true; }
+            if (!currentRightArm) { AttachToSlot(limbToAttach, LimbSlot.RightArm, false, isDamaged); attached = true; }
+            else if (!currentLeftArm) { AttachToSlot(limbToAttach, LimbSlot.LeftArm, true, isDamaged); attached = true; }
         }
-
-        if (attached)
-        {
-            torsoHealth = Mathf.Min(torsoHealth + 10f, maxTorsoHealth);
-            PickNextWeakLimb();
-            UpdateDamageVisuals();
-            
-            // --- NEW: Play Attach Sound ---
-            if (audioSource != null && limbAttachSound != null)
-            {
-                audioSource.PlayOneShot(limbAttachSound);
-            }
-            // ------------------------------
-
-            return true;
-        }
+        if (attached) { torsoHealth = Mathf.Min(torsoHealth + 10f, maxTorsoHealth); PickNextWeakLimb(); UpdateDamageVisuals(); audioSource?.PlayOneShot(limbAttachSound); return true; }
         return false;
     }
 
     void DetachLimb(LimbSlot slot)
     {
-        WorldLimb limbToDetach = GetLimb(slot);
-        switch (slot)
+        WorldLimb limb = GetLimb(slot);
+        switch (slot) { case LimbSlot.Head: currentHead = null; break; case LimbSlot.LeftArm: currentLeftArm = null; break; case LimbSlot.RightArm: currentRightArm = null; break; case LimbSlot.LeftLeg: currentLeftLeg = null; break; case LimbSlot.RightLeg: currentRightLeg = null; break; }
+        if (limb)
         {
-            case LimbSlot.Head: currentHead = null; break;
-            case LimbSlot.LeftArm: currentLeftArm = null; break;
-            case LimbSlot.RightArm: currentRightArm = null; break;
-            case LimbSlot.LeftLeg: currentLeftLeg = null; break;
-            case LimbSlot.RightLeg: currentRightLeg = null; break;
+            Instantiate(limb.GetLimbData().visualPrefab, transform.position, Quaternion.identity).GetComponent<WorldLimb>()?.InitializeThrow(limb.GetLimbData(), Random.value <= maintainLimbChance, new Vector2(Random.Range(-1f, 1f), Random.Range(0.5f, 1f)).normalized, limb.IsShowingDamaged());
+            Destroy(limb.gameObject);
         }
-
-        if (limbToDetach != null)
-        {
-            bool isMaintained = Random.value <= maintainLimbChance;
-            GameObject thrownLimbObj = Instantiate(limbToDetach.GetLimbData().visualPrefab, transform.position, Quaternion.identity);
-            Vector2 throwDirection = new Vector2(Random.Range(-1f, 1f), Random.Range(0.5f, 1f)).normalized; 
-            WorldLimb worldLimb = thrownLimbObj.GetComponent<WorldLimb>();
-            if (worldLimb)
-            {
-                worldLimb.InitializeThrow(limbToDetach.GetLimbData(), isMaintained, throwDirection, limbToDetach.IsShowingDamaged());
-            }
-            Destroy(limbToDetach.gameObject);
-        }
-
-        if (currentHead == null) Die();
-        UpdatePlayerStats();
+        if (!currentHead) Die(); UpdatePlayerStats();
     }
 
     void AttachToSlot(LimbData limbData, LimbSlot slot, bool flipSprite, bool isDamaged, bool updateStats = true)
     {
-        Transform parentSlot = GetSlotTransform(slot);
-        if (parentSlot == null) return;
-
-        GameObject limbObj = Instantiate(limbData.visualPrefab, parentSlot.position, parentSlot.rotation, parentSlot);
-        limbObj.name = limbData.name + " (Attached)";
-
-        SpriteRenderer sr = limbObj.GetComponentInChildren<SpriteRenderer>();
-        if (sr != null && flipSprite) sr.flipX = true;
-
-        WorldLimb limbComponent = limbObj.GetComponent<WorldLimb>();
-        if (limbComponent == null) { Destroy(limbObj); return; }
-
-        limbComponent.InitializeAttached(limbData, isDamaged);
-
-        int sortingOrder = 0;
-        switch (slot)
-        {
-            case LimbSlot.Head: currentHead = limbComponent; sortingOrder = headOrder; break;
-            case LimbSlot.LeftArm: currentLeftArm = limbComponent; sortingOrder = leftArmOrder; break;
-            case LimbSlot.RightArm: currentRightArm = limbComponent; sortingOrder = rightArmOrder; break;
-            case LimbSlot.LeftLeg: currentLeftLeg = limbComponent; sortingOrder = legOrder; break;
-            case LimbSlot.RightLeg: currentRightLeg = limbComponent; sortingOrder = legOrder; break;
-        }
-
-        SpriteRenderer[] srs = limbObj.GetComponentsInChildren<SpriteRenderer>();
-        foreach (var sr_renderer in srs) sr_renderer.sortingOrder = sortingOrder;
-
-        currentRenderers.AddRange(srs); 
-
+        Transform parent = GetSlotTransform(slot); if (!parent) return;
+        GameObject obj = Instantiate(limbData.visualPrefab, parent.position, parent.rotation, parent);
+        if (obj.GetComponentInChildren<SpriteRenderer>() && flipSprite) obj.GetComponentInChildren<SpriteRenderer>().flipX = true;
+        WorldLimb comp = obj.GetComponent<WorldLimb>(); if (!comp) { Destroy(obj); return; }
+        comp.InitializeAttached(limbData, isDamaged);
+        int order = (slot == LimbSlot.Head) ? headOrder : (slot == LimbSlot.LeftArm) ? leftArmOrder : (slot == LimbSlot.RightArm) ? rightArmOrder : legOrder;
+        foreach (var sr in obj.GetComponentsInChildren<SpriteRenderer>()) { sr.sortingOrder = order; currentRenderers.Add(sr); }
+        switch (slot) { case LimbSlot.Head: currentHead = comp; break; case LimbSlot.LeftArm: currentLeftArm = comp; break; case LimbSlot.RightArm: currentRightArm = comp; break; case LimbSlot.LeftLeg: currentLeftLeg = comp; break; case LimbSlot.RightLeg: currentRightLeg = comp; break; }
         if (updateStats) UpdatePlayerStats();
     }
 
     void UpdatePlayerStats()
     {
-        float totalMoveSpeed = 0f;
-        int legCount = 0;
-        int armCount = 0; 
-        
-        if (currentLeftLeg) { totalMoveSpeed += currentLeftLeg.GetLimbData().moveSpeedBonus; legCount++; }
-        if (currentRightLeg) { totalMoveSpeed += currentRightLeg.GetLimbData().moveSpeedBonus; legCount++; }
-        if (currentLeftArm) armCount++;
-        if (currentRightArm) armCount++;
-
-        if (legCount > 0)
-        {
-            totalMoveSpeed += baseMoveSpeed; 
-            if (legCount == 1) totalMoveSpeed *= 0.6f; 
-        }
-        
-        if (playerMovement) playerMovement.SetMoveSpeed(totalMoveSpeed);
-
-        canCrawl = (legCount == 0 && armCount > 0);
-
-        if (legCount == 0 && armCount == 0)
-        {
-            if (currentHead != null)
-            {
-                Debug.Log("Player is helpless. Detaching head.");
-                DetachLimb(LimbSlot.Head); 
-            }
-        }
+        float speed = (currentLeftLeg?currentLeftLeg.GetLimbData().moveSpeedBonus:0) + (currentRightLeg?currentRightLeg.GetLimbData().moveSpeedBonus:0);
+        int legs = (currentLeftLeg?1:0) + (currentRightLeg?1:0);
+        int arms = (currentLeftArm?1:0) + (currentRightArm?1:0);
+        if (legs > 0) { speed += baseMoveSpeed; if (legs == 1) speed *= 0.6f; }
+        playerMovement?.SetMoveSpeed(speed);
+        canCrawl = (legs == 0 && arms > 0);
+        if (legs == 0 && arms == 0 && currentHead) DetachLimb(LimbSlot.Head);
     }
 
     Transform GetSlotTransform(LimbSlot slot)
     {
-        switch (slot)
+        switch (slot) { case LimbSlot.Head: return headSlot; case LimbSlot.LeftArm: return leftArmSlot; case LimbSlot.RightArm: return rightArmSlot; case LimbSlot.LeftLeg: return leftLegSlot; case LimbSlot.RightLeg: return rightLegSlot; default: return null; }
+    }
+
+    void Die() 
+    { 
+        Debug.Log("Player Die() called.");
+        this.enabled = false; 
+        if (playerMovement) playerMovement.enabled = false; 
+        if (rb) rb.linearVelocity = Vector2.zero; 
+        StopAllCoroutines(); 
+        
+        if (heartbeatSource) heartbeatSource.Stop();
+        if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos; 
+
+        // Try to find death screen if we missed it in Start
+        if (deathScreen == null) deathScreen = FindFirstObjectByType<DeathScreenUI>();
+
+        if (deathScreen) 
         {
-            case LimbSlot.Head:     return headSlot;
-            case LimbSlot.LeftArm:  return leftArmSlot;
-            case LimbSlot.RightArm: return rightArmSlot;
-            case LimbSlot.LeftLeg:  return leftLegSlot;
-            case LimbSlot.RightLeg: return rightLegSlot;
-            default:                return null;
+            deathScreen.TriggerDeath();
+        }
+        else
+        {
+            Debug.LogError("PlayerLimbController: Could not find DeathScreenUI to trigger!");
         }
     }
 
-    void Die()
-    {
-        this.enabled = false;
-        if (playerMovement) playerMovement.enabled = false;
-        if (rb != null) rb.linearVelocity = Vector2.zero;
-        StopAllCoroutines();
-        if(visualsHolder) visualsHolder.localPosition = visualsHolderOriginalPos;
-    }
-
-    public bool CanAttack() { return currentLeftArm != null || currentRightArm != null; }
-    public bool CanCrawl() { return canCrawl; }
-
-    public LimbData GetArmData(bool isLeftArm)
-    {
-        if (isLeftArm) return (currentLeftArm != null) ? currentLeftArm.GetLimbData() : null;
-        else return (currentRightArm != null) ? currentRightArm.GetLimbData() : null;
-    }
-
-    public Transform GetVisualsHolder() { return visualsHolder; }
-    public Transform GetLeftArmSlot() { return leftArmSlot; }
-    public Transform GetRightArmSlot() { return rightArmSlot; }
-    public Transform GetLeftLegSlot() { return leftLegSlot; }
-    public Transform GetRightLegSlot() { return rightLegSlot; }
+    public bool CanAttack() => currentLeftArm != null || currentRightArm != null;
+    public bool CanCrawl() => canCrawl;
+    public LimbData GetArmData(bool left) => left ? (currentLeftArm?.GetLimbData()) : (currentRightArm?.GetLimbData());
+    public LimbData GetLegData(bool left) => left ? (currentLeftLeg?.GetLimbData()) : (currentRightLeg?.GetLimbData());
+    public Transform GetVisualsHolder() => visualsHolder; public Transform GetLeftArmSlot() => leftArmSlot; public Transform GetRightArmSlot() => rightArmSlot; public Transform GetLeftLegSlot() => leftLegSlot; public Transform GetRightLegSlot() => rightLegSlot;
 
     private IEnumerator ShakeVisuals()
     {
-        isShaking = true;
-        float elapsed = 0f;
-        while (elapsed < shakeDuration)
-        {
-            float x = Random.Range(-1f, 1f) * shakeMagnitude;
-            float y = Random.Range(-1f, 1f) * shakeMagnitude;
-            visualsHolder.localPosition = new Vector3(visualsHolderOriginalPos.x + x, visualsHolderOriginalPos.y + y, visualsHolderOriginalPos.z);
-            elapsed += Time.deltaTime;
-            yield return null; 
-        }
-        visualsHolder.localPosition = visualsHolderOriginalPos;
-        isShaking = false;
+        isShaking = true; float e = 0f;
+        while (e < shakeDuration) { visualsHolder.localPosition = visualsHolderOriginalPos + (Vector3)(Random.insideUnitCircle * shakeMagnitude); e += Time.deltaTime; yield return null; }
+        visualsHolder.localPosition = visualsHolderOriginalPos; isShaking = false;
     }
 
     private IEnumerator FlashDamageCoroutine()
     {
-        currentRenderers.Clear();
-        if (visualsHolder != null) visualsHolder.GetComponentsInChildren<SpriteRenderer>(currentRenderers);
-
-        foreach (var renderer in currentRenderers) if (renderer != null) renderer.color = flashColor;
+        currentRenderers.Clear(); visualsHolder?.GetComponentsInChildren<SpriteRenderer>(currentRenderers);
+        foreach (var r in currentRenderers) if (r) r.color = flashColor;
         yield return new WaitForSeconds(flashDuration);
-        foreach (var renderer in currentRenderers) if (renderer != null) renderer.color = Color.white;
-        
+        foreach (var r in currentRenderers) if (r) r.color = Color.white;
         flashCoroutine = null; 
+    }
+    public void IncreaseMaxHealth(float amount, bool healBySameAmount = true)
+    {
+        if (amount <= 0f) return;
+
+        // Increase max health
+        maxTorsoHealth += amount;
+
+        // Clamp max health FIRST
+        maxTorsoHealth = Mathf.Min(maxTorsoHealth, absolutemax);
+
+        // Optional heal
+        if (healBySameAmount)
+        {
+            torsoHealth += amount;
+        }
+
+        // Clamp health AFTER max is finalized
+        torsoHealth = Mathf.Clamp(torsoHealth, 0f, maxTorsoHealth);
+
+        UpdateDamageVisuals();
+    }
+
+    public void Heal(float amount)
+    {
+        if (torsoHealth <= 0) return; // can't heal if dead
+
+        torsoHealth += amount;
+        torsoHealth = Mathf.Clamp(torsoHealth, 0f, maxTorsoHealth);
+
+        UpdateDamageVisuals();
     }
 }

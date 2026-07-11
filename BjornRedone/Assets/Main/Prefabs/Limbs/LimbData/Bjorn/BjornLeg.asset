@@ -12,11 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfc652f006a04b3479f2c4452d4ab38b, type: 3}
   m_Name: BjornLeg
   m_EditorClassIdentifier: Assembly-CSharp::LimbData
-  limbType: 2
+  limbType: 3
   visualPrefab: {fileID: 2324061009247522880, guid: e51222a339ee53b499a0edd9e6706308, type: 3}
+  maxHealth: 20
   moveSpeedBonus: 0
+  punchSounds: []
+  punchPitch: 1
+  punchVolume: 1
   attackDamageBonus: 0
-  attackSpeed: 0
-  attackReach: 0
-  impactSize: 0
+  punchDuration: 0.2
+  attackCooldown: 0.5
+  attackReach: 1
+  impactSize: 1
+  knockbackForce: 5
   healthBonus: 0
