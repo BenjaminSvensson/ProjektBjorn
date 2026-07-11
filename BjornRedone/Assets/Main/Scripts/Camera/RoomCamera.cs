@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// A smooth, room-based camera system with Screen Shake support.
@@ -27,6 +28,11 @@ public class RoomCamera : MonoBehaviour
     [Range(0f, 1f)]
     [SerializeField] private float followStrength = 0.15f; 
 
+    [Tooltip("How much aiming toward the pointer shifts the view inside the current room.")]
+    [Range(0f, 0.25f)]
+    [SerializeField] private float aimLookAhead = 0.08f;
+    [SerializeField] private float maxAimLookAhead = 1.25f;
+
     [Tooltip("If true, the camera stops moving at the room edges.")]
     [SerializeField] private bool clampToRoom = true;
 
@@ -44,12 +50,16 @@ public class RoomCamera : MonoBehaviour
     
     // --- Shake State ---
     private float shakeTimer = 0f;
+    private float shakeDuration = 0f;
     private float shakeIntensity = 0f;
     private Vector3 shakeOffset = Vector3.zero;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
 
     void Awake()
     {
         if (Instance == null) Instance = this;
+        else if (Instance != this) Debug.LogWarning("Multiple RoomCamera components are active. Screen shake will target the first instance.");
         cam = GetComponent<Camera>();
 
         if (cam == null)
@@ -87,13 +97,14 @@ public class RoomCamera : MonoBehaviour
     // --- NEW: Shake Method ---
     public void Shake(float duration, float magnitude)
     {
-        shakeTimer = duration;
-        shakeIntensity = magnitude;
+        shakeDuration = Mathf.Max(shakeDuration, duration);
+        shakeTimer = Mathf.Max(shakeTimer, duration);
+        shakeIntensity = Mathf.Max(shakeIntensity, magnitude);
     }
 
     void LateUpdate()
     {
-        if (autoFitToRoom)
+        if (autoFitToRoom && (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight))
         {
             FitCameraToRoom();
         }
@@ -114,14 +125,18 @@ public class RoomCamera : MonoBehaviour
         // 3. Calculate Shake Offset
         if (shakeTimer > 0)
         {
-            shakeOffset = Random.insideUnitSphere * shakeIntensity;
-            // Keep shake on 2D plane
-            shakeOffset.z = 0; 
+            float remaining = shakeDuration > 0f ? Mathf.Clamp01(shakeTimer / shakeDuration) : 0f;
+            float noiseTime = Time.unscaledTime * 34f;
+            float x = Mathf.PerlinNoise(noiseTime, 0.17f) * 2f - 1f;
+            float y = Mathf.PerlinNoise(0.73f, noiseTime) * 2f - 1f;
+            shakeOffset = new Vector3(x, y, 0f) * shakeIntensity * remaining * remaining;
             shakeTimer -= Time.deltaTime;
         }
         else
         {
             shakeOffset = Vector3.zero;
+            shakeDuration = 0f;
+            shakeIntensity = 0f;
         }
 
         // 4. Apply Final Position
@@ -134,6 +149,15 @@ public class RoomCamera : MonoBehaviour
         Vector3 rawOffset = playerPos - roomCenter;
         Vector3 followOffset = rawOffset * followStrength;
         Vector3 finalTarget = roomCenter + followOffset;
+
+        if (cam != null && Mouse.current != null)
+        {
+            Vector2 pointer = Mouse.current.position.ReadValue();
+            Vector3 pointerWorld = cam.ScreenToWorldPoint(new Vector3(pointer.x, pointer.y, -fixedZ));
+            Vector2 aimOffset = Vector2.ClampMagnitude((Vector2)(pointerWorld - playerPos) * aimLookAhead, maxAimLookAhead);
+            finalTarget += (Vector3)aimOffset;
+        }
+
         finalTarget.z = fixedZ;
 
         if (clampToRoom)
@@ -174,6 +198,9 @@ public class RoomCamera : MonoBehaviour
         {
             cam.orthographicSize = sizeForHeight;
         }
+
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
     }
 
     private Vector3 GetGridCenter(Vector3 position)
@@ -202,5 +229,10 @@ public class RoomCamera : MonoBehaviour
             float camWidth = camHeight * cam.aspect;
             Gizmos.DrawWireCube(transform.position, new Vector3(camWidth, camHeight, 1));
         }
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 }

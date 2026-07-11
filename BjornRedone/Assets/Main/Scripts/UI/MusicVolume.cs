@@ -2,16 +2,28 @@ using UnityEngine;
 
 public class Music_slider : MonoBehaviour
 {
+    private const string MusicVolumeKey = "MusicVolume";
     private AudioSource musicSource;
+    private float appliedVolume = -1f;
 
     private void Awake()
     {
         musicSource = GetComponent<AudioSource>();
-        musicSource.volume = PlayerPrefs.GetFloat("MusicVolume", 1f); // load saved volume
+        ApplySavedVolume();
     }
 
     private void Update()
     {
-        musicSource.volume = PlayerPrefs.GetFloat("MusicVolume", 1f); // keep it updated
+        ApplySavedVolume();
+    }
+
+    private void ApplySavedVolume()
+    {
+        if (musicSource == null) return;
+        float savedVolume = PlayerPrefs.GetFloat(MusicVolumeKey, 0.8f);
+        if (Mathf.Approximately(appliedVolume, savedVolume)) return;
+
+        appliedVolume = savedVolume;
+        musicSource.volume = savedVolume;
     }
 }

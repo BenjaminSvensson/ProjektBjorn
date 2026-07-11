@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 public class DeathScreenUI : MonoBehaviour
 {
@@ -16,6 +17,10 @@ public class DeathScreenUI : MonoBehaviour
     [SerializeField] private float delayBeforeShowing = 1.5f;
     [Tooltip("Should the game pause (TimeScale = 0) when the screen appears?")]
     [SerializeField] private bool pauseTimeOnShow = true;
+    [SerializeField] private float fadeInDuration = 0.4f;
+
+    private CanvasGroup canvasGroup;
+    private bool hasTriggered;
 
     void Awake()
     {
@@ -25,7 +30,14 @@ public class DeathScreenUI : MonoBehaviour
             deathScreenPanel = transform.GetChild(0).gameObject;
         }
 
-        if (deathScreenPanel) deathScreenPanel.SetActive(false);
+        if (deathScreenPanel)
+        {
+            canvasGroup = deathScreenPanel.GetComponent<CanvasGroup>();
+            if (canvasGroup == null) canvasGroup = deathScreenPanel.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+            deathScreenPanel.SetActive(false);
+        }
         else Debug.LogError("DeathScreenUI: No Death Screen Panel assigned or found!");
     }
 
@@ -37,7 +49,8 @@ public class DeathScreenUI : MonoBehaviour
 
     public void TriggerDeath()
     {
-        Debug.Log("DeathScreenUI: TriggerDeath called. Waiting " + delayBeforeShowing + " seconds.");
+        if (hasTriggered) return;
+        hasTriggered = true;
         StartCoroutine(ShowRoutine());
     }
 
@@ -46,16 +59,34 @@ public class DeathScreenUI : MonoBehaviour
         // Use Realtime so it works even if something else set TimeScale to 0
         yield return new WaitForSecondsRealtime(delayBeforeShowing);
         
-        Debug.Log("DeathScreenUI: Showing Screen.");
-
         UnityEngine.Cursor.visible = true;
         UnityEngine.Cursor.lockState = CursorLockMode.None;
 
-        if (deathScreenPanel) deathScreenPanel.SetActive(true);
+        if (deathScreenPanel)
+        {
+            deathScreenPanel.SetActive(true);
+            canvasGroup.blocksRaycasts = true;
+
+            float elapsed = 0f;
+            float duration = Mathf.Max(0.01f, fadeInDuration);
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                canvasGroup.alpha = t * t * (3f - 2f * t);
+                yield return null;
+            }
+            canvasGroup.alpha = 1f;
+        }
         
         if (pauseTimeOnShow)
         {
             Time.timeScale = 0f;
+        }
+
+        if (EventSystem.current != null && restartButton != null)
+        {
+            EventSystem.current.SetSelectedGameObject(restartButton.gameObject);
         }
     }
 
@@ -73,5 +104,12 @@ public class DeathScreenUI : MonoBehaviour
         #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
         #endif
+    }
+
+    public void ReturnToMainMenu()
+    {
+        Time.timeScale = 1f;
+        PlayerSceneState.Clear();
+        SceneManager.LoadScene("BjornMenu");
     }
 }

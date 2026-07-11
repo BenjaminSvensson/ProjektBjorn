@@ -3,14 +3,16 @@ using UnityEngine.UI;
 
 public class MenuMusicSlider : MonoBehaviour
 {
+    private const string MusicVolumeKey = "MusicVolume";
     [SerializeField] private Slider musicVolumeSlider; // the slider in the menu
+    private bool hasUnsavedChange;
 
     private void Start()
     {
         if (musicVolumeSlider == null) return;
 
-        // Load saved volume or default to 1
-        float savedVolume = PlayerPrefs.GetFloat("MusicVolume", 1f);
+        // Start slightly below full volume while respecting returning players' preference.
+        float savedVolume = PlayerPrefs.GetFloat(MusicVolumeKey, 0.8f);
         musicVolumeSlider.value = savedVolume;
 
         // Listen to slider changes
@@ -19,14 +21,15 @@ public class MenuMusicSlider : MonoBehaviour
 
     private void OnSliderChanged(float value)
     {
-        // Save the new volume to PlayerPrefs
-        PlayerPrefs.SetFloat("MusicVolume", value);
-        PlayerPrefs.Save();
+        PlayerPrefs.SetFloat(MusicVolumeKey, Mathf.Clamp01(value));
+        hasUnsavedChange = true;
     }
 
     private void OnDestroy()
     {
         if (musicVolumeSlider != null)
             musicVolumeSlider.onValueChanged.RemoveListener(OnSliderChanged);
+
+        if (hasUnsavedChange) PlayerPrefs.Save();
     }
 }

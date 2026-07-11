@@ -1801,7 +1801,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LoadingScreen
   loadingPanel: {fileID: 1239269377}
-  postGenerationDelay: 2
+  statusText: {fileID: 1158923482}
+  postGenerationDelay: 0.35
+  fadeOutDuration: 0.35
 --- !u!114 &587544854
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4039,6 +4041,8 @@ MonoBehaviour:
   smoothTime: 0.25
   fixedZ: -10
   followStrength: 0.15
+  aimLookAhead: 0.08
+  maxAimLookAhead: 1.25
   clampToRoom: 1
   autoFitToRoom: 1
   zoomScale: 0.9
@@ -7559,6 +7563,10 @@ MonoBehaviour:
   minBossDistance: 16
   roomSize: {x: 20, y: 10}
   maxGenerationAttempts: 300
+  mainPathBias: 0.82
+  randomizeSeed: 1
+  seed: 1337
+  announceRunCode: 1
   startRoomPrefab: {fileID: 3293985558420901034, guid: c9c040172363c2740b3ccedb8915c592, type: 3}
   normalRoomRules:
   - roomPrefab: {fileID: 3293985558420901034, guid: a9e71a554c33f0c4abd5bc600b6e7dd2, type: 3}
@@ -7582,9 +7590,6 @@ MonoBehaviour:
   - roomPrefab: {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
     spawnWeight: 20
     maxSpawns: 100
-  - roomPrefab: {fileID: 3293985558420901034, guid: 7968b3be65b6dce49ae01f564c6fe8a8, type: 3}
-    spawnWeight: 20
-    maxSpawns: 100
   - roomPrefab: {fileID: 3293985558420901034, guid: 776e1dc11847c8940846e80dbb248c1e, type: 3}
     spawnWeight: 10
     maxSpawns: 1
@@ -7600,22 +7605,27 @@ MonoBehaviour:
     prefab: {fileID: 2378324834480014950, guid: 0ce83044ecff3d545832a315a06e9a93, type: 3}
     cost: 8
     minDistanceReq: 2
+    spawnWeight: 1
   - name: Dog
     prefab: {fileID: 8447582695004223394, guid: c6d08eb7ad69dfb4fb038600c260ced9, type: 3}
     cost: 7
     minDistanceReq: 2
+    spawnWeight: 1
   - name: Hedgehog
     prefab: {fileID: 8447582695004223394, guid: 22733423fca786e4bac7110703f6ea8d, type: 3}
     cost: 9
     minDistanceReq: 2
+    spawnWeight: 1
   - name: Bird
     prefab: {fileID: 7443698164649891963, guid: 48294c12d6fd8b2409c3c67b9b335f93, type: 3}
     cost: 12
     minDistanceReq: 3
+    spawnWeight: 0.7
   - name: DogVariant1
     prefab: {fileID: 8447582695004223394, guid: 33e89338cc2ec2c4ba781c22e416473d, type: 3}
     cost: 7
     minDistanceReq: 2
+    spawnWeight: 1
   baseEnemyBudget: 5
   enemyBudgetPerDistance: 2
   environmentProps:
@@ -7800,7 +7810,7 @@ GameObject:
   - component: {fileID: 1876773002}
   - component: {fileID: 1876773001}
   m_Layer: 5
-  m_Name: BuildNumber
+  m_Name: Objective
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7822,8 +7832,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 4.4001465, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 8, y: -8}
+  m_SizeDelta: {x: 360, y: 32}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1876773001
 MonoBehaviour:
@@ -7845,7 +7855,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Alpha Objective : Kill PenguinBoss'
+  m_text: 'OBJECTIVE // REACH THE PENGUIN''S LAIR'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -7872,8 +7882,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
-  m_fontSizeBase: 18
+  m_fontSize: 16
+  m_fontSizeBase: 16
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -7889,7 +7899,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -7911,7 +7921,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: -126.33661, w: 27.045185}
+  m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0

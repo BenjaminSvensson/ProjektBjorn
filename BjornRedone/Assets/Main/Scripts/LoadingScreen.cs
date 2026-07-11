@@ -1,23 +1,63 @@
 using UnityEngine;
 using System.Collections;
-using System.Runtime.Serialization;
+using TMPro;
 
 public class LoadingScreen : MonoBehaviour
 {
     [Header("UI Reference")]
     [Tooltip("The Panel containing the 'Loading...' text/image.")]
     [SerializeField] private GameObject loadingPanel;
+    [SerializeField] private TMP_Text statusText;
 
     [Header("Settings")]
     [Tooltip("How long to wait after generation before revealing the game (Realtime).")]
     [SerializeField] private float postGenerationDelay = 0.2f;
+    [SerializeField] private float fadeOutDuration = 0.35f;
+
+    private CanvasGroup canvasGroup;
+    private Coroutine dismissRoutine;
 
     void Awake()
     {
-        // 1. Activate Screen
-        if (loadingPanel) loadingPanel.SetActive(true);
-        
-        // 2. Pause Time immediately so nothing moves/spawns logic doesn't run physics
+        if (loadingPanel == null && transform.childCount > 0)
+        {
+            loadingPanel = transform.GetChild(0).gameObject;
+        }
+
+        if (loadingPanel != null)
+        {
+            loadingPanel.SetActive(true);
+            canvasGroup = loadingPanel.GetComponent<CanvasGroup>();
+            if (canvasGroup == null) canvasGroup = loadingPanel.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 1f;
+            canvasGroup.blocksRaycasts = true;
+
+            if (statusText == null)
+            {
+                statusText = loadingPanel.GetComponentInChildren<TMP_Text>(true);
+            }
+        }
+
+        Time.timeScale = 0f;
+    }
+
+    public void Prepare(string runCode)
+    {
+        if (dismissRoutine != null)
+        {
+            StopCoroutine(dismissRoutine);
+            dismissRoutine = null;
+        }
+
+        if (loadingPanel != null) loadingPanel.SetActive(true);
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 1f;
+            canvasGroup.blocksRaycasts = true;
+        }
+
+        Time.timeScale = 0f;
+        SetStatus($"BUILDING CUDDLETOWN\nRUN {runCode}");
     }
 
     /// <summary>
@@ -25,18 +65,41 @@ public class LoadingScreen : MonoBehaviour
     /// </summary>
     public void Dismiss()
     {
-        StartCoroutine(DismissRoutine());
+        SetStatus("DISTRICT READY");
+        if (dismissRoutine != null) StopCoroutine(dismissRoutine);
+        dismissRoutine = StartCoroutine(DismissRoutine());
+    }
+
+    public void ShowError(string message)
+    {
+        SetStatus(message);
     }
 
     private IEnumerator DismissRoutine()
     {
-        // 3. Wait a split second (Realtime, since timescale is 0)
-        yield return new WaitForSecondsRealtime(postGenerationDelay);
+        yield return new WaitForSecondsRealtime(Mathf.Clamp(postGenerationDelay, 0f, 0.75f));
 
-        // 4. Resume Game
         Time.timeScale = 1f;
 
-        // 5. Hide Screen
+        if (canvasGroup != null && fadeOutDuration > 0f)
+        {
+            float elapsed = 0f;
+            while (elapsed < fadeOutDuration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                canvasGroup.alpha = 1f - Mathf.Clamp01(elapsed / fadeOutDuration);
+                yield return null;
+            }
+            canvasGroup.alpha = 0f;
+            canvasGroup.blocksRaycasts = false;
+        }
+
         if (loadingPanel) loadingPanel.SetActive(false);
+        dismissRoutine = null;
+    }
+
+    private void SetStatus(string message)
+    {
+        if (statusText != null) statusText.text = message;
     }
 }

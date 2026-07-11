@@ -1,34 +1,83 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class PauseController : MonoBehaviour
 {
-    [SerializeField] private GameObject pauseMenu; // Assign your pause menu here
-    private bool isPaused = false;
+    [SerializeField] private GameObject pauseMenu;
+    private bool isPaused;
+
+    public bool IsPaused => isPaused;
+
+    void Awake()
+    {
+        if (pauseMenu != null) pauseMenu.SetActive(false);
+    }
 
     void Update()
     {
-        // Check if Escape key is pressed
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             TogglePause();
         }
     }
 
-    private void TogglePause()
+    public void TogglePause()
     {
+        if (pauseMenu == null) return;
+
         isPaused = !isPaused;
-
-        if (pauseMenu != null)
-            pauseMenu.SetActive(isPaused);
-
+        pauseMenu.SetActive(isPaused);
         Time.timeScale = isPaused ? 0f : 1f;
+
+        if (isPaused)
+        {
+            SelectFirstControl();
+        }
+        else
+        {
+            EventSystem.current?.SetSelectedGameObject(null);
+        }
     }
 
-    // Optional: Resume button in UI
     public void ResumeGame()
     {
-        if (isPaused)
-            TogglePause();
+        if (isPaused) TogglePause();
+    }
+
+    public void RestartRun()
+    {
+        RestoreTime();
+        PlayerSceneState.Clear();
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void ReturnToMainMenu()
+    {
+        RestoreTime();
+        PlayerSceneState.Clear();
+        SceneManager.LoadScene("BjornMenu");
+    }
+
+    void OnDisable()
+    {
+        if (isPaused) RestoreTime();
+    }
+
+    private void RestoreTime()
+    {
+        isPaused = false;
+        Time.timeScale = 1f;
+        if (pauseMenu != null) pauseMenu.SetActive(false);
+    }
+
+    private void SelectFirstControl()
+    {
+        if (EventSystem.current == null || pauseMenu == null) return;
+
+        Selectable firstControl = pauseMenu.GetComponentInChildren<Selectable>(true);
+        EventSystem.current.SetSelectedGameObject(firstControl != null ? firstControl.gameObject : null);
     }
 }

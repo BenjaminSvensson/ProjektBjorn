@@ -32,6 +32,14 @@ public class CameraFollow : MonoBehaviour
 
     void Awake()
     {
+        if (GetComponent<RoomCamera>() != null)
+        {
+            // RoomCamera owns movement in procedural rooms. Running both components made
+            // the final camera position depend on script execution order and caused jitter.
+            enabled = false;
+            return;
+        }
+
         cam = GetComponent<Camera>();
         defaultZ = transform.position.z;
     }

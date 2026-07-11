@@ -20,7 +20,9 @@ public class Room : MonoBehaviour
     [Tooltip("Distance from the room edge where props CANNOT spawn.")]
     [SerializeField] private float wallPadding = 2.5f;
     [Tooltip("Minimum distance between any two spawned objects (props or enemies).")]
-    [SerializeField] private float minSpawnSpacing = 1.5f; // --- NEW ---
+    [SerializeField] private float minSpawnSpacing = 1.5f;
+    [Tooltip("Keeps enemies away from the room center where the player first enters a space.")]
+    [SerializeField] private float enemyCenterClearance = 2.25f;
 
     [Header("Spawning Rules")]
     [Tooltip("If false, no enemies will procedurally spawn here.")]
@@ -43,17 +45,15 @@ public class Room : MonoBehaviour
         }
     }
 
-    public void SpawnEnemies(List<LevelGenerator.EnemySpawnData> allEnemies, int budget, Vector2 roomSize)
+    public void SpawnEnemies(List<LevelGenerator.EnemySpawnData> allEnemies, int budget, Vector2 roomSize, int distanceFromStart)
     {
-        if (!allowEnemySpawning) return;
+        if (!allowEnemySpawning || allEnemies == null || budget <= 0) return;
 
-        float halfWidth = (roomSize.x / 2f) - wallPadding;
-        float halfHeight = (roomSize.y / 2f) - wallPadding;
-
-        int distFromStart = Mathf.Abs(gridPos.x) + Mathf.Abs(gridPos.y);
+        float halfWidth = Mathf.Max(0.1f, (roomSize.x / 2f) - wallPadding);
+        float halfHeight = Mathf.Max(0.1f, (roomSize.y / 2f) - wallPadding);
         
         List<LevelGenerator.EnemySpawnData> validEnemies = allEnemies
-            .Where(e => e.minDistanceReq <= distFromStart)
+            .Where(enemy => enemy != null && enemy.prefab != null && enemy.cost > 0 && enemy.minDistanceReq <= distanceFromStart)
             .ToList();
 
         if (validEnemies.Count == 0) return;
@@ -65,45 +65,52 @@ public class Room : MonoBehaviour
         {
             safetyLoop++;
 
-            var enemyData = validEnemies[Random.Range(0, validEnemies.Count)];
+            List<LevelGenerator.EnemySpawnData> affordableEnemies = validEnemies
+                .Where(enemy => currentSpent + enemy.cost <= budget)
+                .ToList();
 
-            if (currentSpent + enemyData.cost <= budget)
+            if (affordableEnemies.Count == 0) break;
+
+            LevelGenerator.EnemySpawnData enemyData = PickWeightedEnemy(affordableEnemies);
+
+            // Try several times to find a clear, readable combat position.
+            Vector3 spawnPos = Vector3.zero;
+            bool validSpot = false;
+
+            for (int attempt = 0; attempt < 16; attempt++)
             {
-                // Try 10 times to find a valid spot
-                Vector3 spawnPos = Vector3.zero;
-                bool validSpot = false;
+                float x = Random.Range(-halfWidth, halfWidth);
+                float y = Random.Range(-halfHeight, halfHeight);
+                spawnPos = new Vector3(x, y, 0);
 
-                for (int attempt = 0; attempt < 10; attempt++)
+                if (spawnPos.sqrMagnitude >= enemyCenterClearance * enemyCenterClearance && !IsTooClose(spawnPos))
                 {
-                    float x = Random.Range(-halfWidth, halfWidth);
-                    float y = Random.Range(-halfHeight, halfHeight);
-                    spawnPos = new Vector3(x, y, 0);
-
-                    if (!IsTooClose(spawnPos))
-                    {
-                        validSpot = true;
-                        break;
-                    }
-                }
-
-                if (validSpot)
-                {
-                    if (enemyData.prefab != null)
-                    {
-                        Instantiate(enemyData.prefab, transform.position + spawnPos, Quaternion.identity, transform);
-                        currentSpent += enemyData.cost;
-                        
-                        // Register this spot so future enemies don't overlap
-                        spawnedObjectPositions.Add(spawnPos);
-                    }
+                    validSpot = true;
+                    break;
                 }
             }
-            else
+
+            if (validSpot)
             {
-                int minCost = validEnemies.Min(e => e.cost);
-                if (currentSpent + minCost > budget) break;
+                Instantiate(enemyData.prefab, transform.position + spawnPos, Quaternion.identity, transform);
+                currentSpent += enemyData.cost;
+                spawnedObjectPositions.Add(spawnPos);
             }
         }
+    }
+
+    private static LevelGenerator.EnemySpawnData PickWeightedEnemy(List<LevelGenerator.EnemySpawnData> enemies)
+    {
+        float totalWeight = enemies.Sum(enemy => Mathf.Max(0.01f, enemy.spawnWeight));
+        float roll = Random.value * totalWeight;
+
+        foreach (LevelGenerator.EnemySpawnData enemy in enemies)
+        {
+            roll -= Mathf.Max(0.01f, enemy.spawnWeight);
+            if (roll <= 0f) return enemy;
+        }
+
+        return enemies[enemies.Count - 1];
     }
 
     public void PopulateRoom(List<LevelGenerator.EnvironmentProp> props, Vector2 roomSize, float density)
@@ -113,8 +120,8 @@ public class Room : MonoBehaviour
         float roomArea = roomSize.x * roomSize.y;
         int spawnAttempts = Mathf.RoundToInt(roomArea * density);
 
-        float halfWidth = (roomSize.x / 2f) - wallPadding;
-        float halfHeight = (roomSize.y / 2f) - wallPadding;
+        float halfWidth = Mathf.Max(0.1f, (roomSize.x / 2f) - wallPadding);
+        float halfHeight = Mathf.Max(0.1f, (roomSize.y / 2f) - wallPadding);
 
         // Clear list for new population (just in case)
         spawnedObjectPositions.Clear();
@@ -130,13 +137,15 @@ public class Room : MonoBehaviour
 
             foreach (var prop in props)
             {
-                if (Random.value <= prop.spawnChance)
+                if (prop != null && prop.prefab != null && Random.value <= prop.spawnChance)
                 {
                     GameObject obj = Instantiate(prop.prefab, transform);
                     obj.transform.localPosition = spawnPos;
                     
                     Vector3 originalScale = obj.transform.localScale;
-                    float scaleMultiplier = Random.Range(prop.minScale, prop.maxScale);
+                    float minScale = Mathf.Min(prop.minScale, prop.maxScale);
+                    float maxScale = Mathf.Max(prop.minScale, prop.maxScale);
+                    float scaleMultiplier = Random.Range(minScale, maxScale);
                     float flipMultiplier = 1f;
                     if (prop.allowRandomFlip && Random.value < 0.5f)
                     {
