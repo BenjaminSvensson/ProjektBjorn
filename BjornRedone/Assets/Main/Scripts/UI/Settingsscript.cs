@@ -12,13 +12,13 @@ public class Settingsscript : MonoBehaviour
     [SerializeField] private GameObject objectToToggle;
     [SerializeField] private float animationDuration = 0.22f;
 
-    private static readonly Color Ink = new Color(0.025f, 0.045f, 0.047f, 1f);
-    private static readonly Color Surface = new Color(0.055f, 0.09f, 0.09f, 0.985f);
-    private static readonly Color Raised = new Color(0.085f, 0.125f, 0.12f, 1f);
-    private static readonly Color Accent = new Color(0.94f, 0.48f, 0.16f, 1f);
-    private static readonly Color Cream = new Color(1f, 0.88f, 0.68f, 1f);
-    private static readonly Color Text = new Color(0.94f, 0.95f, 0.9f, 1f);
-    private static readonly Color Muted = new Color(0.59f, 0.66f, 0.62f, 1f);
+    private static readonly Color Ink = new Color(0.015f, 0.015f, 0.018f, 1f);
+    private static readonly Color Surface = new Color(0.025f, 0.025f, 0.03f, 0.97f);
+    private static readonly Color Raised = new Color(0.075f, 0.075f, 0.085f, 1f);
+    private static readonly Color Accent = new Color(1f, 1f, 1f, 1f);
+    private static readonly Color Cream = new Color(1f, 1f, 1f, 1f);
+    private static readonly Color Text = new Color(0.96f, 0.96f, 0.97f, 1f);
+    private static readonly Color Muted = new Color(0.58f, 0.58f, 0.62f, 1f);
 
     private CanvasGroup canvasGroup;
     private RectTransform card;
@@ -139,27 +139,23 @@ public class Settingsscript : MonoBehaviour
             scaler.matchWidthOrHeight = 0.5f;
         }
 
-        GameObject backdrop = CreateImage(objectToToggle.transform, "Options Backdrop", new Color(0.005f, 0.012f, 0.012f, 0.96f));
+        GameObject backdrop = CreateImage(objectToToggle.transform, "Options Backdrop", new Color(0f, 0f, 0f, 0.86f));
         Stretch(backdrop.GetComponent<RectTransform>());
         Button closeBackdrop = backdrop.AddComponent<Button>();
         closeBackdrop.transition = Selectable.Transition.None;
         closeBackdrop.onClick.AddListener(() => SetVisible(false));
 
-        GameObject cardObject = CreateImage(objectToToggle.transform, "Options Card", Surface);
+        GameObject shadowObject = CreateRoundedImage(objectToToggle.transform, "Options Depth", new Color(0f, 0f, 0f, 0.66f));
+        Anchor(shadowObject.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0f, -12f), new Vector2(724f, 454f));
+
+        GameObject cardObject = CreateRoundedImage(objectToToggle.transform, "Options Card", Surface);
         card = cardObject.GetComponent<RectTransform>();
         Anchor(card, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(700f, 430f));
-        cardObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.62f);
 
-        GameObject accent = CreateImage(card, "Accent", Accent);
-        RectTransform accentRect = accent.GetComponent<RectTransform>();
-        accentRect.anchorMin = new Vector2(0f, 0f);
-        accentRect.anchorMax = new Vector2(0f, 1f);
-        accentRect.pivot = new Vector2(0f, 0.5f);
-        accentRect.sizeDelta = new Vector2(7f, 0f);
-
-        CreateText(card, "Eyebrow", "BJORN // FIELD SETTINGS", new Vector2(0f, 188f), new Vector2(610f, 24f), 13f, TextAlignmentOptions.Left, Accent, FontStyles.Bold);
-        CreateText(card, "Title", "OPTIONS", new Vector2(0f, 153f), new Vector2(610f, 46f), 34f, TextAlignmentOptions.Left, Cream, FontStyles.Bold);
-        CreateText(card, "Subtitle", "Tune the expedition to feel right for you.", new Vector2(0f, 119f), new Vector2(610f, 24f), 14f, TextAlignmentOptions.Left, Muted);
+        GameObject topMark = CreateRoundedImage(card, "Top Mark", Color.white);
+        Anchor(topMark.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(-281f, 185f), new Vector2(48f, 3f));
+        CreateText(card, "Title", "OPTIONS", new Vector2(0f, 153f), new Vector2(610f, 46f), 30f, TextAlignmentOptions.Left, Cream, FontStyles.Bold);
+        CreateText(card, "Subtitle", "Audio, display and game feel", new Vector2(0f, 119f), new Vector2(610f, 24f), 13f, TextAlignmentOptions.Left, Muted);
 
         CreateSectionLabel(card, "AUDIO", -175f, 80f);
         masterSlider = CreateSliderRow(card, "MASTER VOLUME", -175f, 34f, GameSettings.MasterVolume, value => GameSettings.MasterVolume = value);
@@ -211,7 +207,7 @@ public class Settingsscript : MonoBehaviour
 
     private Slider CreateSliderRow(Transform parent, string label, float x, float y, float value, Action<float> changed)
     {
-        GameObject row = CreateImage(parent, label + " Row", Raised);
+        GameObject row = CreateRoundedImage(parent, label + " Row", Raised);
         Anchor(row.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(300f, 70f));
         CreateText(row.transform, "Label", label, new Vector2(0f, 19f), new Vector2(260f, 26f), 13f, TextAlignmentOptions.Left, Text, FontStyles.Bold);
 
@@ -220,21 +216,24 @@ public class Settingsscript : MonoBehaviour
         RectTransform sliderRect = sliderObject.GetComponent<RectTransform>();
         Anchor(sliderRect, new Vector2(0.5f, 0.5f), new Vector2(-19f, -14f), new Vector2(214f, 26f));
 
-        GameObject track = CreateImage(sliderRect, "Track", Ink);
+        GameObject track = CreateImage(sliderRect, "Track", new Color(1f, 1f, 1f, 0.13f));
+        BjornUIStyle.ApplyPill(track.GetComponent<Image>());
         Stretch(track.GetComponent<RectTransform>(), new Vector2(0f, 9f), new Vector2(-1f, -9f));
 
         GameObject fillArea = new GameObject("Fill Area", typeof(RectTransform));
         fillArea.transform.SetParent(sliderRect, false);
         Stretch(fillArea.GetComponent<RectTransform>(), new Vector2(7f, 9f), new Vector2(-7f, -9f));
         GameObject fill = CreateImage(fillArea.transform, "Fill", Accent);
+        BjornUIStyle.ApplyPill(fill.GetComponent<Image>());
         Stretch(fill.GetComponent<RectTransform>());
 
         GameObject handleArea = new GameObject("Handle Slide Area", typeof(RectTransform));
         handleArea.transform.SetParent(sliderRect, false);
         Stretch(handleArea.GetComponent<RectTransform>(), new Vector2(10f, 0f), new Vector2(-10f, 0f));
         GameObject handle = CreateImage(handleArea.transform, "Handle", Cream);
+        BjornUIStyle.ApplyCircle(handle.GetComponent<Image>());
         RectTransform handleRect = handle.GetComponent<RectTransform>();
-        Anchor(handleRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(18f, 24f));
+        Anchor(handleRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(20f, 20f));
 
         Slider slider = sliderObject.GetComponent<Slider>();
         slider.minValue = 0f;
@@ -255,7 +254,7 @@ public class Settingsscript : MonoBehaviour
 
     private void CreateToggleRow(Transform parent, string label, float x, float y, Func<bool> getValue, Action<bool> setValue, out TMP_Text stateText)
     {
-        GameObject row = CreateImage(parent, label + " Row", Raised);
+        GameObject row = CreateRoundedImage(parent, label + " Row", Raised);
         Anchor(row.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(x, y), new Vector2(300f, 42f));
         CreateText(row.transform, "Label", label, new Vector2(-57f, 0f), new Vector2(160f, 42f), 13f, TextAlignmentOptions.Left, Text, FontStyles.Bold);
 
@@ -276,7 +275,8 @@ public class Settingsscript : MonoBehaviour
         text.text = enabled ? "ON" : "OFF";
         text.color = enabled ? Cream : Muted;
         Image background = text.transform.parent.GetComponent<Image>();
-        if (background != null) background.color = enabled ? new Color(0.35f, 0.18f, 0.08f, 1f) : Ink;
+        if (background != null) background.color = enabled ? Color.white : new Color(1f, 1f, 1f, 0.08f);
+        if (enabled) text.color = Color.black;
     }
 
     private static void RefreshSliderReadout(Slider slider)
@@ -294,13 +294,13 @@ public class Settingsscript : MonoBehaviour
 
     private static Button CreateTextButton(Transform parent, string name, string value, Vector2 position, Vector2 size)
     {
-        GameObject buttonObject = CreateImage(parent, name, Ink);
+        GameObject buttonObject = CreateRoundedImage(parent, name, new Color(1f, 1f, 1f, 0.08f));
         Anchor(buttonObject.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), position, size);
         Button button = buttonObject.AddComponent<Button>();
         ColorBlock colors = button.colors;
         colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(1.14f, 1.07f, 0.96f, 1f);
-        colors.pressedColor = new Color(0.82f, 0.82f, 0.78f, 1f);
+        colors.highlightedColor = new Color(1.35f, 1.35f, 1.35f, 1f);
+        colors.pressedColor = new Color(0.72f, 0.72f, 0.74f, 1f);
         colors.fadeDuration = 0.08f;
         button.colors = colors;
         CreateText(buttonObject.transform, "Text", value, Vector2.zero, size, 13f, TextAlignmentOptions.Center, Cream, FontStyles.Bold);
@@ -313,6 +313,13 @@ public class Settingsscript : MonoBehaviour
         imageObject.transform.SetParent(parent, false);
         Image image = imageObject.GetComponent<Image>();
         image.color = color;
+        return imageObject;
+    }
+
+    private static GameObject CreateRoundedImage(Transform parent, string name, Color color)
+    {
+        GameObject imageObject = CreateImage(parent, name, color);
+        BjornUIStyle.ApplyRounded(imageObject.GetComponent<Image>());
         return imageObject;
     }
 

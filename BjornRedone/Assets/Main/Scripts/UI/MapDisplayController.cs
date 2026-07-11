@@ -8,10 +8,10 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class MapDisplayController : MonoBehaviour
 {
-    private static readonly Color Ink = new Color(0.018f, 0.034f, 0.033f, 1f);
-    private static readonly Color Cream = new Color(1f, 0.88f, 0.68f, 1f);
-    private static readonly Color Accent = new Color(0.94f, 0.48f, 0.16f, 1f);
-    private static readonly Color Muted = new Color(0.63f, 0.69f, 0.64f, 1f);
+    private static readonly Color Ink = new Color(0.018f, 0.018f, 0.022f, 1f);
+    private static readonly Color Cream = Color.white;
+    private static readonly Color Accent = Color.white;
+    private static readonly Color Muted = new Color(0.62f, 0.62f, 0.66f, 1f);
 
     private Canvas minimapCanvas;
     private Canvas shadowCanvas;
@@ -22,9 +22,10 @@ public sealed class MapDisplayController : MonoBehaviour
     private GameObject fullscreenRoot;
     private CanvasGroup fullscreenGroup;
     private RectTransform fullscreenMap;
+    private RectTransform playerMarker;
+    private TMP_Text runText;
     private Coroutine transitionRoutine;
     private bool isFullscreen;
-    private float previousTimeScale = 1f;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void RegisterSceneHook()
@@ -61,6 +62,19 @@ public sealed class MapDisplayController : MonoBehaviour
             SetFullscreen(!isFullscreen);
     }
 
+    private void LateUpdate()
+    {
+        if (!isFullscreen || playerMarker == null || minimapFollow == null || minimapFollow.playerTarget == null) return;
+        Camera overviewCamera = minimapFollow.GetComponent<Camera>();
+        if (overviewCamera == null) return;
+
+        Vector3 viewport = overviewCamera.WorldToViewportPoint(minimapFollow.playerTarget.position);
+        Vector2 mapSize = fullscreenMap.rect.size * 0.86f;
+        playerMarker.anchoredPosition = new Vector2((viewport.x - 0.5f) * mapSize.x, (viewport.y - 0.5f) * mapSize.y);
+        float pulse = 1f + Mathf.Sin(Time.unscaledTime * 7f) * 0.1f;
+        playerMarker.localScale = Vector3.one * pulse;
+    }
+
     private void ConfigureCompactMinimap()
     {
         ConfigureMapScaler(GetComponent<CanvasScaler>());
@@ -94,6 +108,7 @@ public sealed class MapDisplayController : MonoBehaviour
             Image shadowImage = shadowCanvas.GetComponentInChildren<Image>(true);
             if (shadowImage != null)
             {
+                shadowImage.raycastTarget = false;
                 RectTransform rect = shadowImage.rectTransform;
                 rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
                 rect.pivot = new Vector2(1f, 1f);
@@ -124,7 +139,7 @@ public sealed class MapDisplayController : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
 
         fullscreenGroup = fullscreenRoot.GetComponent<CanvasGroup>();
-        GameObject backdrop = CreateImage(fullscreenRoot.transform, "Backdrop", new Color(0.006f, 0.016f, 0.015f, 0.94f));
+        GameObject backdrop = CreateImage(fullscreenRoot.transform, "Backdrop", new Color(0f, 0f, 0f, 0.58f));
         Stretch(backdrop.GetComponent<RectTransform>());
 
         GameObject topRule = CreateImage(fullscreenRoot.transform, "Top Accent", Accent);
@@ -169,8 +184,10 @@ public sealed class MapDisplayController : MonoBehaviour
             image.raycastTarget = false;
         }
 
+        CreatePlayerMarker();
+
         string runCode = levelGenerator != null ? levelGenerator.RunCode : "--------";
-        CreateText(fullscreenRoot.transform, "Run", "RUN " + runCode, new Vector2(-300f, -420f), new Vector2(360f, 38f), 15f, TextAlignmentOptions.Left, Muted, FontStyles.Bold);
+        runText = CreateText(fullscreenRoot.transform, "Run", "RUN " + runCode, new Vector2(-300f, -420f), new Vector2(360f, 38f), 15f, TextAlignmentOptions.Left, Muted, FontStyles.Bold);
         GameObject closeObject = CreateImage(fullscreenRoot.transform, "Close Map", Color.clear);
         Anchor(closeObject.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(300f, -420f), new Vector2(360f, 38f));
         CreateText(closeObject.transform, "Label", "M   CLOSE MAP", Vector2.zero, new Vector2(360f, 38f), 15f, TextAlignmentOptions.Right, Cream, FontStyles.Bold);
@@ -195,14 +212,13 @@ public sealed class MapDisplayController : MonoBehaviour
         isFullscreen = visible;
         if (visible)
         {
-            previousTimeScale = Time.timeScale;
-            Time.timeScale = 0f;
             minimapCanvas.enabled = false;
             if (shadowCanvas != null) shadowCanvas.enabled = false;
             if (levelGenerator == null) levelGenerator = FindFirstObjectByType<LevelGenerator>();
             if (minimapFollow == null) minimapFollow = FindFirstObjectByType<MinimapFollow>();
             if (levelGenerator != null && minimapFollow != null)
                 minimapFollow.ShowOverview(levelGenerator.GeneratedWorldBounds);
+            if (runText != null && levelGenerator != null) runText.text = "RUN " + levelGenerator.RunCode;
             fullscreenRoot.SetActive(true);
         }
 
@@ -234,7 +250,6 @@ public sealed class MapDisplayController : MonoBehaviour
             fullscreenRoot.SetActive(false);
             if (minimapCanvas != null) minimapCanvas.enabled = true;
             if (shadowCanvas != null) shadowCanvas.enabled = true;
-            Time.timeScale = previousTimeScale;
         }
         transitionRoutine = null;
     }
@@ -246,6 +261,27 @@ public sealed class MapDisplayController : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f;
+    }
+
+    private void CreatePlayerMarker()
+    {
+        GameObject marker = CreateImage(fullscreenMap, "Player Marker", Color.white);
+        BjornUIStyle.ApplyCircle(marker.GetComponent<Image>());
+        playerMarker = marker.GetComponent<RectTransform>();
+        Anchor(playerMarker, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(46f, 46f));
+
+        GameObject inner = CreateImage(marker.transform, "Inner", Color.black);
+        BjornUIStyle.ApplyCircle(inner.GetComponent<Image>());
+        Anchor(inner.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(30f, 30f));
+
+        GameObject center = CreateImage(inner.transform, "Center", Color.white);
+        BjornUIStyle.ApplyCircle(center.GetComponent<Image>());
+        Anchor(center.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(11f, 11f));
+
+        GameObject label = CreateImage(marker.transform, "You Label", new Color(0f, 0f, 0f, 0.9f));
+        BjornUIStyle.ApplyRounded(label.GetComponent<Image>());
+        Anchor(label.GetComponent<RectTransform>(), new Vector2(0.5f, 0.5f), new Vector2(0f, 39f), new Vector2(58f, 22f));
+        CreateText(label.transform, "Text", "YOU", Vector2.zero, new Vector2(58f, 22f), 11f, TextAlignmentOptions.Center, Color.white, FontStyles.Bold);
     }
 
     private static GameObject CreateImage(Transform parent, string name, Color color)
@@ -290,11 +326,7 @@ public sealed class MapDisplayController : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (isFullscreen)
-        {
-            minimapFollow?.ShowPlayerFollow();
-            Time.timeScale = previousTimeScale;
-        }
+        if (isFullscreen) minimapFollow?.ShowPlayerFollow();
         if (fullscreenRoot != null) Destroy(fullscreenRoot);
     }
 }
