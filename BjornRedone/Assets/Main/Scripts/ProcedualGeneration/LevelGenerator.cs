@@ -120,6 +120,23 @@ public class LevelGenerator : MonoBehaviour
     public int BossRoomDistance { get; private set; }
     public int LastGenerationAttempts { get; private set; }
 
+    public Bounds GeneratedWorldBounds
+    {
+        get
+        {
+            if (finalLayout == null || finalLayout.Count == 0)
+                return new Bounds(Vector3.zero, new Vector3(roomSize.x, roomSize.y, 1f));
+
+            int minX = finalLayout.Min(node => node.gridPos.x);
+            int maxX = finalLayout.Max(node => node.gridPos.x);
+            int minY = finalLayout.Min(node => node.gridPos.y);
+            int maxY = finalLayout.Max(node => node.gridPos.y);
+            Vector3 center = new Vector3((minX + maxX) * roomSize.x * 0.5f, (minY + maxY) * roomSize.y * 0.5f, 0f);
+            Vector3 size = new Vector3((maxX - minX + 1) * roomSize.x, (maxY - minY + 1) * roomSize.y, 1f);
+            return new Bounds(center, size);
+        }
+    }
+
     void Start() => GenerateLevel();
 
     void Update()

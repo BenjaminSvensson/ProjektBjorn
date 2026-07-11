@@ -40,6 +40,18 @@ public sealed class UIInteractionPulse : MonoBehaviour,
         {
             Canvas canvas = scaler.GetComponent<Canvas>();
             if (canvas != null && canvas.renderMode == RenderMode.WorldSpace) continue;
+            if (canvas != null && canvas.overrideSorting && canvas.sortingOrder >= 30000) continue;
+
+            bool isMapCanvas = scaler.name == "MapUi" || scaler.name == "MapShadow";
+            if (isMapCanvas)
+            {
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0.5f;
+                continue;
+            }
+
             if (scaler.uiScaleMode != CanvasScaler.ScaleMode.ConstantPixelSize) continue;
 
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

@@ -97,6 +97,9 @@ public class RoomCamera : MonoBehaviour
     // --- NEW: Shake Method ---
     public void Shake(float duration, float magnitude)
     {
+        magnitude *= GameSettings.ScreenShake;
+        if (magnitude <= 0.001f) return;
+
         shakeDuration = Mathf.Max(shakeDuration, duration);
         shakeTimer = Mathf.Max(shakeTimer, duration);
         shakeIntensity = Mathf.Max(shakeIntensity, magnitude);

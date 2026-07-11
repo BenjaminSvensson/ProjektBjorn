@@ -28,6 +28,7 @@ public class SceneMenuManager : MonoBehaviour
     private readonly List<Button> configuredButtons = new List<Button>();
     private CanvasGroup transitionOverlay;
     private bool isTransitioning;
+    private Coroutine controlsFadeRoutine;
 
     [System.Serializable]
     public struct SceneLink
@@ -56,11 +57,7 @@ public class SceneMenuManager : MonoBehaviour
             }
         }
 
-        GameObject farBackground = GameObject.Find("FarBackGround");
-        if (farBackground != null && farBackground.GetComponent<MenuParallaxMotion>() == null)
-        {
-            farBackground.AddComponent<MenuParallaxMotion>();
-        }
+        SetupAspectSafeBackground();
 
         StartCoroutine(PlayMenuEntrance());
     }
@@ -193,12 +190,122 @@ public class SceneMenuManager : MonoBehaviour
         {
             Canvas canvas = scaler.GetComponent<Canvas>();
             if (canvas != null && canvas.renderMode == RenderMode.WorldSpace) continue;
+            if (canvas != null && canvas.overrideSorting && canvas.sortingOrder >= 30000) continue;
 
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = menuReferenceResolution;
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
         }
+    }
+
+    public void SetMenuControlsVisible(bool visible)
+    {
+        if (controlsFadeRoutine != null) StopCoroutine(controlsFadeRoutine);
+        controlsFadeRoutine = StartCoroutine(FadeMenuControls(visible));
+    }
+
+    private IEnumerator FadeMenuControls(bool visible)
+    {
+        float duration = 0.16f;
+        float elapsed = 0f;
+        List<CanvasGroup> groups = new List<CanvasGroup>();
+        List<float> startingAlpha = new List<float>();
+
+        foreach (Button button in configuredButtons)
+        {
+            if (button == null) continue;
+            CanvasGroup group = button.GetComponent<CanvasGroup>();
+            if (group == null) group = button.gameObject.AddComponent<CanvasGroup>();
+            groups.Add(group);
+            startingAlpha.Add(group.alpha);
+            button.interactable = visible && !isTransitioning;
+            group.blocksRaycasts = visible;
+        }
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            t = t * t * (3f - 2f * t);
+            for (int i = 0; i < groups.Count; i++)
+                groups[i].alpha = Mathf.Lerp(startingAlpha[i], visible ? 1f : 0f, t);
+            yield return null;
+        }
+
+        foreach (CanvasGroup group in groups) group.alpha = visible ? 1f : 0f;
+        controlsFadeRoutine = null;
+    }
+
+    private void SetupAspectSafeBackground()
+    {
+        GameObject backgroundRoot = GameObject.Find("FarBackGround");
+        if (backgroundRoot == null) return;
+
+        Image artwork = backgroundRoot.GetComponentInChildren<Image>(true);
+        if (artwork == null) return;
+
+        RectTransform artRect = artwork.rectTransform;
+        artRect.anchorMin = new Vector2(0.5f, 0.5f);
+        artRect.anchorMax = new Vector2(0.5f, 0.5f);
+        artRect.pivot = new Vector2(0.5f, 0.5f);
+        artRect.anchoredPosition = Vector2.zero;
+
+        AspectRatioFitter fitter = artwork.GetComponent<AspectRatioFitter>();
+        if (fitter == null) fitter = artwork.gameObject.AddComponent<AspectRatioFitter>();
+        fitter.aspectMode = AspectRatioFitter.AspectMode.EnvelopeParent;
+        fitter.aspectRatio = artwork.sprite != null
+            ? artwork.sprite.rect.width / Mathf.Max(1f, artwork.sprite.rect.height)
+            : 16f / 9f;
+
+        if (artwork.GetComponent<MenuParallaxMotion>() == null)
+            artwork.gameObject.AddComponent<MenuParallaxMotion>();
+
+        if (backgroundRoot.transform.Find("Edge Vignette") == null)
+        {
+            GameObject vignetteObject = new GameObject("Edge Vignette", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            vignetteObject.transform.SetParent(backgroundRoot.transform, false);
+            vignetteObject.transform.SetAsLastSibling();
+            RectTransform rect = vignetteObject.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            Image vignette = vignetteObject.GetComponent<Image>();
+            vignette.sprite = CreateVignetteSprite();
+            vignette.color = Color.white;
+            vignette.raycastTarget = false;
+        }
+    }
+
+    private static Sprite CreateVignetteSprite()
+    {
+        const int width = 128;
+        const int height = 72;
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false, true)
+        {
+            name = "Runtime Menu Vignette",
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear
+        };
+
+        Color[] pixels = new Color[width * height];
+        for (int y = 0; y < height; y++)
+        {
+            float ny = Mathf.Abs((y + 0.5f) / height * 2f - 1f);
+            for (int x = 0; x < width; x++)
+            {
+                float nx = Mathf.Abs((x + 0.5f) / width * 2f - 1f);
+                float horizontal = Mathf.SmoothStep(0.5f, 1f, nx) * 0.46f;
+                float vertical = Mathf.SmoothStep(0.65f, 1f, ny) * 0.2f;
+                pixels[y * width + x] = new Color(0.015f, 0.02f, 0.018f, Mathf.Max(horizontal, vertical));
+            }
+        }
+
+        texture.SetPixels(pixels);
+        texture.Apply(false, true);
+        return Sprite.Create(texture, new Rect(0f, 0f, width, height), new Vector2(0.5f, 0.5f), 100f);
     }
 
     private void CreateTransitionOverlay()
