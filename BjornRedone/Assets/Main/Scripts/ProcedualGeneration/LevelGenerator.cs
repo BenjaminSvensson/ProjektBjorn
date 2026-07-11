@@ -120,6 +120,26 @@ public class LevelGenerator : MonoBehaviour
     public int BossRoomDistance { get; private set; }
     public int LastGenerationAttempts { get; private set; }
 
+    public bool HasConnectedRoom(Vector2Int from, Vector2Int direction)
+    {
+        if (finalLayout == null) return false;
+
+        RoomNode current = finalLayout.FirstOrDefault(node => node.gridPos == from);
+        RoomNode adjacent = finalLayout.FirstOrDefault(node => node.gridPos == from + direction);
+        if (current == null || adjacent == null) return false;
+
+        if (direction == Vector2Int.up)
+            return current.roomPrefab.hasTopDoor && adjacent.roomPrefab.hasBottomDoor;
+        if (direction == Vector2Int.down)
+            return current.roomPrefab.hasBottomDoor && adjacent.roomPrefab.hasTopDoor;
+        if (direction == Vector2Int.left)
+            return current.roomPrefab.hasLeftDoor && adjacent.roomPrefab.hasRightDoor;
+        if (direction == Vector2Int.right)
+            return current.roomPrefab.hasRightDoor && adjacent.roomPrefab.hasLeftDoor;
+
+        return false;
+    }
+
     public Bounds GeneratedWorldBounds
     {
         get

@@ -70,6 +70,7 @@ public sealed class UIInteractionPulse : MonoBehaviour,
     {
         if (restingScale == Vector3.zero) restingScale = transform.localScale;
         isHovered = false;
+        isSelected = false;
         isPressed = false;
     }
 
@@ -91,6 +92,14 @@ public sealed class UIInteractionPulse : MonoBehaviour,
     {
         isHovered = false;
         isPressed = false;
+
+        // Pointer hover should never leave a button looking permanently focused.
+        // Keyboard/gamepad navigation can select it again on the next navigation input.
+        if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == gameObject)
+        {
+            isSelected = false;
+            EventSystem.current.SetSelectedGameObject(null, eventData);
+        }
     }
 
     public void OnPointerDown(PointerEventData eventData) => isPressed = true;

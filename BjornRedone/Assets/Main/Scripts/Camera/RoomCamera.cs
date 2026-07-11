@@ -26,12 +26,21 @@ public class RoomCamera : MonoBehaviour
     [Header("Follow Settings")]
     [Tooltip("How much the camera leans towards the player within the room. 0 = Locked to Center, 1 = Locked to Player.")]
     [Range(0f, 1f)]
-    [SerializeField] private float followStrength = 0.15f; 
+    [SerializeField] private float followStrength = 0.28f;
 
     [Tooltip("How much aiming toward the pointer shifts the view inside the current room.")]
     [Range(0f, 0.25f)]
-    [SerializeField] private float aimLookAhead = 0.08f;
-    [SerializeField] private float maxAimLookAhead = 1.25f;
+    [SerializeField] private float aimLookAhead = 0.12f;
+    [SerializeField] private float maxAimLookAhead = 2f;
+
+    [Header("Door Reveal")]
+    [Tooltip("How close to a room edge the player must be before the adjacent room is revealed.")]
+    [Range(0.35f, 0.9f)]
+    [SerializeField] private float edgeRevealStart = 0.58f;
+
+    [Tooltip("How far the camera may look into a connected adjacent room.")]
+    [Range(0f, 6f)]
+    [SerializeField] private float edgeRevealDistance = 3.25f;
 
     [Tooltip("If true, the camera stops moving at the room edges.")]
     [SerializeField] private bool clampToRoom = true;
@@ -47,6 +56,7 @@ public class RoomCamera : MonoBehaviour
     // --- Private State ---
     private Vector3 currentVelocity; 
     private Camera cam;
+    private LevelGenerator levelGenerator;
     
     // --- Shake State ---
     private float shakeTimer = 0f;
@@ -61,6 +71,7 @@ public class RoomCamera : MonoBehaviour
         if (Instance == null) Instance = this;
         else if (Instance != this) Debug.LogWarning("Multiple RoomCamera components are active. Screen shake will target the first instance.");
         cam = GetComponent<Camera>();
+        levelGenerator = FindFirstObjectByType<LevelGenerator>();
 
         if (cam == null)
         {
@@ -151,7 +162,7 @@ public class RoomCamera : MonoBehaviour
         Vector3 roomCenter = GetGridCenter(playerPos);
         Vector3 rawOffset = playerPos - roomCenter;
         Vector3 followOffset = rawOffset * followStrength;
-        Vector3 finalTarget = roomCenter + followOffset;
+        Vector3 finalTarget = roomCenter + followOffset + (Vector3)CalculateDoorReveal(playerPos, rawOffset);
 
         if (cam != null && Mouse.current != null)
         {
@@ -168,17 +179,60 @@ public class RoomCamera : MonoBehaviour
             float camHeight = cam.orthographicSize;
             float camWidth = camHeight * cam.aspect;
 
-            float maxDx = (roomSize.x / 2f) - camWidth;
-            float maxDy = (roomSize.y / 2f) - camHeight;
+            float baseDx = Mathf.Max(0f, (roomSize.x / 2f) - camWidth);
+            float baseDy = Mathf.Max(0f, (roomSize.y / 2f) - camHeight);
+            Vector2Int grid = GetGridPosition(playerPos);
 
-            float clampedX = (maxDx > 0) ? Mathf.Clamp(finalTarget.x - roomCenter.x, -maxDx, maxDx) : 0f;
-            float clampedY = (maxDy > 0) ? Mathf.Clamp(finalTarget.y - roomCenter.y, -maxDy, maxDy) : 0f;
+            float minDx = -baseDx - (HasAdjacentRoom(grid, Vector2Int.left) ? edgeRevealDistance : 0f);
+            float maxDx = baseDx + (HasAdjacentRoom(grid, Vector2Int.right) ? edgeRevealDistance : 0f);
+            float minDy = -baseDy - (HasAdjacentRoom(grid, Vector2Int.down) ? edgeRevealDistance : 0f);
+            float maxDy = baseDy + (HasAdjacentRoom(grid, Vector2Int.up) ? edgeRevealDistance : 0f);
+
+            float clampedX = Mathf.Clamp(finalTarget.x - roomCenter.x, minDx, maxDx);
+            float clampedY = Mathf.Clamp(finalTarget.y - roomCenter.y, minDy, maxDy);
 
             finalTarget.x = roomCenter.x + clampedX;
             finalTarget.y = roomCenter.y + clampedY;
         }
 
         return finalTarget;
+    }
+
+    private Vector2 CalculateDoorReveal(Vector3 playerPos, Vector3 rawOffset)
+    {
+        Vector2Int grid = GetGridPosition(playerPos);
+        float halfWidth = roomSize.x * 0.5f;
+        float halfHeight = roomSize.y * 0.5f;
+        float startX = halfWidth * edgeRevealStart;
+        float startY = halfHeight * edgeRevealStart;
+        Vector2 reveal = Vector2.zero;
+
+        if (Mathf.Abs(rawOffset.x) > startX)
+        {
+            Vector2Int direction = rawOffset.x > 0f ? Vector2Int.right : Vector2Int.left;
+            if (HasAdjacentRoom(grid, direction))
+            {
+                float t = Mathf.InverseLerp(startX, halfWidth, Mathf.Abs(rawOffset.x));
+                reveal.x = Mathf.Sign(rawOffset.x) * Mathf.SmoothStep(0f, edgeRevealDistance, t);
+            }
+        }
+
+        if (Mathf.Abs(rawOffset.y) > startY)
+        {
+            Vector2Int direction = rawOffset.y > 0f ? Vector2Int.up : Vector2Int.down;
+            if (HasAdjacentRoom(grid, direction))
+            {
+                float t = Mathf.InverseLerp(startY, halfHeight, Mathf.Abs(rawOffset.y));
+                reveal.y = Mathf.Sign(rawOffset.y) * Mathf.SmoothStep(0f, edgeRevealDistance, t);
+            }
+        }
+
+        return reveal;
+    }
+
+    private bool HasAdjacentRoom(Vector2Int grid, Vector2Int direction)
+    {
+        return levelGenerator == null || levelGenerator.HasConnectedRoom(grid, direction);
     }
 
     private void FitCameraToRoom()
@@ -208,13 +262,19 @@ public class RoomCamera : MonoBehaviour
 
     private Vector3 GetGridCenter(Vector3 position)
     {
-        int gridX = Mathf.RoundToInt(position.x / roomSize.x);
-        int gridY = Mathf.RoundToInt(position.y / roomSize.y);
+        Vector2Int grid = GetGridPosition(position);
 
-        float centerX = gridX * roomSize.x;
-        float centerY = gridY * roomSize.y;
+        float centerX = grid.x * roomSize.x;
+        float centerY = grid.y * roomSize.y;
 
         return new Vector3(centerX, centerY, 0); 
+    }
+
+    private Vector2Int GetGridPosition(Vector3 position)
+    {
+        return new Vector2Int(
+            Mathf.RoundToInt(position.x / roomSize.x),
+            Mathf.RoundToInt(position.y / roomSize.y));
     }
 
     void OnDrawGizmos()

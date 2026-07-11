@@ -4040,9 +4040,11 @@ MonoBehaviour:
   roomSize: {x: 20, y: 10}
   smoothTime: 0.25
   fixedZ: -10
-  followStrength: 0.15
-  aimLookAhead: 0.08
-  maxAimLookAhead: 1.25
+  followStrength: 0.28
+  aimLookAhead: 0.12
+  maxAimLookAhead: 2
+  edgeRevealStart: 0.58
+  edgeRevealDistance: 3.25
   clampToRoom: 1
   autoFitToRoom: 1
   zoomScale: 0.9
